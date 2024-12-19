@@ -46,61 +46,34 @@ async function submitEntry(e) {
   console.log(`Name: ${name}, Pockets: ${pockets}, Date: ${dateStr}`);
 
   if (name && !isNaN(pockets)) {
-    // Check if today's date is September 28th or 29th, 2024
-    const specialDates = ["2024-09-28", "2024-09-29"];
-
-    if (specialDates.includes(dateStr)) {
-      // Add 5 to the pockets
-      pockets += 5;
-      alert("Weekend +5 bonus applied! Your new pockets count is " + pockets);
-    }
-
-    try {
-      await addDoc(collection(db, 'entries'), {
-        name: name,
-        pockets: pockets,
-        date: dateStr
-      });
-      console.log('Entry added to Firestore');
-      alert('Pockets entered! Thank you for playing POCKETWHACK! © POTATOCORP 2024');
-      document.getElementById('entryForm').reset();
-      await loadLeaderboard(); // Reload leaderboards after submission
-
-      // Now, check if the user's entry is the winning entry
-      // Fetch today's entries
-      const q = query(collection(db, 'entries'), where('date', '==', dateStr));
-      const querySnapshot = await getDocs(q);
-      const entries = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        data.pockets = Number(data.pockets); // Ensure pockets is a number
-        entries.push(data);
-      });
-
-      // Calculate the smallest unique number of pockets over 0
-      const pocketCounts = entries
-        .filter(entry => entry.pockets > 0)
-        .map(entry => entry.pockets);
-      const uniquePockets = pocketCounts.filter((pockets, _, arr) => arr.indexOf(pockets) === arr.lastIndexOf(pockets));
-      const minUniquePockets = uniquePockets.length > 0 ? Math.min(...uniquePockets) : null;
-
-      // Access the message div
-      const messageDiv = document.getElementById('message');
-
-      // Check if user's entry is the winning entry
-      if (pockets === minUniquePockets && pockets > 0) {
-        // Display the message
-        messageDiv.innerText = "CONGRATULATIONS, YOU'VE POCKETWHACKED!!!";
-      } else {
-        // Clear the message if not the winning entry
-        messageDiv.innerText = "";
+    // Check if today's date is a special date
+    const specialDates = {
+      "2024-12-25": {
+        message: "It's Christmas Day and Santa and his good friends at PotatoCorp have gifted you a pocket! Your new pockets count is ",
+        modifier: 1
+      },
+      "2024-12-26": {
+        message: "It's Christmas Eve! Your advent calendar today contained two pocket (and a clove orange). Your new pockets count is ",
+        modifier: 2
       }
+    };
 
-    } catch (error) {
-      console.error('Error adding document: ', error);
+    if (specialDates[dateStr]) {
+      // Apply the modifier and show the message
+      pockets += specialDates[dateStr].modifier;
+      alert(specialDates[dateStr].message + pockets);
     }
-  } else {
-    alert('Please enter a valid name and number of pockets.');
+  }
+
+  try {
+    await addDoc(collection(db, 'entries'), {
+      name: name,
+      pockets: pockets,
+      date: dateStr
+    });
+    console.log('Document successfully written!');
+  } catch (error) {
+    console.error('Error writing document: ', error);
   }
 }
 
