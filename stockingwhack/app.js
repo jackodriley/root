@@ -67,10 +67,13 @@ async function submitEntry(e) {
       alert(specialDates[dateStr].message + pockets);
       document.getElementById('message').innerText = specialDates[dateStr].message + pockets;
     } else {
-      const message = `Ho ho ho, ${state} elf, ${name}! Your pockets count is ${pockets}.`;
+      const message = `Ho Ho Ho ${state} elf, ${name}! Your festive pockets count is ${pockets}.`;
       document.getElementById('message').innerText = message;
       alert(message);
     }
+
+    // Play the submit sound
+    document.getElementById('submit-sound').play();
 
     try {
       await addDoc(collection(db, 'entries'), {
