@@ -46,14 +46,17 @@ async function submitEntry(e) {
   console.log(`Name: ${name}, Pockets: ${pockets}, Date: ${dateStr}`);
 
   if (name && !isNaN(pockets)) {
+    // Randomly assign 'naughty' or 'nice'
+    const state = Math.random() < 0.5 ? 'naughty' : 'nice';
+
     // Check if today's date is a special date
     const specialDates = {
       "2024-12-25": {
-        message: "It's Christmas Day and Santa and his good friends at PotatoCorp have gifted you a pocket! Your new pockets count is ",
+        message: "It's Christmas Day and Santa and his good friends at POTATOCORP have gifted you a pocket! Your new pockets count is ",
         modifier: 1
       },
       "2024-12-26": {
-        message: "It's Christmas Eve! Your advent calendar today contained two pocket (and a clove orange). Your new pockets count is ",
+        message: "It's Boxing Day! You found an extra pocket in your POTATOCORP gift box! Your new pockets count is ",
         modifier: 2
       }
     };
@@ -62,18 +65,25 @@ async function submitEntry(e) {
       // Apply the modifier and show the message
       pockets += specialDates[dateStr].modifier;
       alert(specialDates[dateStr].message + pockets);
+      document.getElementById('message').innerText = specialDates[dateStr].message + pockets;
+    } else {
+      const message = `Ho ho ho, ${state} elf, ${name}! Your pockets count is ${pockets}.`;
+      document.getElementById('message').innerText = message;
+      alert(message);
     }
-  }
 
-  try {
-    await addDoc(collection(db, 'entries'), {
-      name: name,
-      pockets: pockets,
-      date: dateStr
-    });
-    console.log('Document successfully written!');
-  } catch (error) {
-    console.error('Error writing document: ', error);
+    try {
+      await addDoc(collection(db, 'entries'), {
+        name: name,
+        pockets: pockets,
+        date: dateStr,
+        state: state
+      });
+      console.log('Document successfully written!');
+    } catch (error) {
+      console.error('Error writing document: ', error);
+      document.getElementById('message').innerText = 'Error writing document: ' + error.message;
+    }
   }
 }
 
@@ -223,3 +233,23 @@ async function loadDailyWinners() {
     console.error('Error loading daily winners: ', error);
   }
 }
+
+async function generateLeaderboard() {
+  const today = new Date();
+  const dateStr = today.toISOString().split('T')[0];
+  const q = query(collection(db, 'entries'), where('date', '==', dateStr), orderBy('pockets', 'desc'));
+
+  const querySnapshot = await getDocs(q);
+  let leaderboardHtml = '<ul>';
+
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    leaderboardHtml += `<li>${data.name} (${data.state}): ${data.pockets} pockets</li>`;
+  });
+
+  leaderboardHtml += '</ul>';
+  document.getElementById('leaderboard').innerHTML = leaderboardHtml;
+}
+
+// Call generateLeaderboard to update the leaderboard
+generateLeaderboard();
