@@ -250,8 +250,8 @@ async function generateLeaderboard() {
     const state = data.state || 'Unknown'; // Use a default value if state is missing
     leaderboardHtml += `<tr>
                           <td>${data.name}</td>
-                          <td>${state}</td>
                           <td>${data.pockets}</td>
+                          <td>${data.state || 'A Mystery'}</td> <!-- Fallback for missing state -->
                         </tr>`;
   });
 
