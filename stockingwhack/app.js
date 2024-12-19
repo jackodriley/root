@@ -243,15 +243,18 @@ async function generateLeaderboard() {
   const q = query(collection(db, 'entries'), where('date', '==', dateStr), orderBy('pockets', 'desc'));
 
   const querySnapshot = await getDocs(q);
-  let leaderboardHtml = '<ul>';
+  let leaderboardHtml = '';
 
   querySnapshot.forEach((doc) => {
     const data = doc.data();
-    leaderboardHtml += `<li>${data.name} (${data.state}): ${data.pockets} pockets</li>`;
+    leaderboardHtml += `<tr>
+                          <td>${data.name}</td>
+                          <td>${data.pockets}</td>
+                          <td>${data.state}</td>
+                        </tr>`;
   });
 
-  leaderboardHtml += '</ul>';
-  document.getElementById('leaderboard').innerHTML = leaderboardHtml;
+  document.querySelector('#todayLeaderboard tbody').innerHTML = leaderboardHtml;
 }
 
 // Call generateLeaderboard to update the leaderboard
