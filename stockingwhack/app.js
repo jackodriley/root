@@ -247,10 +247,11 @@ async function generateLeaderboard() {
 
   querySnapshot.forEach((doc) => {
     const data = doc.data();
+    const state = data.state || 'Unknown'; // Use a default value if state is missing
     leaderboardHtml += `<tr>
                           <td>${data.name}</td>
+                          <td>${state}</td>
                           <td>${data.pockets}</td>
-                          <td>${data.state}</td>
                         </tr>`;
   });
 
