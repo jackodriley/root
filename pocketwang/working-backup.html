@@ -41,11 +41,11 @@
     /* Animation styling */
     @keyframes wave {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+      50% { transform: translateY(-20px); }
     }
     /* Apply animation to each letter with a delay */
     h1.title span {
-      animation: wave 2.5s ease-in-out infinite;
+      animation: wave 1s ease-in-out;
     }
     h1.title span:nth-child(1) { animation-delay: 0s; }
     h1.title span:nth-child(2) { animation-delay: 0.1s; }
@@ -166,19 +166,9 @@
         font-size: 16px;
       }
     }
-
-  .special-event {
-    color: yellow;
-  }
-  
-  .regular-event {
-    color: lime;
-  }
-
   </style>
 </head>
 <body>
-
 
   <!-- Large Title with letters in different primary colors -->
   <h1 class="title" style="margin-top: 10px; margin-bottom: 20px;">
@@ -187,10 +177,95 @@
 
   <!-- The Play Audio button will be inserted here when needed -->
 
-  <h1 class="special-event">⭐️ <a href="https://jackodriley.github.io/pocketwang/game/whacketpock.html">FINAL EDITION SPECIAL EVENT</a> ⭐️</h1>
-</br></br>
-  <h1 class="regular-event"><a href="https://jackodriley.github.io/pocketwang/working-backup.html">REGULAR OL' POCKETWHACK</a></h1>
-  
+  <h1>Enter Today's Pockets</h1>
+  <form id="entryForm">
+    <input type="text" id="name" placeholder="Your Name" required />
+    <input type="number" id="pockets" placeholder="Number of Pockets" required min="0" />
+    <br />
+    <button type="submit">Submit</button>
+  </form>
+
+  <!-- Div to display the congratulatory message -->
+  <div id="message"></div>
+
+  <h2 >Today's Leaderboard</h2>
+  <p class="subheading">Lowest unique number of pockets over 0 wins!</p>
+  <table id="todayLeaderboard">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Number of Pockets</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Today's leaderboard entries will be injected here -->
+    </tbody>
+  </table>
+
+  <h2 style="margin-bottom: 10px;">Yesterday's Leaderboard</h2>
+  <table id="yesterdayLeaderboard">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Number of Pockets</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Yesterday's leaderboard entries will be injected here -->
+    </tbody>
+  </table>
+
+  <!-- New Daily Winners Table -->
+  <h2 style="margin-bottom: 10px;">Daily Winners</h2>
+  <table id="winnersTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Winner</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Daily winners will be injected here -->
+    </tbody>
+  </table>
+
+  <!-- Include your JavaScript code as a module -->
+  <script type="module" src="app.js"></script>
+
+  <!-- Autoplay MP3 when page loads -->
+  <audio id="background-audio" autoplay>
+    <source src="https://jackodriley.github.io/pocketwang/pocketwhack.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+  <!-- Script to attempt autoplay on mobile devices -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const audio = document.getElementById('background-audio');
+      const playAudio = () => {
+        audio.play().catch(() => {
+          // Autoplay failed, show a play button under the title
+          let playButton = document.createElement('button');
+          playButton.id = 'play-audio-button';
+          playButton.innerText = 'Play Audio';
+          playButton.onclick = () => {
+            audio.play();
+            playButton.remove();
+          };
+          // Insert the button after the title
+          const title = document.querySelector('h1.title');
+          title.parentNode.insertBefore(playButton, title.nextSibling);
+        });
+      };
+      playAudio();
+    });
+  </script>
+
+  <!-- Audio element for the submit sound effect -->
+  <audio id="submit-sound">
+    <source src="https://jackodriley.github.io/pocketwang/sad%20dads%20club%20wake%20word.wav" type="audio/wav">
+    Your browser does not support the audio element.
+  </audio>
 
   <!-- Footer -->
   <footer>

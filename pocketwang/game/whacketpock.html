@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WHACKETPOCK</title>
+  <!-- Responsive Meta Tag -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Include Google Font VT323 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+  <style>
+    /* Basic styling */
+    body {
+      font-family: 'VT323', monospace;
+      background-color: black;
+      color: green;
+      margin: 20px;
+    }
+    h1.title {
+      font-size: 10vw; /* Responsive font size */
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    h1.title span {
+      display: inline-block; /* Needed for animation */
+    }
+    /* Assign different colors to each letter */
+    h1.title span:nth-child(1) { color: red; }      /* W */
+    h1.title span:nth-child(2) { color: blue; }     /* H */
+    h1.title span:nth-child(3) { color: yellow; }   /* A */
+    h1.title span:nth-child(4) { color: green; }    /* C */
+    h1.title span:nth-child(5) { color: orange; }   /* K */
+    h1.title span:nth-child(6) { color: purple; }   /* E */
+    h1.title span:nth-child(7) { color: cyan; }     /* T */
+    h1.title span:nth-child(8) { color: magenta;}   /* P */
+    h1.title span:nth-child(9) { color: lime; }     /* O */
+    h1.title span:nth-child(10){ color: pink; }     /* C */
+    h1.title span:nth-child(11){ color: gold; }     /* K */
+
+    /* Animation styling */
+    @keyframes wave {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    /* Apply animation to each letter with a delay */
+    h1.title span {
+      animation: wave 1s ease-in-out infinite;
+    }
+    h1.title span:nth-child(1) { animation-delay: 0s; }
+    h1.title span:nth-child(2) { animation-delay: 0.1s; }
+    h1.title span:nth-child(3) { animation-delay: 0.2s; }
+    h1.title span:nth-child(4) { animation-delay: 0.3s; }
+    h1.title span:nth-child(5) { animation-delay: 0.4s; }
+    h1.title span:nth-child(6) { animation-delay: 0.5s; }
+    h1.title span:nth-child(7) { animation-delay: 0.6s; }
+    h1.title span:nth-child(8) { animation-delay: 0.7s; }
+    h1.title span:nth-child(9) { animation-delay: 0.8s; }
+    h1.title span:nth-child(10){ animation-delay: 0.9s; }
+    h1.title span:nth-child(11){ animation-delay: 1s; }
+
+    /* Rules text */
+    #rules {
+      text-align: center;
+      font-size: 5vw;
+      margin-bottom: 20px;
+    }
+
+    /* Grid styling */
+    #game-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-gap: 5px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .grid-cell {
+      background-color: black;
+      border: 1px solid green;
+      width: 100%;
+      padding-bottom: 100%; /* To make squares */
+      position: relative;
+    }
+    .pocket, .potato {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* UI elements */
+    #scoreboard {
+      text-align: center;
+      margin: 10px 0;
+    }
+    #scoreboard span {
+      margin: 0 20px;
+      font-size: 5vw;
+    }
+    /* Buttons */
+    button {
+      background-color: black;
+      color: green;
+      border: 1px solid green;
+      font-family: 'VT323', monospace;
+      font-size: 5vw;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: green;
+      color: black;
+    }
+    /* Game over modal */
+    #game-over-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      color: green;
+      font-family: 'VT323', monospace;
+      text-align: center;
+      padding-top: 50px;
+    }
+    #game-over-modal h2 {
+      font-size: 8vw;
+      min-font-size: 14px;
+    }
+    #game-over-modal p, #game-over-modal h3 {
+      font-size: 5vw;
+      min-font-size: 14px;
+    }
+    #highscore-form {
+      margin-top: 20px;
+    }
+    #highscore-form input {
+      background-color: black;
+      color: green;
+      border: 1px solid green;
+      font-family: 'VT323', monospace;
+      font-size: 5vw;
+      padding: 5px;
+      margin: 5px;
+    }
+    #highscore-form button {
+      background-color: black;
+      color: green;
+      border: 1px solid green;
+      font-family: 'VT323', monospace;
+      font-size: 5vw;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #highscore-form button:hover {
+      background-color: green;
+      color: black;
+    }
+    #highscore-table {
+      margin-top: 20px;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      border-collapse: collapse;
+    }
+    #highscore-table th, #highscore-table td {
+      border: 1px solid green;
+      padding: 8px;
+      font-size: 4vw;
+      min-font-size: 14px;
+    }
+    /* Start button container */
+    #start-button-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Game Title -->
+  <h1 class="title">
+    <span>G</span><span>O</span></br><span>T</span><span>O</span></br><span>S</span><span>L</span><span>E</span><span>E</span><span>P</span>
+  </h1>
+
+  </br><footer><center>
+    &copy; POTATOCORP 2024 - v0.2
+  </center></footer>
+</body>
+</html>
