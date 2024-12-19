@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>POCKETWHACK</title>
+  <title>STOCKINGWHACK</title>
   <!-- Responsive Meta Tag -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Include Google Font VT323 -->
@@ -11,7 +11,7 @@
     /* Basic styling */
     body {
       font-family: 'VT323', monospace;
-      background-color: black; /* Reverted to black */
+      background-color: #FFFAFA; /* Snow color */
       color: green;
       margin: 20px;
     }
@@ -25,18 +25,9 @@
       display: inline-block; /* Needed for animation */
       color: red; /* Default color */
     }
-    /* Assign different colors to each letter */
-    h1.title span:nth-child(1) { color: red; }    /* P */
-    h1.title span:nth-child(2) { color: blue; }   /* O */
-    h1.title span:nth-child(3) { color: yellow; } /* C */
-    h1.title span:nth-child(4) { color: green; }  /* K */
-    h1.title span:nth-child(5) { color: orange; } /* E */
-    h1.title span:nth-child(6) { color: purple; } /* T */
-    h1.title span:nth-child(7) { color: cyan; }   /* W */
-    h1.title span:nth-child(8) { color: magenta;} /* H */
-    h1.title span:nth-child(9) { color: lime; }   /* A */
-    h1.title span:nth-child(10){ color: pink; }   /* C */
-    h1.title span:nth-child(11){ color: gold; }   /* K */
+    /* Assign alternating red and green colors to each letter */
+    h1.title span:nth-child(odd) { color: red; }
+    h1.title span:nth-child(even) { color: green; }
 
     /* Animation styling */
     @keyframes wave {
