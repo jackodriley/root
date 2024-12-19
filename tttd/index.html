@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thought for the Day Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Thought for the Day Generator</h1>
+    <div id="loading" style="display: none;">
+        <img src="cross.svg" alt="Loading..." style="width: 50px; height: 50px;">
+    </div>
+    <div class="form-wrapper">
+        <label for="object">Everyday Object to Include (Optional):</label>
+        <select id="object" onchange="showOtherField()">
+            <option value="random" selected>Random</option>
+            <option value="Cup">Cup</option>
+            <option value="Book">Book</option>
+            <option value="Pen">Pen</option>
+            <option value="other">Other...</option>
+        </select>
+        <input type="text" id="otherObject" placeholder="Enter object" maxlength="150" style="display: none;" />
+    
+        <label for="thinker">Today's Big Thinker:</label>
+        <select id="thinker">
+            <option value="Vicar">Vicar</option>
+            <option value="Bishop">Bishop</option>
+            <option value="Rabbi">Rabbi</option>
+            <option value="Humanist">Trendy Humanist</option>
+        </select>
+    
+        <label for="tabooMode">Taboo Mode ON/OFF:</label>
+        <label class="switch">
+            <input type="checkbox" id="tabooMode">
+            <span class="slider round"></span>
+        </label>
+    
+        <button onclick="generateThought()">Generate Thought</button>
+    </div>
+    
+    <audio id="audioPlayer" controls hidden></audio>
+    <a id="downloadLink" href="#" hidden>Download MP3</a>
+
+    <p id="thoughtText" style="visibility: hidden;"></p>
+    <button id="resetButton" onclick="resetApp()" style="display: none;">Seek Yet More Wisdom</button>
+<p id="potatocorp">v0.21 - © POTATOCORP 2024</p>
+    <script src="script.js"></script>
+</body>
+</html>

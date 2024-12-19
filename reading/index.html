@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading App</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #word-display {
+            font-size: 48px;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            border-radius: 8px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #45a049;
+        }
+        #well-done {
+            font-size: 36px;
+            color: green;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            #word-display {
+                font-size: 36px;
+                padding: 20px;
+            }
+            button {
+                font-size: 18px;
+                padding: 15px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="word-display">Press Start to Begin</div>
+    <button id="start-btn">Start</button>
+    <button id="next-btn" class="hidden">Next Word</button>
+    <button id="well-done-btn" class="hidden">Well Done!</button>
+    <div id="well-done" class="hidden">Well Done!</div>
+
+    <audio id="cheer-sound" src="cheer.mp3"></audio>
+
+    <script src="script.js"></script>
+</body>
+</html>

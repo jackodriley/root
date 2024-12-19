@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>POCKETWHACK</title>
+  <!-- Responsive Meta Tag -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Include Google Font VT323 -->
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    /* Basic styling */
+    body {
+      font-family: 'VT323', monospace;
+      background-color: black;
+      color: green;
+      margin: 20px;
+    }
+    h1.title {
+      font-size: 10vw; /* Responsive font size */
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h1.title span {
+      color: red; /* Default color */
+    }
+    /* Assign different colors to each letter */
+    h1.title span:nth-child(1) { color: red; }    /* P */
+    h1.title span:nth-child(2) { color: blue; }   /* O */
+    h1.title span:nth-child(3) { color: yellow; } /* C */
+    h1.title span:nth-child(4) { color: green; }  /* K */
+    h1.title span:nth-child(5) { color: orange; } /* E */
+    h1.title span:nth-child(6) { color: purple; } /* T */
+    h1.title span:nth-child(7) { color: cyan; }   /* W */
+    h1.title span:nth-child(8) { color: magenta;} /* H */
+    h1.title span:nth-child(9) { color: lime; }   /* A */
+    h1.title span:nth-child(10){ color: pink; }   /* C */
+    h1.title span:nth-child(11){ color: gold; }   /* K */
+
+    form { margin-bottom: 30px; text-align: center; }
+    input, button {
+      background-color: black;
+      color: green;
+      border: 1px solid green;
+      font-family: 'VT323', monospace;
+      font-size: 5vw; /* Responsive font size */
+      padding: 5px;
+      margin: 5px;
+      width: 80%;
+      max-width: 300px;
+    }
+    input::placeholder {
+      color: green;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    th, td {
+      border: 1px solid green;
+      padding: 8px;
+      text-align: left;
+      font-size: 4vw; /* Responsive font size */
+    }
+    tr.highlight { background-color: #004400; } /* Darker green for winner */
+    tr.highlight td {
+      color: white; /* Make text color white for better contrast */
+    }
+    .winner::before { content: '⭐ '; } /* Display star before winner's name */
+    /* Responsive adjustments */
+    @media (min-width: 600px) {
+      input, button {
+        font-size: 20px;
+        width: auto;
+        max-width: none;
+      }
+      th, td {
+        font-size: 16px;
+      }
+    }
+    /* Style for the congratulatory message */
+    #message {
+      text-align: center;
+      font-size: 5vw;
+      color: green;
+      margin-top: 20px;
+    }
+    @media (min-width: 600px) {
+      #message {
+        font-size: 24px;
+      }
+    }
+    /* Style for the Play Audio button */
+    #play-audio-button {
+      display: block;
+      margin: 10px auto;
+      font-size: 5vw;
+      background-color: black;
+      color: green;
+      border: 1px solid green;
+      font-family: 'VT323', monospace;
+      padding: 5px 10px;
+    }
+    @media (min-width: 600px) {
+      #play-audio-button {
+        font-size: 20px;
+      }
+    }
+    /* Footer styling */
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 4vw;
+      color: green;
+    }
+    @media (min-width: 600px) {
+      footer {
+        font-size: 16px;
+      }
+    }
+    /* Style for the subheading under Today's Leaderboard */
+    .subheading {
+      text-align: center;
+      font-size: 3vw;
+      margin-bottom: 10px;
+    }
+    @media (min-width: 600px) {
+      .subheading {
+        font-size: 14px;
+      }
+    }
+    /* Hide the Today's Leaderboard by default */
+    #todayLeaderboardSection {
+      display: none;
+    }
+    /* Style for the Reveal Leaderboard button */
+    #revealLeaderboardButton {
+      display: block;
+      margin: 20px auto;
+      font-size: 5vw;
+      background-color: black;
+      color: green;
+      border: 1px solid green;
+      font-family: 'VT323', monospace;
+      padding: 5px 10px;
+      text-align: center;
+    }
+    @media (min-width: 600px) {
+      #revealLeaderboardButton {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Large Title with letters in different primary colors -->
+  <h1 class="title">
+    <span>P</span><span>O</span><span>C</span><span>K</span><span>E</span><span>T</span><span>W</span><span>H</span><span>A</span><span>C</span><span>K</span>
+  </h1>
+
+  <!-- The Play Audio button will be inserted here when needed -->
+
+  <h1>Enter Today's Pockets</h1>
+  <form id="entryForm">
+    <input type="text" id="name" placeholder="Your Name" required />
+    <input type="number" id="pockets" placeholder="Number of Pockets" required min="0" />
+    <br />
+    <button type="submit">Submit</button>
+  </form>
+
+  <!-- Div to display the congratulatory message -->
+  <div id="message"></div>
+
+  <!-- Reveal Today's Leaderboard Button -->
+  <button id="revealLeaderboardButton">Reveal Today's Leaderboard</button>
+
+  <!-- Today's Leaderboard Section (initially hidden) -->
+  <div id="todayLeaderboardSection">
+    <h2>Today's Leaderboard</h2>
+    <p class="subheading">Lowest unique number of pockets over 0 wins!</p>
+    <table id="todayLeaderboard">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Number of Pockets</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Today's leaderboard entries will be injected here -->
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Yesterday's Leaderboard</h2>
+  <table id="yesterdayLeaderboard">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Number of Pockets</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Yesterday's leaderboard entries will be injected here -->
+    </tbody>
+  </table>
+
+  <!-- Include your JavaScript code as a module -->
+  <script type="module" src="app.js"></script>
+
+  <!-- Autoplay MP3 when page loads -->
+  <audio id="background-audio" autoplay>
+    <source src="https://jackodriley.github.io/pocketwang/pocketwhack.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+  <!-- Script to attempt autoplay on mobile devices -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const audio = document.getElementById('background-audio');
+      const playAudio = () => {
+        audio.play().catch(() => {
+          // Autoplay failed, show a play button under the title
+          let playButton = document.createElement('button');
+          playButton.id = 'play-audio-button';
+          playButton.innerText = 'Play Audio';
+          playButton.onclick = () => {
+            audio.play();
+            playButton.remove();
+          };
+          // Insert the button after the title
+          const title = document.querySelector('h1.title');
+          title.parentNode.insertBefore(playButton, title.nextSibling);
+        });
+      };
+      playAudio();
+    });
+  </script>
+
+  <!-- Footer -->
+  <footer>
+    &copy; POTATOCORP 2024 - v.2
+  </footer>
+
+</body>
+</html>

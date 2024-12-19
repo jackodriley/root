@@ -1,0 +1,142 @@
+/* styles.css */
+
+/* 1. Gothic Font for Page Title and Text */
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Patrick+Hand&display=swap');
+
+body {
+    font-family: 'Dancing Script', cursive;
+    background-color: #fffacd; /* Pale yellow */
+    padding: 20px;
+    margin: 0;
+    line-height: 1.6;
+    text-align: center;
+}
+
+h1 {
+    font-family: 'UnifrakturCook', serif; /* Apply Gothic font */
+    color: #333;
+    text-align: center;
+    font-size: 3em; /* Adjust size for prominence */
+}
+
+#otherObject {
+    display: none; /* Hidden by default */
+}
+
+label, select, input, button {
+    display: block;
+    margin-top: 20px;
+}
+
+#potatocorp {
+    font-family: 'VT323', monospace;
+    color: green;
+    margin: 20px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+#loading img {
+    animation: spin 2s linear infinite; /* Spinning animation */
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+
+/* 2. Styles for Input Fields and Dropdown */
+label, select, input, button {
+    display: block;
+    margin-top: 20px;
+    font-family: 'Dancing Script', cursive;
+}
+
+/* 3. Limit Text Width for Better Layout */
+#thoughtText {
+    font-family: 'Dancing Script', cursive; /* Handwritten style */
+    white-space: pre-wrap;
+    max-width: 600px;
+    margin: 20px auto;
+    text-align: left;
+    visibility: hidden;
+}
+
+#resetButton {
+    display: block;
+    margin: 20px auto; /* Center the button horizontally */
+    text-align: center; /* Ensure text alignment */
+}
+
+
+/* 4. Centering and Aesthetic Improvements *
+
+
+/* 5. Toggle Text Button */
+#toggleTextBtn {
+    display: block;
+    margin: 20px auto;
+}
+
+.form-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the form elements */
+    margin: 20px auto;
+}
+
+select, input, button {
+    width: 80%; /* Stretch to a reasonable size */
+    max-width: 400px; /* Limit width on larger screens */
+    margin: 10px 0; /* Add spacing */
+    font-size: 16px; /* Make text readable */
+    text-align: center; /* Align text in the fields */
+}
