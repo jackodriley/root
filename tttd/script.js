@@ -8,23 +8,18 @@ function showOtherField() {
 // Called when the 'Generate Thought' button is clicked
 // Called when the 'Generate Thought' button is clicked
 async function generateThought() {
-  // Hide the form wrapper (selection UX)
+  // Hide form, show loading
   document.querySelector('.form-wrapper').style.display = 'none';
-
-  // Show the loading graphic
   const loadingElement = document.getElementById('loading');
   loadingElement.style.display = 'block';
 
-  // Get the user input values
   const objectSelect = document.getElementById('object');
   let object = objectSelect.value;
 
-  // Handle custom object input if "Other..." is selected
   if (object === 'other') {
     object = document.getElementById('otherObject').value.trim() || 'an object';
   }
 
-  // Default: Remove object from prompt if "Random" is selected
   if (object === 'random') {
     object = '';
   }
@@ -32,7 +27,6 @@ async function generateThought() {
   const thinker = document.getElementById('thinker').value;
   const tabooMode = document.getElementById('tabooMode').checked;
 
-  // Map thinker to the corresponding phrase and teachings
   let thinkerPhrase = '';
   let teachings = '';
   switch (thinker) {
@@ -57,7 +51,6 @@ async function generateThought() {
       teachings = 'Christian teachings';
   }
 
-  // Construct the prompt
   const tabooInstruction = tabooMode
     ? '[THE COMPOSITION SHOULD GROW INCREASINGLY UNHINGED AND END WITH ESSENTIALLY NONSENSICAL GARBAGE]'
     : '';
@@ -72,80 +65,95 @@ async function generateThought() {
     `thought-provoking takeaway for the audience. Maintain a reflective, inclusive, and ` +
     `eloquent tone throughout. ${tabooInstruction}"`;
 
-  console.log("Constructed prompt:", prompt); // Debugging log
+  console.log("Constructed prompt:", prompt);
 
   try {
-      // Step 1: Fetch the generated text from your backend
-      const response = await fetch('https://us-central1-tttd-a18ee.cloudfunctions.net/generateThought', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-    
-      if (!response.ok) {
-        throw new Error(`Server responded with status ${response.status}`);
-      }
-    
-      const data = await response.json();
-    
-      // Gradually display the returned text
-      const thoughtText = document.getElementById('thoughtText');
-      thoughtText.textContent = ''; // Clear previous content
-      thoughtText.style.visibility = 'visible';
-    
-      const lines = data.text.split('\n'); // Split response into lines
-      lines.forEach((line, index) => {
-        setTimeout(() => {
-          thoughtText.textContent += line + '\n'; 
-        }, index * 500); 
-        setTimeout(() => {
-          document.getElementById('resetButton').style.display = 'block';
-        }, lines.length * 500); 
-      });
-      
-      // Step 2: After text is displayed, call ElevenLabs API to get TTS audio
-      // Replace with your ElevenLabs API key and voice ID
-      const elevenLabsApiKey = 'sk_aee9d0c6e4a1c2ed29c54251083bfb2eb53823fdfb1e5d13'; 
-      const voiceId = 'ZAzIVQ2dY0CuoLzRn8tm'; // e.g. "21m00Tcm4TlvDq8ikWAM"
-      
-      // Wait until the text is fully appended before generating audio
-      // The lines are appended over time; to simplify, we might just wait 
-      // for all lines to finish:
-      await new Promise(resolve => setTimeout(resolve, lines.length * 500 + 500));
-      
-      const audioResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: {
-          'xi-api-key': elevenLabsApiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: data.text,
-          voice_settings: {
-            stability: 0.4,
-            similarity_boost: 1.0
-          }
-        })
-      });
-      
-      if (!audioResponse.ok) {
-        throw new Error(`Audio generation failed: ${audioResponse.status}`);
-      }
-      
-      const audioBlob = await audioResponse.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      // Step 3: Play the audio in the browser
-      const audioElement = new Audio(audioUrl);
-      audioElement.play();
+    // Step 1: Fetch the generated text from your backend
+    const textPromise = fetch('https://us-central1-tttd-a18ee.cloudfunctions.net/generateThought', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => data.text);
 
-    } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while generating the thought: ' + error.message);
-    } finally {
-      // Hide the loading graphic
-      loadingElement.style.display = 'none';
-    }
+    const generatedText = await textPromise;
+
+    // Step 2: Call ElevenLabs API to get TTS audio
+    const elevenLabsApiKey = 'YOUR_ELEVENLABS_API_KEY'; 
+    const voiceId = 'YOUR_VOICE_ID'; // e.g. "21m00Tcm4TlvDq8ikWAM"
+
+    const audioPromise = fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': elevenLabsApiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: generatedText,
+        voice_settings: {
+          stability: 0.4,
+          similarity_boost: 1.0
+        }
+      })
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Audio generation failed: ${response.status}`);
+      }
+      return response.blob();
+    });
+
+    // Wait for both text and audio to be ready
+    const [audioBlob] = await Promise.all([audioPromise]);
+
+    // Now we have both text and audio
+    // Hide the loading graphic
+    loadingElement.style.display = 'none';
+
+    // Prepare text and audio for display and playback
+    const thoughtText = document.getElementById('thoughtText');
+    thoughtText.textContent = ''; 
+    thoughtText.style.visibility = 'visible';
+
+    const lines = generatedText.split('\n');
+
+    // Create audio URL from blob
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audioElement = document.getElementById('audioPlayer');
+    audioElement.src = audioUrl;
+    audioElement.hidden = false;
+
+    // Prepare download link for the audio
+    const downloadLink = document.getElementById('downloadLink');
+    downloadLink.href = audioUrl;
+    downloadLink.download = 'thought-for-the-day.mp3';
+    downloadLink.hidden = false;
+    downloadLink.textContent = 'Download MP3';
+
+    // Start playing audio and showing text lines in parallel
+    audioElement.play().catch((err) => console.warn("Auto-play may be blocked by browser:", err));
+
+    lines.forEach((line, index) => {
+      setTimeout(() => {
+        thoughtText.textContent += line + '\n'; 
+        if (index === lines.length - 1) {
+          document.getElementById('resetButton').style.display = 'block';
+        }
+      }, index * 500);
+    });
+    
+  } catch (error) {
+    console.error('Error:', error);
+    alert('An error occurred while generating the thought: ' + error.message);
+    // Show the form again in case of error
+    document.querySelector('.form-wrapper').style.display = 'block';
+  }
 }
 
 function resetApp() {
@@ -153,7 +161,22 @@ function resetApp() {
   document.getElementById('thoughtText').style.visibility = 'hidden';
   document.getElementById('thoughtText').textContent = '';
   document.getElementById('resetButton').style.display = 'none';
+  document.getElementById('downloadLink').hidden = true;
+  const audioElement = document.getElementById('audioPlayer');
+  audioElement.pause();
+  audioElement.src = '';
+  audioElement.hidden = true;
   document.querySelector('.form-wrapper').style.display = 'block';
+}
+
+function showOtherField() {
+  const objectSelect = document.getElementById('object');
+  const otherObject = document.getElementById('otherObject');
+  if (objectSelect.value === 'other') {
+    otherObject.style.display = 'inline-block';
+  } else {
+    otherObject.style.display = 'none';
+  }
 }
 
 // It's important to test each function to ensure they're working correctly in the browser.
