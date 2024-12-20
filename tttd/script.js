@@ -352,10 +352,23 @@ async function generateThought() {
   const reassuranceMessages = [
     "Patience, my child...",
     "Patience is a virtue...",
-    "Heavenly things come to those who wait..."
+    "Heavenly things come to those who wait...",
+    "Those who wait shall renew their strength...",
+    "In patience, possess your souls...",
+    "The fruit of the Spirit is love, joy, peace, patience...",
+    "Be strong and take heart, and wait patiently...",
+    "Rejoice in hope, be patient in tribulation, be constant in prayer...",
+    "The testing of your faith produces patience...",
+    "Let us run with perseverance the race marked out for us...",
+    "Blessed are those who persevere under trial...",
+    "Be joyful in hope, patient in affliction, faithful in prayer...",
+    "Though it tarry, wait for it; because it will surely come...",
+    "Let patience have her perfect work, that you may be perfect and complete...",
+    "You need only to be still..."
   ];
 
-  let reassuranceTimeout = setTimeout(() => {
+// Replace the previous setTimeout code with this:
+  const reassuranceInterval = setInterval(() => {
     // Only show if we are still loading (check if loadingElement is visible)
     if (loadingElement.style.display !== 'none') {
       const randomMsg = reassuranceMessages[Math.floor(Math.random() * reassuranceMessages.length)];
@@ -371,8 +384,11 @@ async function generateThought() {
         loadingElement.appendChild(reassuranceElement);
       }
       reassuranceElement.textContent = randomMsg;
+    } else {
+      // If loading is done, clear the interval
+      clearInterval(reassuranceInterval);
     }
-  }, 15000); // 15 seconds
+  }, 9000); // 9 seconds
 
   try {
     // Step 1: Fetch the generated text
