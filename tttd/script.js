@@ -85,8 +85,8 @@ async function generateThought() {
     const generatedText = await textPromise;
 
     // Step 2: Call ElevenLabs API to get TTS audio
-    const elevenLabsApiKey = 'YOUR_ELEVENLABS_API_KEY'; 
-    const voiceId = 'YOUR_VOICE_ID'; // e.g. "21m00Tcm4TlvDq8ikWAM"
+    const elevenLabsApiKey = 'sk_aee9d0c6e4a1c2ed29c54251083bfb2eb53823fdfb1e5d13'; 
+    const voiceId = 'ZAzIVQ2dY0CuoLzRn8tm'; // e.g. "21m00Tcm4TlvDq8ikWAM"
 
     const audioPromise = fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
