@@ -108,6 +108,7 @@ label, select, input, button {
     margin: 20px auto;
     text-align: left;
     visibility: hidden;
+    font-size: 1.5em; /* Increase text size */
 }
 
 #resetButton {
