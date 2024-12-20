@@ -166,7 +166,7 @@ function resetApp() {
   audioElement.pause();
   audioElement.src = '';
   audioElement.hidden = true;
-  document.querySelector('.form-wrapper').style.display = 'block';
+  document.querySelector('.form-wrapper').style.display = '';
 }
 
 function showOtherField() {
