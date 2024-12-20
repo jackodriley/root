@@ -6,119 +6,155 @@ function showOtherField() {
 }
 
 // Called when the 'Generate Thought' button is clicked
+// Called when the 'Generate Thought' button is clicked
 async function generateThought() {
-    // Hide the form wrapper (selection UX)
-    document.querySelector('.form-wrapper').style.display = 'none';
-  
-    // Show the loading graphic
-    const loadingElement = document.getElementById('loading');
-    loadingElement.style.display = 'block';
-  
-    // Get the user input values
-    const objectSelect = document.getElementById('object');
-    let object = objectSelect.value;
-  
-    // Handle custom object input if "Other..." is selected
-    if (object === 'other') {
-      object = document.getElementById('otherObject').value.trim() || 'an object';
-    }
-  
-    // Default: Remove object from prompt if "Random" is selected
-    if (object === 'random') {
-      object = '';
-    }
-  
-    const thinker = document.getElementById('thinker').value;
-    const tabooMode = document.getElementById('tabooMode').checked;
-  
-    // Map thinker to the corresponding phrase and teachings
-    let thinkerPhrase = '';
-    let teachings = '';
-    switch (thinker) {
-      case 'Vicar':
-        thinkerPhrase = 'an eminent English vicar';
-        teachings = 'Christian teachings';
-        break;
-      case 'Bishop':
-        thinkerPhrase = 'an elderly Bishop';
-        teachings = 'Old Testament teachings';
-        break;
-      case 'Rabbi':
-        thinkerPhrase = 'an eminent rabbi';
-        teachings = 'rabbinical teachings';
-        break;
-      case 'Humanist':
-        thinkerPhrase = 'a trendy Humanist thinker';
-        teachings = 'atheistic philosophical teachings';
-        break;
-      default:
-        thinkerPhrase = 'an eminent English vicar';
-        teachings = 'Christian teachings';
-    }
-  
-    // Construct the prompt
-    const tabooInstruction = tabooMode
-      ? '[THE COMPOSITION SHOULD GROW INCREASINGLY UNHINGED AND END WITH ESSENTIALLY NONSENSICAL GARBAGE]'
-      : '';
-  
-    const prompt =
-      `PROMPT: "Write a ‘Thought for the Day’ in the style of BBC Radio 4, ` +
-      `in the voice of ${thinkerPhrase}. The piece should be 250-350 words and begin ` +
-      `${object ? `with an observation about an (imaginary) personal anecdote involving ${object}, ` : ''}` +
-      `ideally proceeding from some humdrum detail about ordinary life. Expand into a ` +
-      `moral and spiritual reflection, incorporating a balance of ${teachings} and ` +
-      `relatable insights. Begin with Good Morning and Conclude with a glib, hopeful or ` +
-      `thought-provoking takeaway for the audience. Maintain a reflective, inclusive, and ` +
-      `eloquent tone throughout. ${tabooInstruction}"`;
-  
-    console.log("Constructed prompt:", prompt); // Debugging log
-  
-    try {
-        // Make the POST request to the backend
-        const response = await fetch('https://us-central1-tttd-a18ee.cloudfunctions.net/generateThought', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
-        });
-      
-        if (!response.ok) {
-          throw new Error(`Server responded with status ${response.status}`);
-        }
-      
-        const data = await response.json();
-      
-        // Gradually display the returned text
-        const thoughtText = document.getElementById('thoughtText');
-        thoughtText.textContent = ''; // Clear previous content
-        thoughtText.style.visibility = 'visible';
-      
-        const lines = data.text.split('\n'); // Split response into lines
-        lines.forEach((line, index) => {
-          setTimeout(() => {
-            thoughtText.textContent += line + '\n'; // Add each line with a delay
-          }, index * 500); // Delay increases for each line
-          setTimeout(() => {
-            document.getElementById('resetButton').style.display = 'block';
-          }, lines.length * 500); // Display button after all lines have loaded
-        });
+  // Hide the form wrapper (selection UX)
+  document.querySelector('.form-wrapper').style.display = 'none';
 
-      } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while generating the thought: ' + error.message);
-      } finally {
-        // Hide the loading graphic
-        loadingElement.style.display = 'none';
+  // Show the loading graphic
+  const loadingElement = document.getElementById('loading');
+  loadingElement.style.display = 'block';
+
+  // Get the user input values
+  const objectSelect = document.getElementById('object');
+  let object = objectSelect.value;
+
+  // Handle custom object input if "Other..." is selected
+  if (object === 'other') {
+    object = document.getElementById('otherObject').value.trim() || 'an object';
+  }
+
+  // Default: Remove object from prompt if "Random" is selected
+  if (object === 'random') {
+    object = '';
+  }
+
+  const thinker = document.getElementById('thinker').value;
+  const tabooMode = document.getElementById('tabooMode').checked;
+
+  // Map thinker to the corresponding phrase and teachings
+  let thinkerPhrase = '';
+  let teachings = '';
+  switch (thinker) {
+    case 'Vicar':
+      thinkerPhrase = 'an eminent English vicar';
+      teachings = 'Christian teachings';
+      break;
+    case 'Bishop':
+      thinkerPhrase = 'an elderly Bishop';
+      teachings = 'Old Testament teachings';
+      break;
+    case 'Rabbi':
+      thinkerPhrase = 'an eminent rabbi';
+      teachings = 'rabbinical teachings';
+      break;
+    case 'Humanist':
+      thinkerPhrase = 'a trendy Humanist thinker';
+      teachings = 'atheistic philosophical teachings';
+      break;
+    default:
+      thinkerPhrase = 'an eminent English vicar';
+      teachings = 'Christian teachings';
+  }
+
+  // Construct the prompt
+  const tabooInstruction = tabooMode
+    ? '[THE COMPOSITION SHOULD GROW INCREASINGLY UNHINGED AND END WITH ESSENTIALLY NONSENSICAL GARBAGE]'
+    : '';
+
+  const prompt =
+    `PROMPT: "Write a ‘Thought for the Day’ in the style of BBC Radio 4, ` +
+    `in the voice of ${thinkerPhrase}. The piece should be 250-350 words and begin ` +
+    `${object ? `with an observation about an (imaginary) personal anecdote involving ${object}, ` : ''}` +
+    `ideally proceeding from some humdrum detail about ordinary life. Expand into a ` +
+    `moral and spiritual reflection, incorporating a balance of ${teachings} and ` +
+    `relatable insights. Begin with Good Morning and Conclude with a glib, hopeful or ` +
+    `thought-provoking takeaway for the audience. Maintain a reflective, inclusive, and ` +
+    `eloquent tone throughout. ${tabooInstruction}"`;
+
+  console.log("Constructed prompt:", prompt); // Debugging log
+
+  try {
+      // Step 1: Fetch the generated text from your backend
+      const response = await fetch('https://us-central1-tttd-a18ee.cloudfunctions.net/generateThought', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+    
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
       }
+    
+      const data = await response.json();
+    
+      // Gradually display the returned text
+      const thoughtText = document.getElementById('thoughtText');
+      thoughtText.textContent = ''; // Clear previous content
+      thoughtText.style.visibility = 'visible';
+    
+      const lines = data.text.split('\n'); // Split response into lines
+      lines.forEach((line, index) => {
+        setTimeout(() => {
+          thoughtText.textContent += line + '\n'; 
+        }, index * 500); 
+        setTimeout(() => {
+          document.getElementById('resetButton').style.display = 'block';
+        }, lines.length * 500); 
+      });
+      
+      // Step 2: After text is displayed, call ElevenLabs API to get TTS audio
+      // Replace with your ElevenLabs API key and voice ID
+      const elevenLabsApiKey = 'sk_aee9d0c6e4a1c2ed29c54251083bfb2eb53823fdfb1e5d13'; 
+      const voiceId = 'ZAzIVQ2dY0CuoLzRn8tm'; // e.g. "21m00Tcm4TlvDq8ikWAM"
+      
+      // Wait until the text is fully appended before generating audio
+      // The lines are appended over time; to simplify, we might just wait 
+      // for all lines to finish:
+      await new Promise(resolve => setTimeout(resolve, lines.length * 500 + 500));
+      
+      const audioResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'xi-api-key': elevenLabsApiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: data.text,
+          voice_settings: {
+            stability: 0.4,
+            similarity_boost: 1.0
+          }
+        })
+      });
+      
+      if (!audioResponse.ok) {
+        throw new Error(`Audio generation failed: ${audioResponse.status}`);
+      }
+      
+      const audioBlob = await audioResponse.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Step 3: Play the audio in the browser
+      const audioElement = new Audio(audioUrl);
+      audioElement.play();
 
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred while generating the thought: ' + error.message);
+    } finally {
+      // Hide the loading graphic
+      loadingElement.style.display = 'none';
+    }
 }
 
 function resetApp() {
-    // Reset the app to its default state
-    document.getElementById('thoughtText').style.visibility = 'hidden';
-    document.getElementById('thoughtText').textContent = '';
-    document.getElementById('resetButton').style.display = 'none';
-    document.querySelector('.form-wrapper').style.display = 'block';
-  }
+  // Reset the app to its default state
+  document.getElementById('thoughtText').style.visibility = 'hidden';
+  document.getElementById('thoughtText').textContent = '';
+  document.getElementById('resetButton').style.display = 'none';
+  document.querySelector('.form-wrapper').style.display = 'block';
+}
 
 // It's important to test each function to ensure they're working correctly in the browser.
 // Check for console errors and ensure that the API integration works once added.
