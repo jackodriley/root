@@ -317,7 +317,7 @@ async function generateThought() {
       break;
     case 'Bishop':
       thinkerPhrase = 'an elderly Bishop';
-      teachings = 'Old Testament teachings';
+      teachings = 'fire and brimstone Old Testament teachings';
       break;
     case 'Rabbi':
       thinkerPhrase = 'an eminent rabbi';
@@ -325,7 +325,7 @@ async function generateThought() {
       break;
     case 'Humanist':
       thinkerPhrase = 'a trendy Humanist thinker';
-      teachings = 'atheistic philosophical teachings';
+      teachings = 'modern atheistic philosophical teachings';
       break;
     default:
       thinkerPhrase = 'an eminent English vicar';
@@ -333,7 +333,7 @@ async function generateThought() {
   }
 
   const tabooInstruction = tabooMode
-    ? '[THE COMPOSITION SHOULD GROW INCREASINGLY UNHINGED AND END WITH ESSENTIALLY NONSENSICAL GARBAGE]'
+    ? '[After a briefly lucid introduction, the composition should turn nonsensical, incorporating inappropriate themes, growing unhinged and ultimately turning into surrealist garbage]'
     : '';
 
   const prompt =
@@ -409,7 +409,27 @@ async function generateThought() {
 
     // Step 2: Call ElevenLabs API to get TTS audio
     const elevenLabsApiKey = 'sk_aee9d0c6e4a1c2ed29c54251083bfb2eb53823fdfb1e5d13'; 
-    const voiceId = 'ZAzIVQ2dY0CuoLzRn8tm';
+
+    // Choose different voice IDs depending on the thinker
+    let voiceId;
+    switch (thinker) {
+      case 'Vicar':
+        voiceId = 'ZAzIVQ2dY0CuoLzRn8tm'; // Valentino
+        break;
+      case 'Bishop':
+        voiceId = 'FOeGvDsxRiDvljNiKuEt'; // Victoria, Queen of England
+        break;
+      case 'Rabbi':
+        voiceId = '4LL7HErVintUHD50jZxC'; // Rupert
+        break;
+      case 'Humanist':
+        voiceId = 'MSFX2UKKt80XGgUzjpBO'; // Philemon
+        break;
+      default:
+        // Fallback voice ID if none match
+        voiceId = 'ZAzIVQ2dY0CuoLzRn8tm'; // Valentino
+        break;
+    }
 
     const audioPromise = fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
