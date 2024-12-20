@@ -135,6 +135,12 @@ function displayLeaderboard(entries, tableId) {
   entries.sort((a, b) => a.pockets - b.pockets);
 
   // Determine winner logic remains unchanged...
+
+  const pocketCounts = entries
+  .filter(entry => entry.pockets > 0)
+  .map(entry => entry.pockets);
+  const uniquePockets = pocketCounts.filter((p, _, arr) => arr.indexOf(p) === arr.lastIndexOf(p));
+  const minUniquePockets = uniquePockets.length > 0 ? Math.min(...uniquePockets) : null;
   
   entries.forEach((entry) => {
     const row = tbody.insertRow();
@@ -148,13 +154,6 @@ function displayLeaderboard(entries, tableId) {
     nameCell.innerText = entry.name;
     pocketsCell.innerText = (entry.pockets === 0) ? '0 (DNP)' : entry.pockets;
     stateCell.innerText = entry.state || 'Unknown'; // Use 'Unknown' if state is missing
-
-    // Annotate zero pockets with "(DNP)"
-    if (entry.pockets === 0) {
-      pocketsCell.innerText = '0 (DNP)';
-    } else {
-      pocketsCell.innerText = entry.pockets;
-    }
 
     // Highlight the winner (only if pockets > 0)
     if (entry.pockets === minUniquePockets && entry.pockets > 0) {
