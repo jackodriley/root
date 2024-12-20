@@ -388,7 +388,7 @@ async function generateThought() {
       // If loading is done, clear the interval
       clearInterval(reassuranceInterval);
     }
-  }, 9000); // 9 seconds
+  }, 6000); // 6 seconds
 
   try {
     // Step 1: Fetch the generated text
