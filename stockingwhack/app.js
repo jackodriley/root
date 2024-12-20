@@ -83,11 +83,43 @@ async function submitEntry(e) {
         state: state
       });
       console.log('Document successfully written!');
+
+      const { winners } = await getWinnerForDate(dateStr);
+
+      // Check if the current user's submission matches a winner
+      const userIsWinner = winners.some(w => w.name === name && w.pockets === pockets);
+
+      if (userIsWinner) {
+      alert('Congratulations! Your submission is currently the winning entry for today!');
+      }
+      
+      // Refresh the leaderboard
+      await loadLeaderboardForDate('todayLeaderboard', new Date());
+
     } catch (error) {
       console.error('Error writing document: ', error);
       document.getElementById('message').innerText = 'Error writing document: ' + error.message;
     }
   }
+}
+
+async function getWinnerForDate(dateStr) {
+  const q = query(collection(db, 'entries'), where('date', '==', dateStr));
+  const querySnapshot = await getDocs(q);
+  const entries = querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    data.pockets = Number(data.pockets);
+    return data;
+  });
+
+  // Calculate the minimum unique pockets > 0
+  const pocketCounts = entries.filter(e => e.pockets > 0).map(e => e.pockets);
+  const uniquePockets = pocketCounts.filter((p, _, arr) => arr.indexOf(p) === arr.lastIndexOf(p));
+  const minUniquePockets = uniquePockets.length > 0 ? Math.min(...uniquePockets) : null;
+
+  // Return the winners and minUniquePockets
+  const winners = entries.filter(e => e.pockets === minUniquePockets && e.pockets > 0);
+  return { winners, minUniquePockets };
 }
 
 window.onload = loadLeaderboard;
@@ -163,7 +195,7 @@ function displayLeaderboard(entries, tableId) {
   });
 }
 
-// Updated function to load daily winners excluding the current day
+// Updated function to load daily winners excluding the current day and only from 20 Dec 2024 onwards
 async function loadDailyWinners() {
   console.log('Loading daily winners');
 
@@ -190,10 +222,11 @@ async function loadDailyWinners() {
 
     // Get today's date string
     const todayStr = new Date().toISOString().split('T')[0];
+    const startDateStr = '2024-12-20';
 
-    // Get all dates and sort them in descending order, excluding today
+    // Get all dates and sort them in descending order, excluding today and before start date
     const dates = Object.keys(entriesByDate)
-      .filter(date => date !== todayStr) // Exclude today's date
+      .filter(date => date !== todayStr && date >= startDateStr) // Exclude today's date and dates before start date
       .sort((a, b) => new Date(b) - new Date(a));
 
     // Determine winner for each date
