@@ -5,7 +5,9 @@ function showOtherField() {
     otherInput.style.display = select.value === 'other' ? 'block' : 'none';
 }
 
-// Called when the 'Generate Thought' button is clicked
+//     const elevenLabsApiKey = 'sk_aee9d0c6e4a1c2ed29c54251083bfb2eb53823fdfb1e5d13'; 
+// const voiceId = 'ZAzIVQ2dY0CuoLzRn8tm'; // e.g. "21m00Tcm4TlvDq8ikWAM"
+
 // Called when the 'Generate Thought' button is clicked
 async function generateThought() {
   // Hide form, show loading
@@ -67,8 +69,34 @@ async function generateThought() {
 
   console.log("Constructed prompt:", prompt);
 
+  // Set up a reassurance message after 15 seconds if still loading
+  const reassuranceMessages = [
+    "Patience, my child...",
+    "Patience is a virtue...",
+    "Heavenly things come to those who wait..."
+  ];
+
+  let reassuranceTimeout = setTimeout(() => {
+    // Only show if we are still loading (check if loadingElement is visible)
+    if (loadingElement.style.display !== 'none') {
+      const randomMsg = reassuranceMessages[Math.floor(Math.random() * reassuranceMessages.length)];
+      // Create or select an element to show the reassurance message
+      let reassuranceElement = document.getElementById('reassuranceMessage');
+      if (!reassuranceElement) {
+        reassuranceElement = document.createElement('div');
+        reassuranceElement.id = 'reassuranceMessage';
+        reassuranceElement.style.textAlign = 'center';
+        reassuranceElement.style.marginTop = '10px';
+        reassuranceElement.style.fontStyle = 'italic';
+        reassuranceElement.style.color = '#444';
+        loadingElement.appendChild(reassuranceElement);
+      }
+      reassuranceElement.textContent = randomMsg;
+    }
+  }, 15000); // 15 seconds
+
   try {
-    // Step 1: Fetch the generated text from your backend
+    // Step 1: Fetch the generated text
     const textPromise = fetch('https://us-central1-tttd-a18ee.cloudfunctions.net/generateThought', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -86,7 +114,7 @@ async function generateThought() {
 
     // Step 2: Call ElevenLabs API to get TTS audio
     const elevenLabsApiKey = 'sk_aee9d0c6e4a1c2ed29c54251083bfb2eb53823fdfb1e5d13'; 
-    const voiceId = 'ZAzIVQ2dY0CuoLzRn8tm'; // e.g. "21m00Tcm4TlvDq8ikWAM"
+    const voiceId = 'ZAzIVQ2dY0CuoLzRn8tm';
 
     const audioPromise = fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
@@ -109,34 +137,38 @@ async function generateThought() {
       return response.blob();
     });
 
-    // Wait for both text and audio to be ready
     const [audioBlob] = await Promise.all([audioPromise]);
 
-    // Now we have both text and audio
-    // Hide the loading graphic
+    // Clear the reassurance timeout since we've finished loading
+    clearTimeout(reassuranceTimeout);
+
+    // Hide the loading
     loadingElement.style.display = 'none';
 
-    // Prepare text and audio for display and playback
+    // Remove reassurance message if present
+    const reassuranceElement = document.getElementById('reassuranceMessage');
+    if (reassuranceElement) {
+      reassuranceElement.remove();
+    }
+
+    // Prepare text and audio
     const thoughtText = document.getElementById('thoughtText');
     thoughtText.textContent = ''; 
     thoughtText.style.visibility = 'visible';
 
     const lines = generatedText.split('\n');
 
-    // Create audio URL from blob
     const audioUrl = URL.createObjectURL(audioBlob);
     const audioElement = document.getElementById('audioPlayer');
     audioElement.src = audioUrl;
     audioElement.hidden = false;
 
-    // Prepare download link for the audio
     const downloadLink = document.getElementById('downloadLink');
     downloadLink.href = audioUrl;
     downloadLink.download = 'thought-for-the-day.mp3';
     downloadLink.hidden = false;
     downloadLink.textContent = 'Download MP3';
 
-    // Start playing audio and showing text lines in parallel
     audioElement.play().catch((err) => console.warn("Auto-play may be blocked by browser:", err));
 
     lines.forEach((line, index) => {
@@ -147,7 +179,7 @@ async function generateThought() {
         }
       }, index * 500);
     });
-    
+
   } catch (error) {
     console.error('Error:', error);
     alert('An error occurred while generating the thought: ' + error.message);
