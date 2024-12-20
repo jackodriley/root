@@ -90,7 +90,7 @@ async function submitEntry(e) {
       const userIsWinner = winners.some(w => w.name === name && w.pockets === pockets);
 
       if (userIsWinner) {
-      alert('Congratulations! Your submission is currently the winning entry for today!');
+      alert("Thaaaat\'s STOCKINGWHACK! Congratulations from your friends at POTATOCORP!");
       }
       
       // Refresh the leaderboard
