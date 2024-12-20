@@ -46,8 +46,8 @@ async function submitEntry(e) {
   console.log(`Name: ${name}, Pockets: ${pockets}, Date: ${dateStr}`);
 
   if (name && !isNaN(pockets)) {
-    // Assign 'naughty' if the name is Danny, otherwise randomly assign 'naughty' or 'nice'
-    const state = name.toLowerCase() === 'danny' ? 'naughty' : (Math.random() < 0.5 ? 'naughty' : 'nice');
+    // Assign 'naughty' if the name is Danny, 'nice' if the name is Dan, otherwise randomly assign 'naughty' or 'nice'
+    const state = name.toLowerCase() === 'danny' ? 'naughty' : (name.toLowerCase() === 'dan' ? 'nice' : (Math.random() < 0.5 ? 'naughty' : 'nice'));
 
     // Check if today's date is a special date
     const specialDates = {
