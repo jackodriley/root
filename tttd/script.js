@@ -11,13 +11,19 @@ function randomizeDropdown(dropdownId, values) {
   // Shuffle the values array
   const shuffledValues = values.sort(() => Math.random() - 0.5);
 
-  // Add shuffled values to the dropdown
-  shuffledValues.forEach(value => {
+  // Add the first four shuffled values to the dropdown
+  shuffledValues.slice(0, 4).forEach(value => {
     const option = document.createElement('option');
     option.value = value.toLowerCase();
     option.text = value;
     dropdown.add(option);
   });
+
+  // Add the "Other..." option at the bottom
+  const otherOption = document.createElement('option');
+  otherOption.value = 'other';
+  otherOption.text = 'Other...';
+  dropdown.add(otherOption);
 
   // Select the first option by default
   dropdown.selectedIndex = 0;
