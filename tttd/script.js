@@ -435,7 +435,7 @@ async function generateThought() {
     const [audioBlob] = await Promise.all([audioPromise]);
 
     // Clear the reassurance timeout since we've finished loading
-    clearTimeout(reassuranceTimeout);
+    clearTimeout(reassuranceInterval);
 
     // Hide the loading
     loadingElement.style.display = 'none';
