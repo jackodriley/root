@@ -1,12 +1,34 @@
-// Handles showing the additional text input when 'Other...' is selected
-function showOtherField() {
-    const select = document.getElementById('object');
-    const otherInput = document.getElementById('otherObject');
-    otherInput.style.display = select.value === 'other' ? 'block' : 'none';
+const objects = ["Random", "Cup", "Book", "Pen", "Laptop", "Phone", "Table", "Chair", "Bottle", "Notebook"];
+
+function randomizeDropdowns() {
+  randomizeDropdown('object', objects);
 }
 
-//     const elevenLabsApiKey = 'sk_aee9d0c6e4a1c2ed29c54251083bfb2eb53823fdfb1e5d13'; 
-// const voiceId = 'ZAzIVQ2dY0CuoLzRn8tm'; // e.g. "21m00Tcm4TlvDq8ikWAM"
+function randomizeDropdown(dropdownId, values) {
+  const dropdown = document.getElementById(dropdownId);
+  dropdown.innerHTML = ''; // Clear existing options
+
+  // Shuffle the values array
+  const shuffledValues = values.sort(() => Math.random() - 0.5);
+
+  // Add shuffled values to the dropdown
+  shuffledValues.forEach(value => {
+    const option = document.createElement('option');
+    option.value = value.toLowerCase();
+    option.text = value;
+    dropdown.add(option);
+  });
+
+  // Select the first option by default
+  dropdown.selectedIndex = 0;
+}
+
+// Handles showing the additional text input when 'Other...' is selected
+function showOtherField() {
+  const select = document.getElementById('object');
+  const otherInput = document.getElementById('otherObject');
+  otherInput.style.display = select.value === 'other' ? 'block' : 'none';
+}
 
 // Called when the 'Generate Thought' button is clicked
 async function generateThought() {
@@ -201,15 +223,8 @@ function resetApp() {
   document.querySelector('.form-wrapper').style.display = '';
 }
 
-function showOtherField() {
-  const objectSelect = document.getElementById('object');
-  const otherObject = document.getElementById('otherObject');
-  if (objectSelect.value === 'other') {
-    otherObject.style.display = 'inline-block';
-  } else {
-    otherObject.style.display = 'none';
-  }
-}
+// Call randomizeDropdowns on page load
+window.onload = randomizeDropdowns;
 
 // It's important to test each function to ensure they're working correctly in the browser.
 // Check for console errors and ensure that the API integration works once added.
