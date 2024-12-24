@@ -336,17 +336,26 @@ async function generateThought() {
     ? '[After a briefly lucid introduction, the composition should turn nonsensical, incorporating inappropriate themes, growing unhinged and ultimately turning into surrealist garbage]'
     : '';
 
-  const prompt =
-    `PROMPT: "Write a ‘Thought for the Day’ in the style of BBC Radio 4, ` +
-    `in the voice of ${thinkerPhrase}. The piece should be 250-350 words and begin ` +
-    `${object ? `with an observation about an (imaginary) personal anecdote involving ${object}, ` : ''}` +
-    `ideally proceeding from some humdrum detail about ordinary life. Expand into a ` +
-    `moral and spiritual reflection, incorporating a balance of ${teachings} and ` +
-    `relatable insights. Begin with Good Morning and Conclude with a glib, hopeful or ` +
-    `thought-provoking takeaway for the audience. Maintain a reflective, inclusive, and ` +
-    `eloquent tone throughout. ${tabooInstruction}"`;
+// NEW: Construct the prompt differently depending on tabooMode
+let prompt;
+if (tabooMode) {
+  // Taboo Mode: A completely different, minimal prompt
+  prompt = `PROMPT: Write a satirical, slightly unhinged Thought for the Day in the style of BBC Radio 4, in the voice of ${thinkerPhrase}. The piece should be 250-350 words, beginning with ${object ? `an observation about ${object}, ` : ''}but proceeding to relate it somehow to a social taboo subject. After a briefly lucid introduction, the composition should turn nonsensical, incorporating inappropriate themes, growing unhinged and ultimately turning into surrealist garbage.`;
+} else {
+  // Non-Taboo (Normal) Mode: Original BBC Radio 4–style prompt
+  prompt =
+    `PROMPT: "Write a ‘Thought for the Day’ in the style of BBC Radio 4, 
+in the voice of ${thinkerPhrase}. The piece should be 250-350 words and 
+begin ${object ? `with an observation about an (imaginary) personal anecdote involving ${object}, ` : ''} 
+ideally proceeding from some humdrum detail about ordinary life. Expand into a 
+moral and spiritual reflection, incorporating a balance of ${teachings} and 
+relatable insights. Begin with Good Morning and Conclude with a glib, hopeful or 
+thought-provoking takeaway for the audience. Maintain a reflective, inclusive, and 
+eloquent tone throughout."`;
+}
 
-  console.log("Constructed prompt:", prompt);
+console.log("Constructed prompt:", prompt);
+
 
   // Set up a reassurance message after 15 seconds if still loading
   const reassuranceMessages = [
