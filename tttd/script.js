@@ -273,7 +273,7 @@ function randomizeDropdown(dropdownId, values) {
   // Add the "Other..." option at the bottom
   const otherOption = document.createElement('option');
   otherOption.value = 'other';
-  otherOption.text = 'Other...';
+  otherOption.text = 'Add your own theme...';
   dropdown.add(otherOption);
 
   // Select the first option by default
