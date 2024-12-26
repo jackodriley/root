@@ -56,7 +56,7 @@ async function submitEntry(e) {
         modifier: 1
       },
       "2024-12-26": {
-        message: "It's Boxing Day! You found an extra pocket in your POTATOCORP gift box! Your new pockets count is ",
+        message: "It's Boxing Day! You found a SINGLE extra pocket in your POTATOCORP gift box! Your new pockets count is ",
         modifier: 1
       }
     };
