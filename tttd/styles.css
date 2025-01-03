@@ -118,8 +118,7 @@ label, select, input, button {
 }
 
 
-/* 4. Centering and Aesthetic Improvements *
-
+/* 4. Centering and Aesthetic Improvements */
 
 /* 5. Toggle Text Button */
 #toggleTextBtn {
@@ -140,4 +139,14 @@ select, input, button {
     margin: 10px 0; /* Add spacing */
     font-size: 24px; /* Make text readable */
     text-align: center; /* Align text in the fields */
+}
+
+/* Make all text larger except h1 */
+body, h2, h3, p, select, input, button {
+    font-size: 18px; /* Adjust as needed for legibility */
+}
+
+/* Bold the text on the button */
+button {
+    font-weight: bold;
 }
