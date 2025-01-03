@@ -32,7 +32,7 @@ label, select, input, button {
     font-family: 'VT323', monospace;
     color: green;
     margin: 20px;
-    font-size: 14px; /* Make text smaller */
+    font-size: 10px; /* Make text smaller */
 }
 
 .switch {
@@ -40,6 +40,7 @@ label, select, input, button {
     display: inline-block;
     width: 60px;
     height: 34px;
+    margin-left: 10px; /* Adjust this value to reduce space between label and switch */
 }
 
 #loading img {
@@ -93,6 +94,19 @@ input:checked + .slider:before {
     transform: translateX(26px);
 }
 
+/* Rounded sliders */
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Adjust margin for the label to reduce space */
+label[for="tabooMode"] {
+    margin-right: 10px; /* Adjust this value to reduce space between label and switch */
+}
 
 /* 2. Styles for Input Fields and Dropdown */
 label, select, input, button {
