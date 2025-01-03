@@ -11,7 +11,6 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-5WZEF7TFB5');
 </script>
 <body onload="randomizeDropdowns()">
@@ -20,7 +19,7 @@
         <img src="cross.svg" alt="Loading..." style="width: 50px; height: 50px;">
     </div>
     <div class="form-wrapper">
-        <label for="object">Something to Include (Optional - <a href="#" onclick="location.reload()">Refresh</a> for new options):</label>
+        <label for="object">Something to Include <br/>(Optional - <a href="#" onclick="location.reload()">Refresh</a> for new options):</label>
         <select id="object" onchange="showOtherField()">
             <option value="random" selected>Random</option>
             <option value="Cup">Cup</option>
@@ -44,7 +43,7 @@
             <span class="slider round"></span>
         </label>
     
-        <button onclick="generateThought()">Generate Thought</button>
+        <button onclick="generateThought()">Summon A Thought</button>
     </div>
     
     <audio id="audioPlayer" controls hidden></audio>

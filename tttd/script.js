@@ -132,8 +132,8 @@ const objects = [
   "Decoding Life’s Mysteries from the Wrinkles on Your Pillowcase",
   "The Moral Universe Encapsulated in a Half-Eaten Packet of Crisps",
   "A Theological Inquiry into Why a Simple Pen Always Goes Missing",
-  "Longing for Transcendence in the Flat Soda You Left Out Overnight",
-  "The Wisdom Gleaned from Almost Remembering a Dream",
+  "Longing for Transcendence in the Flat Soft Drink You Left Out Overnight",
+  "The Wisdom Gleaned from Almost Remembering a Dream But Not",
   "Penance and the Difficulties of Pulling Weeds from Your Garden",
   "Contemplating Fate in the Pattern of Your Burnt Toast",
   "The Spiritual Significance of a Window That Won’t Stay Open",
@@ -289,6 +289,12 @@ function showOtherField() {
 
 // Called when the 'Generate Thought' button is clicked
 async function generateThought() {
+  // Send Google Analytics event
+  gtag('event', 'generate_thought', {
+    'event_category': 'engagement',
+    'event_label': 'Generate Thought Button Click'
+  });
+
   // Hide form, show loading
   document.querySelector('.form-wrapper').style.display = 'none';
   const loadingElement = document.getElementById('loading');
