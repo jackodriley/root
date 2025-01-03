@@ -138,6 +138,6 @@ select, input, button {
     width: 80%; /* Stretch to a reasonable size */
     max-width: 400px; /* Limit width on larger screens */
     margin: 10px 0; /* Add spacing */
-    font-size: 16px; /* Make text readable */
+    font-size: 24px; /* Make text readable */
     text-align: center; /* Align text in the fields */
 }
