@@ -41,6 +41,7 @@ label, select, input, button {
     width: 60px;
     height: 34px;
     margin-left: 10px; /* Adjust this value to reduce space between label and switch */
+    margin-top: 10px; /* Add margin to create space above the switch */
 }
 
 #loading img {
@@ -105,15 +106,18 @@ input:checked + .slider:before {
 
 /* Adjust margin for the label to reduce space */
 label[for="tabooMode"] {
+    margin-bottom: 10px; /* Adjust this value to create space between label and switch */
     margin-right: 10px; /* Adjust this value to reduce space between label and switch */
 }
 
 /* Center the taboo mode container */
 .taboo-mode-container {
     display: flex;
+    flex-direction: column; /* Stack label and switch vertically */
     justify-content: center;
     align-items: center;
     margin-top: 20px; /* Adjust as needed */
+    text-align: center; /* Ensure text alignment */
 }
 
 /* 2. Styles for Input Fields and Dropdown */
