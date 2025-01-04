@@ -108,6 +108,14 @@ label[for="tabooMode"] {
     margin-right: 10px; /* Adjust this value to reduce space between label and switch */
 }
 
+/* Center the taboo mode container */
+.taboo-mode-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px; /* Adjust as needed */
+}
+
 /* 2. Styles for Input Fields and Dropdown */
 label, select, input, button {
     display: block;
