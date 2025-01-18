@@ -158,6 +158,32 @@
       font-size: 1.2rem;
       margin-top: 1rem;
     }
+
+    @keyframes fallSpin {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(300px) rotate(720deg) scale(0.1);
+    opacity: 0;
+  }
+}
+
+.fall-animation {
+  animation: fallSpin 2s forwards; /* 2-second animation, keep end state (forwards) */
+}
+
+#scoreBoard {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+#scoreValue {
+  font-weight: bold;
+  color: #ff0000; /* Make it pop or pick any color */
+}
+
   </style>
 </head>
 <body>
@@ -170,6 +196,10 @@
 
   <!-- ========== GAME SCREEN ========== -->
   <div id="gameScreen">
+    <div id="scoreBoard">
+        Score: <span id="scoreValue">0</span>
+      </div>
+    
     <h2 id="promptText">Spell the word:</h2>
     <div>
       <!-- Image for the object to spell -->
@@ -194,28 +224,73 @@
     <h2>Desert Monster Scene</h2>
     <p id="monsterInstructions">Tap the person to feed them to the monster!</p>
     <div>
-      <img id="sandMonster" src="" alt="Sand Monster Image" />
-    </div>
+        <img id="person" src="jedi.png" alt="Person" />
+      </div>
     <div>
-      <img id="person" src="" alt="Person" />
+      <img id="sandMonster" src="sarlacc.jpg" alt="Sand Monster Image" />
     </div>
+
   </div>
 
   <script>
+
+    // 1. Add a global score variable
+let score = 0;
+
+// In startGame(), reset the score to 0 each time the game starts
+function startGame() {
+  shuffleWords(words);
+
+  // Reset the score to 0 at the beginning of each game
+  score = 0;
+  updateScore();
+
+  startScreen.style.display = "none";
+  gameScreen.style.display = "block";
+
+  loadWord(currentWordIndex);
+  createAlphabetLetters();
+}
+
+// A helper to update the score display
+function updateScore() {
+  const scoreValueEl = document.getElementById("scoreValue");
+  scoreValueEl.textContent = score; // Show the current score
+}
+
     /********************************************
      * GAME DATA
      ********************************************/
     // List of words and associated images.
     // Add as many as you’d like:
     const words = [
-      { word: "DOG", image: "dog.jpg" },
-      { word: "CAT", image: "cat.jpg" },
-      { word: "SUN", image: "sun.jpg" },
+      { word: "dog", image: "dog.jpg" },
+      { word: "cat", image: "cat.jpg" },
+      { word: "frog", image: "frog.jpg" },
+      { word: "sun", image: "sun.jpg" },
+      { word: "car", image: "car.jpg" },
+      { word: "hat", image: "hat.jpg" },
+      { word: "pig", image: "pig.jpg" },
+      { word: "cup", image: "cup.jpg" },
+      { word: "bed", image: "bed.jpg" },
+      { word: "ball", image: "ball.jpg" },
+      { word: "sock", image: "sock.jpg" },
+      { word: "tree", image: "tree.jpg" },
+      { word: "fish", image: "fish.jpg" },
+      { word: "bat", image: "bat.jpg" },
+      { word: "fox", image: "fox.jpg" },
+      { word: "bee", image: "bee.jpg" },
+      { word: "star", image: "star.jpg" },
+
+
       // ...
     ];
 
+
     // Keep track of the current word index
     let currentWordIndex = 0;
+
+    const feedSound = new Audio('anotheroneforthesarlacc.mp3'); // or your chosen file
 
     // A reference to the spelled letters
     // letterBoxes[i] will hold the letter dropped in box i
@@ -247,15 +322,45 @@
     tryButton.addEventListener("click", checkSpelling);
 
     // Feed the person to the monster, then return to next spelling challenge
-    person.addEventListener("click", () => {
-      // You can animate or do something fun here. For now, just move on:
-      monsterScene.style.display = "none";
-      gameScreen.style.display = "block";
+// Replace your current person click listener with this:
+person.addEventListener("click", feedPersonToMonster);
 
-      // Load the next word (if any)
-      currentWordIndex = (currentWordIndex + 1) % words.length;
-      loadWord(currentWordIndex);
-    });
+function feedPersonToMonster() {
+  // 1) Play the sound
+  feedSound.play();
+
+  // 2) Add the animation class
+  person.classList.add("fall-animation");
+
+  // 3) Remove this same click event so it doesn’t trigger multiple times
+  person.removeEventListener("click", feedPersonToMonster);
+
+  // 4) Listen for the end of the animation
+  person.addEventListener("animationend", onAnimationEnd);
+}
+
+function onAnimationEnd() {
+  // Remove the 'animationend' listener
+  person.removeEventListener("animationend", onAnimationEnd);
+
+  // Hide monster scene now that the person has "fallen in"
+  monsterScene.style.display = "none";
+
+  // Remove the animation class so the person can reappear next time
+  person.classList.remove("fall-animation");
+  person.style.transform = "none";
+  person.style.opacity = "1";
+
+  // Show the game screen again
+  gameScreen.style.display = "block";
+
+  // Next word
+  currentWordIndex = (currentWordIndex + 1) % words.length;
+  loadWord(currentWordIndex);
+
+  // Add the click listener back so it’s ready for the next round
+  person.addEventListener("click", feedPersonToMonster);
+}
 
     /********************************************
      * DRAG & DROP LOGIC
@@ -266,7 +371,7 @@
       alphabetContainer.innerHTML = "";
 
       // A-Z
-      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      const letters = "abcdefghijklmnopqrstuvwxyz".split("");
       letters.forEach((letter) => {
         const letterElem = document.createElement("div");
         letterElem.classList.add("draggable-letter");
@@ -310,15 +415,30 @@
      * GAME FUNCTIONS
      ********************************************/
 
-    // Start game: hide start screen, show game screen, load first word
-    function startGame() {
-      startScreen.style.display = "none";
-      gameScreen.style.display = "block";
+    
+    
+    
+    
+     // Start game: hide start screen, show game screen, load first word
+function shuffleWords(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
 
-      loadWord(currentWordIndex);
-      createAlphabetLetters();
-    }
+// In startGame():
+function startGame() {
+  // Shuffle the words array (one time)
+  shuffleWords(words);
 
+  startScreen.style.display = "none";
+  gameScreen.style.display = "block";
+
+  currentWordIndex = 0; // Reset to the first word after shuffling
+  loadWord(currentWordIndex);
+  createAlphabetLetters();
+}
     // Load a word by index
     function loadWord(index) {
       feedback.textContent = "";
@@ -346,22 +466,30 @@
 
     // Check spelled word
     function checkSpelling() {
-      // Collect letters from each box
-      const boxes = letterBoxesContainer.querySelectorAll(".letter-box");
-      let spelledWord = "";
-      boxes.forEach((box) => {
-        spelledWord += box.textContent.trim() || "_";
-      });
+        const boxes = letterBoxesContainer.querySelectorAll(".letter-box");
+        let spelledWord = "";
+        boxes.forEach((box) => {
+            spelledWord += box.textContent.trim();
+        });
 
-      const correctWord = words[currentWordIndex].word;
-      if (spelledWord === correctWord) {
-        feedback.textContent = "SUCCESS!";
-        // Show the monster scene
-        gameScreen.style.display = "none";
-        monsterScene.style.display = "block";
-      } else {
-        feedback.textContent = "INCORRECT. Try again!";
-      }
+        const correctWord = words[currentWordIndex].word.toLowerCase();
+
+        if (spelledWord.toLowerCase() === correctWord) {
+            feedback.textContent = "SUCCESS!";
+
+            // 2. Increase the score by 1
+            score++;
+            updateScore();
+
+            // Show the monster scene
+            gameScreen.style.display = "none";
+            monsterScene.style.display = "block";
+        } else {
+            feedback.textContent = "INCORRECT. Try again!";
+            boxes.forEach((box) => {
+                box.textContent = "";
+            });
+        }
     }
   </script>
 </body>
