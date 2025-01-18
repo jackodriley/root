@@ -397,8 +397,9 @@ body, html {
     // Person images for the monster scene
     const personImages = [
       "jedi.png",
+      "daddy.png",
       "cat.jpg",
-      "fox.jpg"
+      "dog.jpg"
     ];
 
     // Score tracking
@@ -407,7 +408,23 @@ body, html {
     let currentWordIndex = 0;
 
     // Sound
-    const feedSound = new Audio('anotheroneforthesarlacc.mp3');
+    const fallingSound = new Audio('falling.mp3');
+    const feedSounds = [
+      'anotheroneforthesarlacc.mp3',
+      'famished.mp3',
+      'delicioustreat.mp3',
+      'snacktime.mp3',
+      // 'yumyum.mp3'
+    ];
+
+    function playFeedSound() {
+      fallingSound.play();
+      fallingSound.onended = () => {
+        const randomIndex = Math.floor(Math.random() * feedSounds.length);
+        const feedSound = new Audio(feedSounds[randomIndex]);
+        feedSound.play();
+      };
+    }
 
     // DOM elements
 const startScreen          = document.getElementById("startScreen");
@@ -513,7 +530,7 @@ objectImage.addEventListener("click", () => {
 
     // Feed the person to the monster
     function feedPersonToMonster() {
-      feedSound.play();
+      playFeedSound();
       person.classList.add("fall-animation");
       person.removeEventListener("click", feedPersonToMonster);
 
