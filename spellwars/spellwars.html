@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spelling Game</title>
+  <style>
+    /* ========== BASIC PAGE STYLES ========== */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: #e2d0ff; /* Light purple for a fun vibe */
+    }
+
+    /* ========== START SCREEN ========== */
+    #startScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #8e72c7; /* A darker purple */
+      color: #fff;
+      text-align: center;
+    }
+
+    #startScreen h1 {
+      font-size: 3rem;
+      margin-bottom: 2rem;
+    }
+
+    #startButton {
+      font-size: 1.5rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      background: #f8ae00;
+      border: none;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    #startButton:hover {
+      background: #ffc107;
+    }
+
+    /* ========== GAME SCREEN ========== */
+    #gameScreen {
+      display: none; /* Hidden by default */
+      padding: 1rem;
+      text-align: center;
+    }
+
+    #objectImage {
+      width: 200px; /* Adjust as needed */
+      image-rendering: pixelated; /* For a retro 16-bit style (browser support may vary) */
+    }
+
+    #letterBoxes {
+      margin: 1rem 0;
+    }
+
+    /* Boxes to drop letters into */
+    .letter-box {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      margin: 0 5px;
+      border: 2px dashed #333;
+      vertical-align: middle;
+      font-size: 2rem;
+      line-height: 50px;
+      text-align: center;
+      user-select: none;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    /* ========== ALPHABET STYLES ========== */
+    #alphabet {
+      margin: 1rem 0;
+    }
+
+    .draggable-letter {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      margin: 5px;
+      border: 2px solid #333;
+      background: #fffae3;
+      font-size: 1.5rem;
+      line-height: 40px;
+      text-align: center;
+      user-select: none;
+      cursor: grab;
+      image-rendering: pixelated; /* Attempt a pixelated look if using any background images */
+    }
+
+    /* Highlight letter box when dragged over */
+    .highlight {
+      border-color: #f00;
+    }
+
+    /* ========== FEEDBACK ========== */
+    #feedback {
+      font-size: 1.5rem;
+      margin: 1rem 0;
+    }
+
+    /* ========== TRY BUTTON ========== */
+    #tryButton {
+      font-size: 1.25rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      background: #4caf50;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      transition: background 0.3s;
+    }
+
+    #tryButton:hover {
+      background: #45a049;
+    }
+
+    /* ========== MONSTER SCENE ========== */
+    #monsterScene {
+      display: none; /* Hidden by default */
+      height: 100vh;
+      text-align: center;
+      background: #f0e0c0; /* Desert-like background */
+      position: relative;
+    }
+
+    #monsterScene h2 {
+      margin-top: 2rem;
+      font-size: 2rem;
+    }
+
+    #sandMonster {
+      width: 200px;
+      image-rendering: pixelated;
+    }
+
+    #person {
+      width: 100px;
+      image-rendering: pixelated;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    #person:hover {
+      transform: scale(1.1);
+    }
+
+    #monsterInstructions {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== START SCREEN ========== -->
+  <div id="startScreen">
+    <h1>Spelling Game</h1>
+    <button id="startButton">Start</button>
+  </div>
+
+  <!-- ========== GAME SCREEN ========== -->
+  <div id="gameScreen">
+    <h2 id="promptText">Spell the word:</h2>
+    <div>
+      <!-- Image for the object to spell -->
+      <img id="objectImage" src="" alt="Object to spell" />
+    </div>
+    
+    <!-- Boxes where letters will be dropped -->
+    <div id="letterBoxes"></div>
+    
+    <!-- Alphabet letters to drag and drop -->
+    <div id="alphabet"></div>
+    
+    <!-- Button to check the spelled word -->
+    <button id="tryButton">Try</button>
+    
+    <!-- Feedback message -->
+    <div id="feedback"></div>
+  </div>
+
+  <!-- ========== MONSTER SCENE ========== -->
+  <div id="monsterScene">
+    <h2>Desert Monster Scene</h2>
+    <p id="monsterInstructions">Tap the person to feed them to the monster!</p>
+    <div>
+      <img id="sandMonster" src="" alt="Sand Monster Image" />
+    </div>
+    <div>
+      <img id="person" src="" alt="Person" />
+    </div>
+  </div>
+
+  <script>
+    /********************************************
+     * GAME DATA
+     ********************************************/
+    // List of words and associated images.
+    // Add as many as you’d like:
+    const words = [
+      { word: "DOG", image: "dog.png" },
+      { word: "CAT", image: "cat.png" },
+      { word: "SUN", image: "sun.png" },
+      // ...
+    ];
+
+    // Keep track of the current word index
+    let currentWordIndex = 0;
+
+    // A reference to the spelled letters
+    // letterBoxes[i] will hold the letter dropped in box i
+    let letterBoxes = [];
+
+    /********************************************
+     * ELEMENT REFERENCES
+     ********************************************/
+    const startScreen = document.getElementById("startScreen");
+    const startButton = document.getElementById("startButton");
+
+    const gameScreen = document.getElementById("gameScreen");
+    const objectImage = document.getElementById("objectImage");
+    const letterBoxesContainer = document.getElementById("letterBoxes");
+    const alphabetContainer = document.getElementById("alphabet");
+    const tryButton = document.getElementById("tryButton");
+    const feedback = document.getElementById("feedback");
+
+    const monsterScene = document.getElementById("monsterScene");
+    const person = document.getElementById("person");
+
+    /********************************************
+     * EVENT LISTENERS
+     ********************************************/
+    // Start the game
+    startButton.addEventListener("click", startGame);
+
+    // Check spelled word
+    tryButton.addEventListener("click", checkSpelling);
+
+    // Feed the person to the monster, then return to next spelling challenge
+    person.addEventListener("click", () => {
+      // You can animate or do something fun here. For now, just move on:
+      monsterScene.style.display = "none";
+      gameScreen.style.display = "block";
+
+      // Load the next word (if any)
+      currentWordIndex = (currentWordIndex + 1) % words.length;
+      loadWord(currentWordIndex);
+    });
+
+    /********************************************
+     * DRAG & DROP LOGIC
+     ********************************************/
+    // Helper to create the alphabet letters
+    function createAlphabetLetters() {
+      // Clear container
+      alphabetContainer.innerHTML = "";
+
+      // A-Z
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      letters.forEach((letter) => {
+        const letterElem = document.createElement("div");
+        letterElem.classList.add("draggable-letter");
+        letterElem.textContent = letter;
+
+        // Set draggable attribute
+        letterElem.draggable = true;
+
+        // Listen for drag events
+        letterElem.addEventListener("dragstart", onDragStart);
+
+        alphabetContainer.appendChild(letterElem);
+      });
+    }
+
+    // Drag start
+    function onDragStart(event) {
+      event.dataTransfer.setData("text/plain", event.target.textContent);
+    }
+
+    // Boxes: enable drop
+    function onDragOver(event) {
+      event.preventDefault();
+      event.currentTarget.classList.add("highlight");
+    }
+
+    function onDragLeave(event) {
+      event.currentTarget.classList.remove("highlight");
+    }
+
+    function onDrop(event) {
+      event.preventDefault();
+      event.currentTarget.classList.remove("highlight");
+      const letter = event.dataTransfer.getData("text/plain");
+
+      // Put the letter into the box
+      event.currentTarget.textContent = letter;
+    }
+
+    /********************************************
+     * GAME FUNCTIONS
+     ********************************************/
+
+    // Start game: hide start screen, show game screen, load first word
+    function startGame() {
+      startScreen.style.display = "none";
+      gameScreen.style.display = "block";
+
+      loadWord(currentWordIndex);
+      createAlphabetLetters();
+    }
+
+    // Load a word by index
+    function loadWord(index) {
+      feedback.textContent = "";
+      const currentWord = words[index];
+
+      // Update the image
+      objectImage.src = currentWord.image;
+      // Could also set alt text: objectImage.alt = currentWord.word;
+
+      // Clear and rebuild letter boxes
+      letterBoxesContainer.innerHTML = "";
+      letterBoxes = [];
+
+      for (let i = 0; i < currentWord.word.length; i++) {
+        const box = document.createElement("div");
+        box.classList.add("letter-box");
+        // Set up dragover/dragdrop
+        box.addEventListener("dragover", onDragOver);
+        box.addEventListener("dragleave", onDragLeave);
+        box.addEventListener("drop", onDrop);
+
+        letterBoxesContainer.appendChild(box);
+      }
+    }
+
+    // Check spelled word
+    function checkSpelling() {
+      // Collect letters from each box
+      const boxes = letterBoxesContainer.querySelectorAll(".letter-box");
+      let spelledWord = "";
+      boxes.forEach((box) => {
+        spelledWord += box.textContent.trim() || "_";
+      });
+
+      const correctWord = words[currentWordIndex].word;
+      if (spelledWord === correctWord) {
+        feedback.textContent = "SUCCESS!";
+        // Show the monster scene
+        gameScreen.style.display = "none";
+        monsterScene.style.display = "block";
+      } else {
+        feedback.textContent = "INCORRECT. Try again!";
+      }
+    }
+  </script>
+</body>
+</html>
