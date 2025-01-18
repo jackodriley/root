@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Spelling Game</title>
+  <!-- Make it responsive on mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Spell Wars</title>
   <style>
     /* ========== BASIC PAGE STYLES ========== */
     body {
@@ -19,7 +21,7 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
-      background: #000000; /* A darker purple */
+      background: #000000; /* Currently black */
       color: #fff;
       text-align: center;
     }
@@ -54,7 +56,7 @@
 
     #objectImage {
       width: 200px; /* Adjust as needed */
-      image-rendering: pixelated; /* For a retro 16-bit style (browser support may vary) */
+      image-rendering: pixelated; /* Retro 16-bit style (where supported) */
     }
 
     #letterBoxes {
@@ -64,42 +66,43 @@
     /* Boxes to drop letters into */
     .letter-box {
       display: inline-block;
-      width: 50px;
-      height: 50px;
+      width: 60px;
+      height: 60px;
       margin: 0 5px;
       border: 2px dashed #333;
       vertical-align: middle;
       font-size: 2rem;
-      line-height: 50px;
+      line-height: 60px;
       text-align: center;
       user-select: none;
       background: #fff;
-      cursor: pointer;
     }
 
-    /* ========== ALPHABET STYLES ========== */
+    /* ========== ALPHABET ========== */
     #alphabet {
       margin: 1rem 0;
     }
 
     .draggable-letter {
       display: inline-block;
-      width: 40px;
-      height: 40px;
+      width: 60px;
+      height: 60px;
       margin: 5px;
       border: 2px solid #333;
       background: #fffae3;
-      font-size: 1.5rem;
-      line-height: 40px;
+      font-size: 2rem;
+      line-height: 60px;
       text-align: center;
+      vertical-align: middle;
       user-select: none;
-      cursor: grab;
-      image-rendering: pixelated; /* Attempt a pixelated look if using any background images */
+      cursor: pointer;
     }
 
-    /* Highlight letter box when dragged over */
-    .highlight {
-      border-color: #f00;
+    /* The "drag proxy" will also use these base styles plus absolute positioning */
+    .drag-proxy {
+      position: absolute;
+      z-index: 9999;
+      pointer-events: none; /* So we don't conflict with pointer captures */
     }
 
     /* ========== FEEDBACK ========== */
@@ -119,7 +122,6 @@
       color: #fff;
       transition: background 0.3s;
     }
-
     #tryButton:hover {
       background: #45a049;
     }
@@ -149,7 +151,6 @@
       cursor: pointer;
       transition: transform 0.3s;
     }
-
     #person:hover {
       transform: scale(1.1);
     }
@@ -159,31 +160,31 @@
       margin-top: 1rem;
     }
 
+    /* FALL ANIMATION */
     @keyframes fallSpin {
-  0% {
-    transform: translateY(0) rotate(0deg) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(300px) rotate(720deg) scale(0.1);
-    opacity: 0;
-  }
-}
+      0% {
+        transform: translateY(0) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(300px) rotate(720deg) scale(0.1);
+        opacity: 0;
+      }
+    }
+    .fall-animation {
+      animation: fallSpin 2s forwards; 
+    }
 
-.fall-animation {
-  animation: fallSpin 2s forwards; /* 2-second animation, keep end state (forwards) */
-}
-
-#scoreBoard {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-  color: #333;
-}
-#scoreValue {
-  font-weight: bold;
-  color: #ff0000; /* Make it pop or pick any color */
-}
-
+    /* SCOREBOARD */
+    #scoreBoard {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+    #scoreValue {
+      font-weight: bold;
+      color: #ff0000; 
+    }
   </style>
 </head>
 <body>
@@ -197,24 +198,25 @@
   <!-- ========== GAME SCREEN ========== -->
   <div id="gameScreen">
     <div id="scoreBoard">
-        Score: <span id="scoreValue">0</span>
-      </div>
-    
+      Score: <span id="scoreValue">0</span>
+    </div>
+
     <h2 id="promptText">Spell the word:</h2>
+
     <div>
       <!-- Image for the object to spell -->
       <img id="objectImage" src="" alt="Object to spell" />
     </div>
-    
+
     <!-- Boxes where letters will be dropped -->
     <div id="letterBoxes"></div>
-    
+
     <!-- Alphabet letters to drag and drop -->
     <div id="alphabet"></div>
-    
+
     <!-- Button to check the spelled word -->
     <button id="tryButton">Try</button>
-    
+
     <!-- Feedback message -->
     <div id="feedback"></div>
   </div>
@@ -224,282 +226,294 @@
     <h2>Well done!</h2>
     <p id="monsterInstructions">Feed the sarlacc!</p>
     <div>
-        <img id="person" src="jedi.png" alt="Person" />
-      </div>
+      <img id="person" src="jedi.png" alt="Person" />
+    </div>
     <div>
       <img id="sandMonster" src="sarlacc.jpg" alt="Sand Monster Image" />
     </div>
-
   </div>
 
   <script>
-
-    // 1. Add a global score variable
-let score = 0;
-
-// In startGame(), reset the score to 0 each time the game starts
-function startGame() {
-  shuffleWords(words);
-
-  // Reset the score to 0 at the beginning of each game
-  score = 0;
-  updateScore();
-
-  startScreen.style.display = "none";
-  gameScreen.style.display = "block";
-
-  loadWord(currentWordIndex);
-  createAlphabetLetters();
-}
-
-// A helper to update the score display
-function updateScore() {
-  const scoreValueEl = document.getElementById("scoreValue");
-  scoreValueEl.textContent = score; // Show the current score
-}
-
     /********************************************
-     * GAME DATA
+     * 1) CUSTOM "DRAG PROXY" DRAG & DROP 
+     *    - ALPHABET REMAINS
+     *    - SNAP TO BOX
+     *    - MOBILE-FRIENDLY (POINTER EVENTS)
      ********************************************/
-    // List of words and associated images.
-    // Add as many as you’d like:
-    const words = [
-      { word: "dog", image: "dog.jpg" },
-      { word: "cat", image: "cat.jpg" },
-      { word: "frog", image: "frog.jpg" },
-      { word: "sun", image: "sun.jpg" },
-      { word: "car", image: "car.jpg" },
-      { word: "hat", image: "hat.jpg" },
-      { word: "pig", image: "pig.jpg" },
-      { word: "cup", image: "cup.jpg" },
-      { word: "bed", image: "bed.jpg" },
-      { word: "ball", image: "ball.jpg" },
-      { word: "sock", image: "sock.jpg" },
-      { word: "tree", image: "tree.jpg" },
-      { word: "fish", image: "fish.jpg" },
-      { word: "bat", image: "bat.jpg" },
-      { word: "fox", image: "fox.jpg" },
-      { word: "bee", image: "bee.jpg" },
-      { word: "star", image: "star.jpg" },
+    let currentDragProxy = null;
+    let offsetX = 0;
+    let offsetY = 0;
 
-
-      // ...
-    ];
-
-    const personImages = [
-  "jedi.png",
-  "cat.jpg",
-  "fox.jpg"
-];
-
-
-    // Keep track of the current word index
-    let currentWordIndex = 0;
-
-    const feedSound = new Audio('anotheroneforthesarlacc.mp3'); // or your chosen file
-
-    // A reference to the spelled letters
-    // letterBoxes[i] will hold the letter dropped in box i
-    let letterBoxes = [];
-
-    /********************************************
-     * ELEMENT REFERENCES
-     ********************************************/
-    const startScreen = document.getElementById("startScreen");
-    const startButton = document.getElementById("startButton");
-
-    const gameScreen = document.getElementById("gameScreen");
-    const objectImage = document.getElementById("objectImage");
-    const letterBoxesContainer = document.getElementById("letterBoxes");
-    const alphabetContainer = document.getElementById("alphabet");
-    const tryButton = document.getElementById("tryButton");
-    const feedback = document.getElementById("feedback");
-
-    const monsterScene = document.getElementById("monsterScene");
-    const person = document.getElementById("person");
-
-    /********************************************
-     * EVENT LISTENERS
-     ********************************************/
-    // Start the game
-    startButton.addEventListener("click", startGame);
-
-    // Check spelled word
-    tryButton.addEventListener("click", checkSpelling);
-
-    // Feed the person to the monster, then return to next spelling challenge
-// Replace your current person click listener with this:
-person.addEventListener("click", feedPersonToMonster);
-
-function feedPersonToMonster() {
-  // 1) Play the sound
-  feedSound.play();
-
-  // 2) Add the animation class
-  person.classList.add("fall-animation");
-
-  // 3) Remove this same click event so it doesn’t trigger multiple times
-  person.removeEventListener("click", feedPersonToMonster);
-
-  // 4) Listen for the end of the animation
-  person.addEventListener("animationend", onAnimationEnd);
-}
-
-function onAnimationEnd() {
-  // Remove the 'animationend' listener
-  person.removeEventListener("animationend", onAnimationEnd);
-
-  // Hide monster scene now that the person has "fallen in"
-  monsterScene.style.display = "none";
-
-  // Remove the animation class so the person can reappear next time
-  person.classList.remove("fall-animation");
-  person.style.transform = "none";
-  person.style.opacity = "1";
-
-  // Show the game screen again
-  gameScreen.style.display = "block";
-
-  // Next word
-  currentWordIndex = (currentWordIndex + 1) % words.length;
-  loadWord(currentWordIndex);
-
-  // Add the click listener back so it’s ready for the next round
-  person.addEventListener("click", feedPersonToMonster);
-}
-
-    /********************************************
-     * DRAG & DROP LOGIC
-     ********************************************/
-    // Helper to create the alphabet letters
+    // Create the entire A-Z alphabet in #alphabet
     function createAlphabetLetters() {
-      // Clear container
       alphabetContainer.innerHTML = "";
-
-      // A-Z
       const letters = "abcdefghijklmnopqrstuvwxyz".split("");
-      letters.forEach((letter) => {
+
+      letters.forEach(letter => {
         const letterElem = document.createElement("div");
         letterElem.classList.add("draggable-letter");
         letterElem.textContent = letter;
-
-        // Set draggable attribute
-        letterElem.draggable = true;
-
-        // Listen for drag events
-        letterElem.addEventListener("dragstart", onDragStart);
-
+        
+        // Listen for pointerdown on the original letter
+        letterElem.addEventListener("pointerdown", onLetterPointerDown);
         alphabetContainer.appendChild(letterElem);
       });
     }
 
-    // Drag start
-    function onDragStart(event) {
-      event.dataTransfer.setData("text/plain", event.target.textContent);
+    // When the user touches a letter, create a "drag proxy"
+    function onLetterPointerDown(e) {
+      // The text of the letter we want to drag
+      const letterText = e.currentTarget.textContent.trim();
+
+      // Create a clone to drag around
+      currentDragProxy = e.currentTarget.cloneNode(true);
+      currentDragProxy.classList.add("drag-proxy"); 
+      document.body.appendChild(currentDragProxy);
+
+      // Position the clone where the user pressed
+      const rect = e.currentTarget.getBoundingClientRect();
+      offsetX = e.clientX - rect.left; 
+      offsetY = e.clientY - rect.top;
+      
+      moveDragProxy(e.clientX, e.clientY);
+
+      // We need to capture pointer events on the proxy
+      currentDragProxy.setPointerCapture(e.pointerId);
+      currentDragProxy.addEventListener("pointermove", onProxyPointerMove);
+      currentDragProxy.addEventListener("pointerup", onProxyPointerUp);
     }
 
-    // Boxes: enable drop
-    function onDragOver(event) {
-      event.preventDefault();
-      event.currentTarget.classList.add("highlight");
+    // Move the drag proxy with the pointer
+    function onProxyPointerMove(e) {
+      if (!currentDragProxy) return;
+      moveDragProxy(e.clientX, e.clientY);
     }
 
-    function onDragLeave(event) {
-      event.currentTarget.classList.remove("highlight");
+    function moveDragProxy(clientX, clientY) {
+      currentDragProxy.style.left = (clientX - offsetX) + "px";
+      currentDragProxy.style.top  = (clientY - offsetY) + "px";
     }
 
-    function onDrop(event) {
-      event.preventDefault();
-      event.currentTarget.classList.remove("highlight");
-      const letter = event.dataTransfer.getData("text/plain");
+    // On release, check if it intersects a box
+    function onProxyPointerUp(e) {
+      if (!currentDragProxy) return;
 
-      // Put the letter into the box
-      event.currentTarget.textContent = letter;
+      let letterPlaced = false;
+      const dragRect = currentDragProxy.getBoundingClientRect();
+      const boxes = letterBoxesContainer.querySelectorAll(".letter-box");
+      
+      for (let box of boxes) {
+        const boxRect = box.getBoundingClientRect();
+        
+        // If intersects
+        if (isIntersecting(dragRect, boxRect)) {
+          // Snap the proxy to the center of the box (briefly, for visual effect)
+          const boxCenterX = boxRect.left + boxRect.width / 2;
+          const boxCenterY = boxRect.top + boxRect.height / 2;
+          currentDragProxy.style.left = (boxCenterX - dragRect.width / 2) + "px";
+          currentDragProxy.style.top  = (boxCenterY - dragRect.height / 2) + "px";
+
+          // Put the letter text in the box
+          box.textContent = currentDragProxy.textContent;
+          letterPlaced = true;
+
+          // After a short delay, remove the proxy
+          setTimeout(() => {
+            if (currentDragProxy) {
+              currentDragProxy.remove();
+              currentDragProxy = null;
+            }
+          }, 150); // 0.15s to see the snap
+          break;
+        }
+      }
+
+      // If not placed in a box, remove immediately
+      if (!letterPlaced) {
+        currentDragProxy.remove();
+        currentDragProxy = null;
+      }
+
+      // Cleanup pointer events
+      e.currentTarget.removeEventListener("pointermove", onProxyPointerMove);
+      e.currentTarget.removeEventListener("pointerup", onProxyPointerUp);
+    }
+
+    // Bounding box intersection check
+    function isIntersecting(r1, r2) {
+      return !(
+        r1.right < r2.left ||
+        r1.left > r2.right ||
+        r1.bottom < r2.top ||
+        r1.top > r2.bottom
+      );
     }
 
     /********************************************
-     * GAME FUNCTIONS
+     * 2) GAME DATA, SCORING, & MAIN LOGIC
      ********************************************/
+    // List of words & images
+    const words = [
+      { word: "dog",  image: "dog.jpg" },
+      { word: "cat",  image: "cat.jpg" },
+      { word: "frog", image: "frog.jpg" },
+      { word: "sun",  image: "sun.jpg" },
+      { word: "car",  image: "car.jpg" },
+      { word: "hat",  image: "hat.jpg" },
+      { word: "pig",  image: "pig.jpg" },
+      { word: "cup",  image: "cup.jpg" },
+      { word: "bed",  image: "bed.jpg" },
+      { word: "ball", image: "ball.jpg" },
+      { word: "sock", image: "sock.jpg" },
+      { word: "tree", image: "tree.jpg" },
+      { word: "fish", image: "fish.jpg" },
+      { word: "bat",  image: "bat.jpg" },
+      { word: "fox",  image: "fox.jpg" },
+      { word: "bee",  image: "bee.jpg" },
+      { word: "star", image: "star.jpg" }
+    ];
 
-    
-    
-    
-    
-     // Start game: hide start screen, show game screen, load first word
-function shuffleWords(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-}
+    // Person images for the monster scene
+    const personImages = [
+      "jedi.png",
+      "cat.jpg",
+      "fox.jpg"
+    ];
 
-// In startGame():
-function startGame() {
-  // Shuffle the words array (one time)
-  shuffleWords(words);
+    // Score tracking
+    let score = 0;
+    // Current word index
+    let currentWordIndex = 0;
 
-  startScreen.style.display = "none";
-  gameScreen.style.display = "block";
+    // Sound
+    const feedSound = new Audio('anotheroneforthesarlacc.mp3');
 
-  currentWordIndex = 0; // Reset to the first word after shuffling
-  loadWord(currentWordIndex);
-  createAlphabetLetters();
-}
-    // Load a word by index
+    // DOM elements
+    const startScreen          = document.getElementById("startScreen");
+    const startButton          = document.getElementById("startButton");
+    const gameScreen           = document.getElementById("gameScreen");
+    const monsterScene         = document.getElementById("monsterScene");
+    const person               = document.getElementById("person");
+    const objectImage          = document.getElementById("objectImage");
+    const letterBoxesContainer = document.getElementById("letterBoxes");
+    const alphabetContainer    = document.getElementById("alphabet");
+    const tryButton            = document.getElementById("tryButton");
+    const feedback             = document.getElementById("feedback");
+    const scoreValueEl         = document.getElementById("scoreValue");
+
+    // Event listeners
+    startButton.addEventListener("click", startGame);
+    tryButton.addEventListener("click", checkSpelling);
+    person.addEventListener("click", feedPersonToMonster);
+
+    // Shuffle function
+    function shuffleWords(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    // Start the game
+    function startGame() {
+      // Reset score
+      score = 0;
+      updateScore();
+
+      // Shuffle word list
+      shuffleWords(words);
+      currentWordIndex = 0;
+
+      // Show game screen
+      startScreen.style.display = "none";
+      gameScreen.style.display  = "block";
+
+      // Load the first word
+      loadWord(currentWordIndex);
+      // Create the full alphabet
+      createAlphabetLetters();
+    }
+
+    // Update scoreboard
+    function updateScore() {
+      scoreValueEl.textContent = score;
+    }
+
+    // Load a word by index, blank out the boxes
     function loadWord(index) {
       feedback.textContent = "";
       const currentWord = words[index];
+      objectImage.src = currentWord.image || "";
 
-      // Update the image
-      objectImage.src = currentWord.image;
-      // Could also set alt text: objectImage.alt = currentWord.word;
-
-      // Clear and rebuild letter boxes
+      // Clear old letter boxes
       letterBoxesContainer.innerHTML = "";
-      letterBoxes = [];
-
       for (let i = 0; i < currentWord.word.length; i++) {
         const box = document.createElement("div");
         box.classList.add("letter-box");
-        // Set up dragover/dragdrop
-        box.addEventListener("dragover", onDragOver);
-        box.addEventListener("dragleave", onDragLeave);
-        box.addEventListener("drop", onDrop);
-
         letterBoxesContainer.appendChild(box);
       }
     }
 
-    // Check spelled word
+    // Try button -> check spelled word
     function checkSpelling() {
-        const boxes = letterBoxesContainer.querySelectorAll(".letter-box");
-        let spelledWord = "";
+      const boxes = letterBoxesContainer.querySelectorAll(".letter-box");
+      let spelledWord = "";
+      boxes.forEach((box) => {
+        spelledWord += box.textContent.trim();
+      });
+
+      const correctWord = words[currentWordIndex].word.toLowerCase();
+
+      if (spelledWord.toLowerCase() === correctWord) {
+        feedback.textContent = "SUCCESS!";
+        score++;
+        updateScore();
+
+        // Randomize the "person" image
+        const randomIndex = Math.floor(Math.random() * personImages.length);
+        person.src = personImages[randomIndex];
+
+        // Show monster scene
+        gameScreen.style.display = "none";
+        monsterScene.style.display = "block";
+      } else {
+        feedback.textContent = "INCORRECT. Try again!";
+        // Clear boxes so they can retry
         boxes.forEach((box) => {
-            spelledWord += box.textContent.trim();
+          box.textContent = "";
         });
+      }
+    }
 
-        const correctWord = words[currentWordIndex].word.toLowerCase();
+    // Feed the person to the monster
+    function feedPersonToMonster() {
+      feedSound.play();
+      person.classList.add("fall-animation");
+      person.removeEventListener("click", feedPersonToMonster);
 
-        if (spelledWord.toLowerCase() === correctWord) {
-            feedback.textContent = "SUCCESS!";
+      // When animation ends...
+      person.addEventListener("animationend", onAnimationEnd);
+    }
 
-            // Increase the score
-            score++;
-            updateScore();
+    // After person falls in
+    function onAnimationEnd() {
+      person.removeEventListener("animationend", onAnimationEnd);
 
-            // 1) PICK A RANDOM PERSON IMAGE
-            const randomIndex = Math.floor(Math.random() * personImages.length);
-            person.src = personImages[randomIndex];
+      // Hide monster scene
+      monsterScene.style.display = "none";
+      // Reset person's appearance
+      person.classList.remove("fall-animation");
+      person.style.transform = "none";
+      person.style.opacity = "1";
 
-            // 2) Show the monster scene
-            gameScreen.style.display = "none";
-            monsterScene.style.display = "block";
-        } else {
-            feedback.textContent = "INCORRECT. Try again!";
-            boxes.forEach((box) => {
-                box.textContent = "";
-            });
-        }
+      // Show next word
+      gameScreen.style.display = "block";
+
+      currentWordIndex = (currentWordIndex + 1) % words.length;
+      loadWord(currentWordIndex);
+
+      // Re-enable click
+      person.addEventListener("click", feedPersonToMonster);
     }
   </script>
 </body>
