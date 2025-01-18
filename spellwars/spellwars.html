@@ -7,12 +7,15 @@
   <title>Spell Wars</title>
   <style>
     /* ========== BASIC PAGE STYLES ========== */
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-      background: #e2d0ff; /* Light purple for a fun vibe */
-    }
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background: #e2d0ff; /* Light purple for a fun vibe */
+  overflow: hidden;    /* no scrollbars */
+  touch-action: none;  /* no default gestures */
+  overscroll-behavior: none;
+}
 
     /* ========== START SCREEN ========== */
     #startScreen {
