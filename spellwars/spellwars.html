@@ -247,6 +247,24 @@ body, html {
     let offsetX = 0;
     let offsetY = 0;
 
+    function speakWord(text) {
+  if ('speechSynthesis' in window) {
+    // Cancel any ongoing speech so it doesn't overlap
+    speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Optional: configure pitch, rate, language, etc.
+    utterance.lang = 'en-GB';
+    utterance.pitch = 1;
+    utterance.rate = 1;
+
+    speechSynthesis.speak(utterance);
+  } else {
+    console.log('Text-to-speech not supported in this browser.');
+  }
+}
+
     // Create the entire A-Z alphabet in #alphabet
     function createAlphabetLetters() {
       alphabetContainer.innerHTML = "";
@@ -392,17 +410,22 @@ body, html {
     const feedSound = new Audio('anotheroneforthesarlacc.mp3');
 
     // DOM elements
-    const startScreen          = document.getElementById("startScreen");
-    const startButton          = document.getElementById("startButton");
-    const gameScreen           = document.getElementById("gameScreen");
-    const monsterScene         = document.getElementById("monsterScene");
-    const person               = document.getElementById("person");
-    const objectImage          = document.getElementById("objectImage");
-    const letterBoxesContainer = document.getElementById("letterBoxes");
-    const alphabetContainer    = document.getElementById("alphabet");
-    const tryButton            = document.getElementById("tryButton");
-    const feedback             = document.getElementById("feedback");
-    const scoreValueEl         = document.getElementById("scoreValue");
+const startScreen          = document.getElementById("startScreen");
+const startButton          = document.getElementById("startButton");
+const gameScreen           = document.getElementById("gameScreen");
+const monsterScene         = document.getElementById("monsterScene");
+const person               = document.getElementById("person");
+const objectImage          = document.getElementById("objectImage");
+const letterBoxesContainer = document.getElementById("letterBoxes");
+const alphabetContainer    = document.getElementById("alphabet");
+const tryButton            = document.getElementById("tryButton");
+const feedback             = document.getElementById("feedback");
+const scoreValueEl         = document.getElementById("scoreValue");
+
+objectImage.addEventListener("click", () => {
+  const word = words[currentWordIndex].word;
+  speakWord(word);
+});
 
     // Event listeners
     startButton.addEventListener("click", startGame);
