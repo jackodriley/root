@@ -221,8 +221,8 @@
 
   <!-- ========== MONSTER SCENE ========== -->
   <div id="monsterScene">
-    <h2>Desert Monster Scene</h2>
-    <p id="monsterInstructions">Tap the person to feed them to the monster!</p>
+    <h2>Well done!</h2>
+    <p id="monsterInstructions">Feed the sarlacc!</p>
     <div>
         <img id="person" src="jedi.png" alt="Person" />
       </div>
@@ -285,6 +285,12 @@ function updateScore() {
 
       // ...
     ];
+
+    const personImages = [
+  "jedi.png",
+  "cat.jpg",
+  "fox.jpg"
+];
 
 
     // Keep track of the current word index
@@ -477,11 +483,15 @@ function startGame() {
         if (spelledWord.toLowerCase() === correctWord) {
             feedback.textContent = "SUCCESS!";
 
-            // 2. Increase the score by 1
+            // Increase the score
             score++;
             updateScore();
 
-            // Show the monster scene
+            // 1) PICK A RANDOM PERSON IMAGE
+            const randomIndex = Math.floor(Math.random() * personImages.length);
+            person.src = personImages[randomIndex];
+
+            // 2) Show the monster scene
             gameScreen.style.display = "none";
             monsterScene.style.display = "block";
         } else {
