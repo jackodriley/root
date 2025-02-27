@@ -1,3 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Don't Touch The Floor!</title>
+  <style>
+    /* Basic reset and sizing */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    /* The container for the entire game screen */
+    #appContainer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Opening title text style */
+    .title {
+      font-size: 3em;
+      margin-bottom: 20px;
+    }
+
+    /* Mode text style (HAND MODE, KICK MODE, etc.) */
+    .mode-text {
+      font-size: 4em;
+    }
+
+    /* Common style for Play and End Game buttons */
+    .play-button, .end-button {
+      background: rgba(0,0,0,0.7);
+      border: none;
+      padding: 1em 2em;
+      color: #fff;
+      font-size: 1.2em;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .play-button:hover, .end-button:hover {
+      background: rgba(0,0,0,0.9);
+    }
+
+    /* The End Game button in the top-right corner */
+    .end-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 1em;
+      z-index: 999;
+    }
+
+    /* "GET READY!" text style */
+    .get-ready-text {
+      font-size: 3em;
+    }
+  </style>
+</head>
+<body>
+
 <div id="appContainer"></div>
 
 <script>
@@ -24,7 +94,7 @@
 
   // -- HELPER: Random time between 5s and 15s (in milliseconds) --
   function getRandomDuration() {
-    const minMs = 5000;  // 5 seconds
+    const minMs = 5000;   // 5 seconds
     const maxMs = 15000;  // 15 seconds
     return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   }
@@ -50,10 +120,11 @@
     activeTimeouts.push(t);
   }
 
-  // -- HELPER: Actually show a mode screen and hold it for random duration
+  // -- HELPER: Show a mode screen and hold it for random duration
   function showModeScreen() {
     if (!isGameRunning) return;
 
+    // Pick a mode different from the last one shown
     let randomModeIndex;
     do {
       randomModeIndex = Math.floor(Math.random() * modes.length);
@@ -76,7 +147,6 @@
     const duration = getRandomDuration(); 
     const t = setTimeout(() => {
       if (isGameRunning) {
-        // Show GET READY, then switch again
         showGetReadyScreen(showModeScreen);
       }
     }, duration);
@@ -85,14 +155,13 @@
 
   // -- MAIN CYCLE: show "GET READY!" then show the mode, repeat...
   function cycleModes() {
-    // Start by showing GET READY
     showGetReadyScreen(showModeScreen);
   }
 
   // -- START the game --
   function startGame() {
-    // Make sure we have an AudioContext (user click triggered this function)
     if (!audioContext) {
+      // Must be triggered by a user action to comply with browser audio policies
       audioContext = new AudioContext();
     }
     clearAllTimeouts();
@@ -119,22 +188,23 @@
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
-      oscillator.frequency.value = 880; // A5 note, for example
+      oscillator.frequency.value = 880; // A5 note
       oscillator.type = 'sine';
 
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
 
-      // Start beep
       oscillator.start(beepStart);
-      // Stop beep after 0.2s
       oscillator.stop(beepStart + 0.2);
 
-      // Next beep starts 0.3s after the previous
+      // Each beep begins 0.3s after the previous beep start
       beepStart += 0.3;
     }
   }
 
-  // Show the home screen on initial load
+  // Show the home screen immediately on load
   showHomeScreen();
 </script>
+
+</body>
+</html>
