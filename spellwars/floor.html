@@ -105,6 +105,18 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
   const backgroundMusic = document.getElementById('backgroundMusic');
   let overrideMusic = null; // We'll dynamically create a new Audio() if needed
 
+  const preloadImages = () => {
+    modes.forEach(mode => {
+        if (mode.backgroundImage) {
+            const img = new Image();
+            img.src = mode.backgroundImage;
+        }
+    });
+};
+
+// Call preload function when the script runs
+preloadImages();
+
   // Define modes with per-mode weighting ("weight").
   // Higher weight => more likely to appear.
   const modes = [
