@@ -1,66 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Don't Touch The Floor!</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
-    #appContainer {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .title {
-      font-size: 3em;
-      margin-bottom: 20px;
-    }
-    .mode-text {
-      font-size: 4em;
-    }
-    .play-button, .end-button {
-      background: rgba(0,0,0,0.7);
-      border: none;
-      padding: 1em 2em;
-      color: #fff;
-      font-size: 1.2em;
-      cursor: pointer;
-      border-radius: 8px;
-    }
-    .play-button:hover, .end-button:hover {
-      background: rgba(0,0,0,0.9);
-    }
-    .end-button {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 1em;
-      z-index: 999;
-    }
-    .get-ready-text {
-      font-size: 3em;
-    }
-  </style>
-</head>
-<body>
-<div id="appContainer"></div>
-
 <script>
   // -- GLOBALS --
   let isGameRunning = false;
   let activeTimeouts = [];         // We'll store timeout IDs here to clear them if needed
   let audioContext = null;         // For playing "DING DING"
+  let lastModeIndex = -1;          // To keep track of the last mode index
 
   // Define the modes with their text and background color
   const modes = [
@@ -79,8 +22,8 @@
 
   // -- HELPER: Random time between 45s and 90s (in milliseconds) --
   function getRandomDuration() {
-    const minMs = 45000;  // 45 seconds
-    const maxMs = 90000;  // 90 seconds
+    const minMs = 25000;  // 45 seconds
+    const maxMs = 45000;  // 90 seconds
     return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   }
 
@@ -109,8 +52,14 @@
   function showModeScreen() {
     if (!isGameRunning) return;
 
-    // Pick a random mode
-    const randomMode = modes[Math.floor(Math.random() * modes.length)];
+    let randomModeIndex;
+    do {
+      randomModeIndex = Math.floor(Math.random() * modes.length);
+    } while (randomModeIndex === lastModeIndex);
+
+    lastModeIndex = randomModeIndex;
+    const randomMode = modes[randomModeIndex];
+
     // Play "DING DING" right when mode appears
     playDingDing();
 
@@ -187,5 +136,3 @@
   // Show the home screen on initial load
   showHomeScreen();
 </script>
-</body>
-</html>
