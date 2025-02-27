@@ -1,3 +1,5 @@
+<div id="appContainer"></div>
+
 <script>
   // -- GLOBALS --
   let isGameRunning = false;
@@ -20,10 +22,10 @@
     activeTimeouts = [];
   }
 
-  // -- HELPER: Random time between 45s and 90s (in milliseconds) --
+  // -- HELPER: Random time between 5s and 15s (in milliseconds) --
   function getRandomDuration() {
-    const minMs = 5000;  // 45 seconds
-    const maxMs = 15000;  // 90 seconds
+    const minMs = 5000;  // 5 seconds
+    const maxMs = 15000;  // 15 seconds
     return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   }
 
