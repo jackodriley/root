@@ -3,17 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <title>Don't Touch The Floor!</title>
+  <!-- Google font link for Press Start 2P -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    /* Basic reset and sizing */
+    /* Use the "Press Start 2P" font for a blocky/retro style */
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      font-family: Arial, Helvetica, sans-serif, sans-serif;
+      font-family: 'Press Start 2P', cursive, sans-serif;
       text-align: center;
+      background: #000;
     }
 
-    /* The container for the entire game screen */
     #appContainer {
       position: relative;
       width: 100%;
@@ -24,48 +27,48 @@
       justify-content: center;
       flex-direction: column;
       overflow: hidden;
-      background-size: cover;    /* Make background images fill the screen */
+      background-size: cover;    /* Fill background images */
       background-position: center;
       background-repeat: no-repeat;
     }
 
-    /* Opening title text style */
     .title {
-      font-size: 3em;
+      font-size: 2.4em; /* Because Press Start 2P is quite small by default */
       margin-bottom: 20px;
+      line-height: 1.3;
     }
 
-    /* Mode text style (HAND MODE, KICK MODE, etc.) */
     .mode-text {
-      font-size: 4em;
+      font-size: 2em;
+      line-height: 1.2;
+      margin: 20px;
     }
 
-    /* Common style for Play and End Game buttons */
     .play-button, .end-button {
       background: rgba(0,0,0,0.7);
       border: none;
       padding: 1em 2em;
       color: #fff;
-      font-size: 1.2em;
+      font-size: 0.9em;
       cursor: pointer;
       border-radius: 8px;
+      margin-top: 10px;
     }
     .play-button:hover, .end-button:hover {
       background: rgba(0,0,0,0.9);
     }
 
-    /* The End Game button in the top-right corner */
     .end-button {
       position: absolute;
       top: 20px;
       right: 20px;
-      font-size: 1em;
+      font-size: 0.8em;
       z-index: 999;
     }
 
-    /* "GET READY!" text style */
     .get-ready-text {
-      font-size: 3em;
+      font-size: 1.2em;
+      line-height: 1.4;
     }
   </style>
 </head>
@@ -87,26 +90,26 @@
   const backgroundMusic = document.getElementById('backgroundMusic');
   let overrideMusic = null; // We'll dynamically create a new Audio() if needed
 
-  // Define the modes with their text, color, optional image, optional override music, and custom durations
-  // If backgroundImage is null or "", the code uses the plain color instead
-  // If overrideMusicUrl is null or "", no special music is played for that mode
-  // minDuration and maxDuration are in milliseconds
+  // Define modes with per-mode weighting ("weight").
+  // Higher weight => more likely to appear.
   const modes = [
     {
       name: 'HAND MODE',
       color: '#FF3333',
-      backgroundImage: 'handmode.png',  // e.g. "handmode.png"
-      overrideMusicUrl: '', // e.g. "https://example.com/hand-mode-music.mp3"
+      backgroundImage: 'handmode.png',
+      overrideMusicUrl: '',
       minDuration: 1000,
-      maxDuration: 2000
+      maxDuration: 2000,
+      weight: 5    // More likely
     },
     {
       name: 'KICK MODE',
       color: '#33CC33',
-      backgroundImage: 'kickmode.png',  // e.g. "https://example.com/kick-mode.jpg"
+      backgroundImage: 'kickmode.png',
       overrideMusicUrl: '',
       minDuration: 1000,
-      maxDuration: 2000
+      maxDuration: 2000,
+      weight: 3
     },
     {
       name: 'BAT MODE',
@@ -114,23 +117,26 @@
       backgroundImage: 'batmode.png',
       overrideMusicUrl: '',
       minDuration: 1000,
-      maxDuration: 2000
+      maxDuration: 2000,
+      weight: 5    // More likely
     },
     {
       name: 'HEAD MODE',
       color: '#FF9900',
-      backgroundImage: 'headmode.png',  // e.g. "https://example.com/head-mode.jpg"
+      backgroundImage: 'headmode.png',
       overrideMusicUrl: '',
       minDuration: 1000,
-      maxDuration: 2000
+      maxDuration: 2000,
+      weight: 2
     },
     {
       name: 'BED MODE',
       color: '#663399',
       backgroundImage: 'bedmode.png',
       overrideMusicUrl: 'bedmode.mp3',
-      minDuration: 1000,
-      maxDuration: 2000
+      minDuration: 10000,
+      maxDuration: 12000,
+      weight: 5    // More likely
     },
     {
       name: 'ELBOW MODE',
@@ -138,15 +144,17 @@
       backgroundImage: 'elbowmode.png',
       overrideMusicUrl: '',
       minDuration: 1000,
-      maxDuration: 2000
+      maxDuration: 2000,
+      weight: 2
     },
     {
       name: 'NOSE MODE',
       color: '#FFA500',
       backgroundImage: 'nosemode.png',
-      overrideMusicUrl: '',
-      minDuration: 1000,
-      maxDuration: 2000
+      overrideMusicUrl: 'nosemode.mp3',
+      minDuration: 10000,
+      maxDuration: 11000,
+      weight: 10    // Least likely
     }
   ];
 
@@ -165,6 +173,31 @@
     return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   }
 
+  // -- HELPER: Weighted random pick of a mode, skipping last mode if possible.
+  function pickWeightedMode() {
+    // If there's more than one mode, skip the last mode index in the weighted pool.
+    let candidateModes = modes.map((m, idx) => ({ ...m, idx }));
+    if (lastModeIndex !== -1 && modes.length > 1) {
+      candidateModes = candidateModes.filter(({ idx }) => idx !== lastModeIndex);
+    }
+
+    // Calculate total weight
+    const totalWeight = candidateModes.reduce((acc, m) => acc + (m.weight || 1), 0);
+    // Pick random from 0..totalWeight
+    let rnd = Math.random() * totalWeight;
+
+    // Find which mode we land on
+    for (const m of candidateModes) {
+      const w = m.weight || 1;
+      if (rnd < w) {
+        return m; // Return the chosen mode object (with .idx)
+      }
+      rnd -= w;
+    }
+    // Fallback: if something goes off, just return the last in the array
+    return candidateModes[candidateModes.length - 1];
+  }
+
   // -- HELPER: Show home screen (opening page) --
   function showHomeScreen() {
     // Stop any music if it's playing
@@ -178,20 +211,20 @@
     appContainer.style.backgroundColor = '#FF00AA'; // Some bright color
     appContainer.style.backgroundImage = 'none';    // Remove any leftover image
     appContainer.innerHTML = `
-      <div class="title">Don't Touch The Floor! v0.1</div>
-      <button class="play-button" onclick="startGame()">Play</button>
+      <div class="title">Don't Touch The Floor!</div>
+      <button class="play-button" onclick="startGame()">PLAY</button>
     `;
   }
 
-  // -- HELPER: Show "GET READY!" screen for 5s before a mode
+  // -- HELPER: Show "GET READY!" screen for 1s (adjust if you like)
   function showGetReadyScreen(callback) {
     appContainer.style.backgroundColor = '#000000';
-    appContainer.style.backgroundImage = 'none'; // No image for get-ready screen
+    appContainer.style.backgroundImage = 'none';
     appContainer.innerHTML = `
-      <button class="end-button" onclick="endGame()">End Game</button>
+      <button class="end-button" onclick="endGame()">END GAME</button>
       <div class="get-ready-text">GET READY!</div>
     `;
-    // After 5 seconds, call the callback
+    // After 1 second, call the callback
     const t = setTimeout(callback, 1000);
     activeTimeouts.push(t);
   }
@@ -200,42 +233,30 @@
   function showModeScreen() {
     if (!isGameRunning) return;
 
-    // Pick a mode different from the last one
-    let randomModeIndex;
-    do {
-      randomModeIndex = Math.floor(Math.random() * modes.length);
-    } while (randomModeIndex === lastModeIndex && modes.length > 1);
-
-    lastModeIndex = randomModeIndex;
-    const mode = modes[randomModeIndex];
+    const chosenMode = pickWeightedMode();
+    lastModeIndex = chosenMode.idx; // Track which index we used
 
     // 1) Set the background
-    if (mode.backgroundImage) {
-      appContainer.style.backgroundImage = `url('${mode.backgroundImage}')`;
-      appContainer.style.backgroundColor = 'transparent'; // let image show
+    if (chosenMode.backgroundImage) {
+      appContainer.style.backgroundImage = `url('${chosenMode.backgroundImage}')`;
+      appContainer.style.backgroundColor = 'transparent';
     } else {
       appContainer.style.backgroundImage = 'none';
-      appContainer.style.backgroundColor = mode.color;
+      appContainer.style.backgroundColor = chosenMode.color;
     }
 
     // 2) Play "DING DING" beep
     playDingDing();
 
     // 3) If this mode has override music, pause main music, play override
-    //    Otherwise, keep main music playing.
-    if (mode.overrideMusicUrl) {
-      // Pause background music
+    if (chosenMode.overrideMusicUrl) {
       backgroundMusic.pause();
-
-      // Create an override audio if not existing
-      overrideMusic = new Audio(mode.overrideMusicUrl);
+      overrideMusic = new Audio(chosenMode.overrideMusicUrl);
       overrideMusic.play().catch(err => {
         console.warn("Could not play override music:", err);
       });
     } else {
-      // Ensure we are on background music (it might have been playing already)
-      // If you want it always playing, you can do .play() again or do nothing
-      // in case it was never paused in this game session
+      // Resume the background music if it's paused
       if (backgroundMusic.paused) {
         backgroundMusic.play().catch(err => {
           console.warn("Could not resume background music:", err);
@@ -245,26 +266,26 @@
 
     // 4) Render mode text
     appContainer.innerHTML = `
-      <button class="end-button" onclick="endGame()">End Game</button>
-      <div class="mode-text">${mode.name}</div>
+      <button class="end-button" onclick="endGame()">END GAME</button>
+      <div class="mode-text">${chosenMode.name}</div>
     `;
 
     // 5) Stay in this mode for a random time (unique to that mode)
-    const duration = getModeDuration(mode);
+    const duration = getModeDuration(chosenMode);
     const t = setTimeout(() => {
       if (isGameRunning) {
-        // If override music is playing, stop it
+        // If override music was playing, stop it
         if (overrideMusic && !overrideMusic.paused) {
           overrideMusic.pause();
           overrideMusic = null;
         }
-        // Resume the main music after override
+        // Resume main music after override
         if (backgroundMusic.paused) {
           backgroundMusic.play().catch(err => {
             console.warn("Could not resume background music:", err);
           });
         }
-        // Move to "GET READY!" then next mode
+        // Move to "GET READY!" then pick next mode
         showGetReadyScreen(showModeScreen);
       }
     }, duration);
@@ -278,8 +299,8 @@
 
   // -- START the game --
   function startGame() {
-    // Must be triggered by user action to comply with browser audio policies
     if (!audioContext) {
+      // Must be triggered by user action to comply with browser audio policies
       audioContext = new AudioContext();
     }
     clearAllTimeouts();
@@ -311,12 +332,11 @@
 
   // -- AUDIO: "DING DING" using the Web Audio API --
   function playDingDing() {
-    if (!audioContext) return; // If somehow not initialized, skip
+    if (!audioContext) return;
 
     const now = audioContext.currentTime;
     let beepStart = now;
 
-    // We want two short beeps in quick succession: "DING DING"
     for (let i = 0; i < 2; i++) {
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -330,7 +350,7 @@
       oscillator.start(beepStart);
       oscillator.stop(beepStart + 0.2);
 
-      // Each beep begins 0.3s after the previous beep start
+      // Each beep begins 0.3s after the previous beep's start
       beepStart += 0.3;
     }
   }
