@@ -178,7 +178,7 @@
     appContainer.style.backgroundColor = '#FF00AA'; // Some bright color
     appContainer.style.backgroundImage = 'none';    // Remove any leftover image
     appContainer.innerHTML = `
-      <div class="title">Don't Touch The Floor!</div>
+      <div class="title">Don't Touch The Floor! v0.1</div>
       <button class="play-button" onclick="startGame()">Play</button>
     `;
   }
@@ -192,7 +192,7 @@
       <div class="get-ready-text">GET READY!</div>
     `;
     // After 5 seconds, call the callback
-    const t = setTimeout(callback, 5000);
+    const t = setTimeout(callback, 1000);
     activeTimeouts.push(t);
   }
 
