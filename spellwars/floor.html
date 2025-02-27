@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Don't Touch The Floor!</title>
-  <!-- Google font link for Press Start 2P -->
+  <!-- Using Bungee font from Google Fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
   <style>
-    /* Use the "Press Start 2P" font for a blocky/retro style */ 
+    /* Use the Bungee font */
     html, body {
       margin: 0;
       padding: 0;
@@ -16,14 +16,8 @@
       text-align: center;
       background: #000;
     }
-    /* Add a thin black outline around all/* Add a thin black outline around all text */
-body, h1, h2, h3, h4, h5, h6, p, span, div {
-    text-shadow: 
-        -1px -1px 0 #000,  
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000;
-} text */
+
+    /* Add a thin black outline around all text */
     body, h1, h2, h3, h4, h5, h6, p, span, div {
       text-shadow: 
         -1px -1px 0 #000,  
@@ -48,7 +42,7 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
     }
 
     .title {
-      font-size: 2.4em; /* Because Press Start 2P is quite small by default */
+      font-size: 2.4em; 
       margin-bottom: 20px;
       line-height: 1.3;
     }
@@ -98,27 +92,14 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
   // -- GLOBALS --
   let isGameRunning = false;
   let activeTimeouts = [];
-  let audioContext = null;           // For the "DING DING" beep
-  let lastModeIndex = -1;            // Track the last mode index shown
+  let audioContext = null;  // For "DING DING" beep
+  let lastModeIndex = -1;   // Track last mode index
 
   // We'll handle background music and override music
   const backgroundMusic = document.getElementById('backgroundMusic');
-  let overrideMusic = null; // We'll dynamically create a new Audio() if needed
+  let overrideMusic = null; 
 
-  const preloadImages = () => {
-    modes.forEach(mode => {
-        if (mode.backgroundImage) {
-            const img = new Image();
-            img.src = mode.backgroundImage;
-        }
-    });
-};
-
-// Call preload function when the script runs
-preloadImages();
-
-  // Define modes with per-mode weighting ("weight").
-  // Higher weight => more likely to appear.
+  // Define your modes, each with weighting
   const modes = [
     {
       name: 'HAND MODE',
@@ -127,7 +108,7 @@ preloadImages();
       overrideMusicUrl: '',
       minDuration: 15000,
       maxDuration: 25000,
-      weight: 5    // More likely
+      weight: 5
     },
     {
       name: 'KICK MODE',
@@ -145,7 +126,7 @@ preloadImages();
       overrideMusicUrl: '',
       minDuration: 20000,
       maxDuration: 21000,
-      weight: 5    // More likely
+      weight: 5
     },
     {
       name: 'HEAD MODE',
@@ -163,7 +144,7 @@ preloadImages();
       overrideMusicUrl: 'bedmode.mp3',
       minDuration: 10000,
       maxDuration: 12000,
-      weight: 4    // More likely
+      weight: 4
     },
     {
       name: 'ELBOW MODE',
@@ -181,9 +162,20 @@ preloadImages();
       overrideMusicUrl: 'nosemode.mp3',
       minDuration: 10000,
       maxDuration: 11000,
-      weight: 2    // Least likely
+      weight: 2
     }
   ];
+
+  // Preload images to avoid flicker
+  const preloadImages = () => {
+    modes.forEach(mode => {
+      if (mode.backgroundImage) {
+        const img = new Image();
+        img.src = mode.backgroundImage;
+      }
+    });
+  };
+  preloadImages();
 
   const appContainer = document.getElementById('appContainer');
 
@@ -193,41 +185,35 @@ preloadImages();
     activeTimeouts = [];
   }
 
-  // -- HELPER: Get random duration for a particular mode
+  // -- HELPER: get random duration for a particular mode
   function getModeDuration(mode) {
     const minMs = mode.minDuration;
     const maxMs = mode.maxDuration;
     return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   }
 
-  // -- HELPER: Weighted random pick of a mode, skipping last mode if possible.
+  // -- HELPER: Weighted random pick of a mode
   function pickWeightedMode() {
-    // If there's more than one mode, skip the last mode index in the weighted pool.
     let candidateModes = modes.map((m, idx) => ({ ...m, idx }));
     if (lastModeIndex !== -1 && modes.length > 1) {
       candidateModes = candidateModes.filter(({ idx }) => idx !== lastModeIndex);
     }
 
-    // Calculate total weight
     const totalWeight = candidateModes.reduce((acc, m) => acc + (m.weight || 1), 0);
-    // Pick random from 0..totalWeight
     let rnd = Math.random() * totalWeight;
 
-    // Find which mode we land on
     for (const m of candidateModes) {
       const w = m.weight || 1;
       if (rnd < w) {
-        return m; // Return the chosen mode object (with .idx)
+        return m;
       }
       rnd -= w;
     }
-    // Fallback: if something goes off, just return the last in the array
     return candidateModes[candidateModes.length - 1];
   }
 
-  // -- HELPER: Show home screen (opening page) --
+  // -- Show home screen --
   function showHomeScreen() {
-    // Stop any music if it's playing
     backgroundMusic.pause();
     backgroundMusic.currentTime = 0;
     if (overrideMusic) {
@@ -235,35 +221,34 @@ preloadImages();
       overrideMusic = null;
     }
 
-    appContainer.style.backgroundColor = '#FF00AA'; // Some bright color
-    appContainer.style.backgroundImage = 'none';    // Remove any leftover image
+    appContainer.style.backgroundColor = '#FF00AA';
+    appContainer.style.backgroundImage = 'none';
     appContainer.innerHTML = `
       <div class="title">Don't Touch The Floor! - Ada - v0.1</div>
       <button class="play-button" onclick="startGame()">PLAY</button>
     `;
   }
 
-  // -- HELPER: Show "GET READY!" screen for 1s (adjust if you like)
+  // -- GET READY screen for a few seconds
   function showGetReadyScreen(callback) {
-    appContainer.style.backgroundColor = '#000000';
+    appContainer.style.backgroundColor = '#000';
     appContainer.style.backgroundImage = 'none';
     appContainer.innerHTML = `
       <button class="end-button" onclick="endGame()">END GAME</button>
       <div class="get-ready-text">GET READY!</div>
     `;
-    // After 1 second, call the callback
     const t = setTimeout(callback, 4000);
     activeTimeouts.push(t);
   }
 
-  // -- HELPER: Show a mode screen and hold it for random duration
+  // -- Show a mode screen
   function showModeScreen() {
     if (!isGameRunning) return;
 
     const chosenMode = pickWeightedMode();
-    lastModeIndex = chosenMode.idx; // Track which index we used
+    lastModeIndex = chosenMode.idx;
 
-    // 1) Set the background
+    // Set background
     if (chosenMode.backgroundImage) {
       appContainer.style.backgroundImage = `url('${chosenMode.backgroundImage}')`;
       appContainer.style.backgroundColor = 'transparent';
@@ -272,95 +257,80 @@ preloadImages();
       appContainer.style.backgroundColor = chosenMode.color;
     }
 
-    // 2) Play "DING DING" beep
+    // DING DING
     playDingDing();
 
-    // 3) If this mode has override music, pause main music, play override
+    // If override music, play that instead
     if (chosenMode.overrideMusicUrl) {
       backgroundMusic.pause();
       overrideMusic = new Audio(chosenMode.overrideMusicUrl);
-      overrideMusic.play().catch(err => {
-        console.warn("Could not play override music:", err);
-      });
+      overrideMusic.play().catch(err => console.warn("Override music error:", err));
     } else {
-      // Resume the background music if it's paused
+      // Resume background if paused
       if (backgroundMusic.paused) {
-        backgroundMusic.play().catch(err => {
-          console.warn("Could not resume background music:", err);
-        });
+        backgroundMusic.play().catch(err => console.warn("Music resume error:", err));
       }
     }
 
-    // 4) Render mode text
+    // Mode text
     appContainer.innerHTML = `
       <button class="end-button" onclick="endGame()">END GAME</button>
       <div class="mode-text">${chosenMode.name}</div>
     `;
 
-    // 5) Stay in this mode for a random time (unique to that mode)
+    // Wait random time, then GET READY
     const duration = getModeDuration(chosenMode);
     const t = setTimeout(() => {
       if (isGameRunning) {
-        // If override music was playing, stop it
+        // Stop override music if any
         if (overrideMusic && !overrideMusic.paused) {
           overrideMusic.pause();
           overrideMusic = null;
         }
-        // Resume main music after override
+        // Resume main music
         if (backgroundMusic.paused) {
-          backgroundMusic.play().catch(err => {
-            console.warn("Could not resume background music:", err);
-          });
+          backgroundMusic.play().catch(err => console.warn("Music resume error:", err));
         }
-        // Move to "GET READY!" then pick next mode
         showGetReadyScreen(showModeScreen);
       }
     }, duration);
     activeTimeouts.push(t);
   }
 
-  // -- MAIN CYCLE: show "GET READY!" then show the mode, repeat...
+  // -- MAIN cycle
   function cycleModes() {
     showGetReadyScreen(showModeScreen);
   }
 
-  // -- START the game --
+  // -- START the game
   function startGame() {
+    // Must be triggered by user action
     if (!audioContext) {
-      // Must be triggered by user action to comply with browser audio policies
       audioContext = new AudioContext();
     }
     clearAllTimeouts();
     isGameRunning = true;
-
-    // Start background music
     backgroundMusic.currentTime = 0;
     backgroundMusic.volume = 1.0;
-    backgroundMusic.play().catch(err => {
-      console.warn("Could not start background music:", err);
-    });
+    backgroundMusic.play().catch(err => console.warn("Background music error:", err));
 
     cycleModes();
   }
 
-  // -- END the game --
+  // -- END the game
   function endGame() {
     isGameRunning = false;
     clearAllTimeouts();
-
-    // If override music is playing, stop it
     if (overrideMusic) {
       overrideMusic.pause();
       overrideMusic = null;
     }
-
     showHomeScreen();
   }
 
-  // -- AUDIO: "DING DING" using the Web Audio API --
+  // -- DING DING
   function playDingDing() {
     if (!audioContext) return;
-
     const now = audioContext.currentTime;
     let beepStart = now;
 
@@ -374,15 +344,17 @@ preloadImages();
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
 
+      // Adjust volume if desired
+      gainNode.gain.setValueAtTime(0.3, now);
+
       oscillator.start(beepStart);
       oscillator.stop(beepStart + 0.2);
 
-      // Each beep begins 0.3s after the previous beep's start
       beepStart += 0.3;
     }
   }
 
-  // Show the home screen immediately on load
+  // On load, show home
   showHomeScreen();
 </script>
 
