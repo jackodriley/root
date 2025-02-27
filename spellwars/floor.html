@@ -124,8 +124,8 @@
       color: '#3333FF',
       backgroundImage: 'batmode.png',
       overrideMusicUrl: 'batmode.mp3',
-      minDuration: 20000,
-      maxDuration: 21000,
+      minDuration: 25000,
+      maxDuration: 31000,
       weight: 6
     },
     {
@@ -212,6 +212,28 @@
     return candidateModes[candidateModes.length - 1];
   }
 
+  function playGetReadyBeep() {
+    if (!audioContext) return;
+
+    const now = audioContext.currentTime;
+
+    // Create an oscillator and gain node for the beep
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.frequency.value = 440; // A4 note (adjust if needed)
+    oscillator.type = 'sine';
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    gainNode.gain.setValueAtTime(0.3, now); // Adjust volume if needed
+
+    // Start and stop after 0.3 seconds
+    oscillator.start(now);
+    oscillator.stop(now + 0.3);
+  }
+
   // -- Show home screen --
   function showHomeScreen() {
     backgroundMusic.pause();
@@ -231,6 +253,8 @@
 
   // -- GET READY screen for a few seconds
   function showGetReadyScreen(callback) {
+    playGetReadyBeep(); // Play a beep when "GET READY!" appears
+
     appContainer.style.backgroundColor = '#000';
     appContainer.style.backgroundImage = 'none';
     appContainer.innerHTML = `
