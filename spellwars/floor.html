@@ -94,8 +94,8 @@
 
   // -- HELPER: Random time between 5s and 15s (in milliseconds) --
   function getRandomDuration() {
-    const minMs = 5000;   // 5 seconds
-    const maxMs = 15000;  // 15 seconds
+    const minMs = 12000;   // 5 seconds
+    const maxMs = 20000;  // 15 seconds
     return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   }
 
@@ -103,7 +103,7 @@
   function showHomeScreen() {
     appContainer.style.backgroundColor = '#FF00AA'; // Some bright color
     appContainer.innerHTML = `
-      <div class="title">Don't Touch The Floor! - Ada's game </div>
+      <div class="title">Don't Touch The Floor! - V2</div>
       <button class="play-button" onclick="startGame()">Play</button>
     `;
   }
