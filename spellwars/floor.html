@@ -16,6 +16,21 @@
       text-align: center;
       background: #000;
     }
+    /* Add a thin black outline around all/* Add a thin black outline around all text */
+body, h1, h2, h3, h4, h5, h6, p, span, div {
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+} text */
+    body, h1, h2, h3, h4, h5, h6, p, span, div {
+      text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+    }
 
     #appContainer {
       position: relative;
@@ -211,7 +226,7 @@
     appContainer.style.backgroundColor = '#FF00AA'; // Some bright color
     appContainer.style.backgroundImage = 'none';    // Remove any leftover image
     appContainer.innerHTML = `
-      <div class="title">Don't Touch The Floor!</div>
+      <div class="title">Don't Touch The Floor! v0.99</div>
       <button class="play-button" onclick="startGame()">PLAY</button>
     `;
   }
