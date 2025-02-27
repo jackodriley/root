@@ -5,14 +5,14 @@
   <title>Don't Touch The Floor!</title>
   <!-- Google font link for Press Start 2P -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
   <style>
-    /* Use the "Press Start 2P" font for a blocky/retro style */
+    /* Use the "Press Start 2P" font for a blocky/retro style */ 
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      font-family: 'Press Start 2P', cursive, sans-serif;
+      font-family: 'Bungee', sans-serif;
       text-align: center;
       background: #000;
     }
@@ -113,8 +113,8 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
       color: '#FF3333',
       backgroundImage: 'handmode.png',
       overrideMusicUrl: '',
-      minDuration: 1000,
-      maxDuration: 2000,
+      minDuration: 15000,
+      maxDuration: 25000,
       weight: 5    // More likely
     },
     {
@@ -122,17 +122,17 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
       color: '#33CC33',
       backgroundImage: 'kickmode.png',
       overrideMusicUrl: '',
-      minDuration: 1000,
-      maxDuration: 2000,
-      weight: 3
+      minDuration: 15000,
+      maxDuration: 25000,
+      weight: 5
     },
     {
       name: 'BAT MODE',
       color: '#3333FF',
       backgroundImage: 'batmode.png',
       overrideMusicUrl: '',
-      minDuration: 1000,
-      maxDuration: 2000,
+      minDuration: 20000,
+      maxDuration: 21000,
       weight: 5    // More likely
     },
     {
@@ -151,7 +151,7 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
       overrideMusicUrl: 'bedmode.mp3',
       minDuration: 10000,
       maxDuration: 12000,
-      weight: 5    // More likely
+      weight: 4    // More likely
     },
     {
       name: 'ELBOW MODE',
@@ -160,7 +160,7 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
       overrideMusicUrl: '',
       minDuration: 1000,
       maxDuration: 2000,
-      weight: 2
+      weight: 1
     },
     {
       name: 'NOSE MODE',
@@ -169,7 +169,7 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
       overrideMusicUrl: 'nosemode.mp3',
       minDuration: 10000,
       maxDuration: 11000,
-      weight: 10    // Least likely
+      weight: 2    // Least likely
     }
   ];
 
@@ -240,7 +240,7 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
       <div class="get-ready-text">GET READY!</div>
     `;
     // After 1 second, call the callback
-    const t = setTimeout(callback, 1000);
+    const t = setTimeout(callback, 4000);
     activeTimeouts.push(t);
   }
 
