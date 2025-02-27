@@ -22,8 +22,8 @@
 
   // -- HELPER: Random time between 45s and 90s (in milliseconds) --
   function getRandomDuration() {
-    const minMs = 25000;  // 45 seconds
-    const maxMs = 45000;  // 90 seconds
+    const minMs = 5000;  // 45 seconds
+    const maxMs = 15000;  // 90 seconds
     return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   }
 
@@ -31,7 +31,7 @@
   function showHomeScreen() {
     appContainer.style.backgroundColor = '#FF00AA'; // Some bright color
     appContainer.innerHTML = `
-      <div class="title">Don't Touch The Floor!</div>
+      <div class="title">Don't Touch The Floor! - ada</div>
       <button class="play-button" onclick="startGame()">Play</button>
     `;
   }
