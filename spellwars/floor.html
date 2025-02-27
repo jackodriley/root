@@ -24,6 +24,9 @@
       justify-content: center;
       flex-direction: column;
       overflow: hidden;
+      background-size: cover;    /* Make background images fill the screen */
+      background-position: center;
+      background-repeat: no-repeat;
     }
 
     /* Opening title text style */
@@ -68,20 +71,83 @@
 </head>
 <body>
 
+<!-- Background music file (looped) -->
+<audio id="backgroundMusic" src="your-default-background-music.mp3" loop></audio>
+
 <div id="appContainer"></div>
 
 <script>
   // -- GLOBALS --
   let isGameRunning = false;
-  let activeTimeouts = [];         // We'll store timeout IDs here to clear them if needed
-  let audioContext = null;         // For playing "DING DING"
-  let lastModeIndex = -1;          // To keep track of the last mode index
+  let activeTimeouts = [];
+  let audioContext = null;           // For the "DING DING" beep
+  let lastModeIndex = -1;            // Track the last mode index shown
 
-  // Define the modes with their text and background color
+  // We'll handle background music and override music
+  const backgroundMusic = document.getElementById('backgroundMusic');
+  let overrideMusic = null; // We'll dynamically create a new Audio() if needed
+
+  // Define the modes with their text, color, optional image, optional override music, and custom durations
+  // If backgroundImage is null or "", the code uses the plain color instead
+  // If overrideMusicUrl is null or "", no special music is played for that mode
+  // minDuration and maxDuration are in milliseconds
   const modes = [
-    { name: 'HAND MODE', color: '#FF3333' },  // bright red
-    { name: 'KICK MODE', color: '#33CC33' },  // bright green
-    { name: 'BAT MODE',  color: '#3333FF' }   // bright blue
+    {
+      name: 'HAND MODE',
+      color: '#FF3333',
+      backgroundImage: 'handmode.png',  // e.g. "handmode.png"
+      overrideMusicUrl: '', // e.g. "https://example.com/hand-mode-music.mp3"
+      minDuration: 1000,
+      maxDuration: 2000
+    },
+    {
+      name: 'KICK MODE',
+      color: '#33CC33',
+      backgroundImage: 'kickmode.png',  // e.g. "https://example.com/kick-mode.jpg"
+      overrideMusicUrl: '',
+      minDuration: 1000,
+      maxDuration: 2000
+    },
+    {
+      name: 'BAT MODE',
+      color: '#3333FF',
+      backgroundImage: 'batmode.png',
+      overrideMusicUrl: '',
+      minDuration: 1000,
+      maxDuration: 2000
+    },
+    {
+      name: 'HEAD MODE',
+      color: '#FF9900',
+      backgroundImage: '',  // e.g. "https://example.com/head-mode.jpg"
+      overrideMusicUrl: '',
+      minDuration: 1000,
+      maxDuration: 2000
+    },
+    {
+      name: 'BED MODE',
+      color: '#663399',
+      backgroundImage: '',
+      overrideMusicUrl: '',
+      minDuration: 1000,
+      maxDuration: 2000
+    },
+    {
+      name: 'ELBOW MODE',
+      color: '#CC33CC',
+      backgroundImage: '',
+      overrideMusicUrl: '',
+      minDuration: 1000,
+      maxDuration: 2000
+    },
+    {
+      name: 'NOSE MODE',
+      color: '#FFA500',
+      backgroundImage: '',
+      overrideMusicUrl: '',
+      minDuration: 1000,
+      maxDuration: 2000
+    }
   ];
 
   const appContainer = document.getElementById('appContainer');
@@ -92,18 +158,27 @@
     activeTimeouts = [];
   }
 
-  // -- HELPER: Random time between 5s and 15s (in milliseconds) --
-  function getRandomDuration() {
-    const minMs = 12000;   // 5 seconds
-    const maxMs = 20000;  // 15 seconds
+  // -- HELPER: Get random duration for a particular mode
+  function getModeDuration(mode) {
+    const minMs = mode.minDuration;
+    const maxMs = mode.maxDuration;
     return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   }
 
   // -- HELPER: Show home screen (opening page) --
   function showHomeScreen() {
+    // Stop any music if it's playing
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    if (overrideMusic) {
+      overrideMusic.pause();
+      overrideMusic = null;
+    }
+
     appContainer.style.backgroundColor = '#FF00AA'; // Some bright color
+    appContainer.style.backgroundImage = 'none';    // Remove any leftover image
     appContainer.innerHTML = `
-      <div class="title">Don't Touch The Floor! - V2</div>
+      <div class="title">Don't Touch The Floor!</div>
       <button class="play-button" onclick="startGame()">Play</button>
     `;
   }
@@ -111,6 +186,7 @@
   // -- HELPER: Show "GET READY!" screen for 5s before a mode
   function showGetReadyScreen(callback) {
     appContainer.style.backgroundColor = '#000000';
+    appContainer.style.backgroundImage = 'none'; // No image for get-ready screen
     appContainer.innerHTML = `
       <button class="end-button" onclick="endGame()">End Game</button>
       <div class="get-ready-text">GET READY!</div>
@@ -124,29 +200,71 @@
   function showModeScreen() {
     if (!isGameRunning) return;
 
-    // Pick a mode different from the last one shown
+    // Pick a mode different from the last one
     let randomModeIndex;
     do {
       randomModeIndex = Math.floor(Math.random() * modes.length);
-    } while (randomModeIndex === lastModeIndex);
+    } while (randomModeIndex === lastModeIndex && modes.length > 1);
 
     lastModeIndex = randomModeIndex;
-    const randomMode = modes[randomModeIndex];
+    const mode = modes[randomModeIndex];
 
-    // Play "DING DING" right when mode appears
+    // 1) Set the background
+    if (mode.backgroundImage) {
+      appContainer.style.backgroundImage = `url('${mode.backgroundImage}')`;
+      appContainer.style.backgroundColor = 'transparent'; // let image show
+    } else {
+      appContainer.style.backgroundImage = 'none';
+      appContainer.style.backgroundColor = mode.color;
+    }
+
+    // 2) Play "DING DING" beep
     playDingDing();
 
-    // Render mode screen
-    appContainer.style.backgroundColor = randomMode.color;
+    // 3) If this mode has override music, pause main music, play override
+    //    Otherwise, keep main music playing.
+    if (mode.overrideMusicUrl) {
+      // Pause background music
+      backgroundMusic.pause();
+
+      // Create an override audio if not existing
+      overrideMusic = new Audio(mode.overrideMusicUrl);
+      overrideMusic.play().catch(err => {
+        console.warn("Could not play override music:", err);
+      });
+    } else {
+      // Ensure we are on background music (it might have been playing already)
+      // If you want it always playing, you can do .play() again or do nothing
+      // in case it was never paused in this game session
+      if (backgroundMusic.paused) {
+        backgroundMusic.play().catch(err => {
+          console.warn("Could not resume background music:", err);
+        });
+      }
+    }
+
+    // 4) Render mode text
     appContainer.innerHTML = `
       <button class="end-button" onclick="endGame()">End Game</button>
-      <div class="mode-text">${randomMode.name}</div>
+      <div class="mode-text">${mode.name}</div>
     `;
 
-    // Stay in this mode for a random time, then go to GET READY screen again
-    const duration = getRandomDuration(); 
+    // 5) Stay in this mode for a random time (unique to that mode)
+    const duration = getModeDuration(mode);
     const t = setTimeout(() => {
       if (isGameRunning) {
+        // If override music is playing, stop it
+        if (overrideMusic && !overrideMusic.paused) {
+          overrideMusic.pause();
+          overrideMusic = null;
+        }
+        // Resume the main music after override
+        if (backgroundMusic.paused) {
+          backgroundMusic.play().catch(err => {
+            console.warn("Could not resume background music:", err);
+          });
+        }
+        // Move to "GET READY!" then next mode
         showGetReadyScreen(showModeScreen);
       }
     }, duration);
@@ -160,12 +278,20 @@
 
   // -- START the game --
   function startGame() {
+    // Must be triggered by user action to comply with browser audio policies
     if (!audioContext) {
-      // Must be triggered by a user action to comply with browser audio policies
       audioContext = new AudioContext();
     }
     clearAllTimeouts();
     isGameRunning = true;
+
+    // Start background music
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.volume = 1.0;
+    backgroundMusic.play().catch(err => {
+      console.warn("Could not start background music:", err);
+    });
+
     cycleModes();
   }
 
@@ -173,6 +299,13 @@
   function endGame() {
     isGameRunning = false;
     clearAllTimeouts();
+
+    // If override music is playing, stop it
+    if (overrideMusic) {
+      overrideMusic.pause();
+      overrideMusic = null;
+    }
+
     showHomeScreen();
   }
 
