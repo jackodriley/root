@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Don't Touch The Floor!</title>
+  <!-- Using Bungee font from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+  <style>
+    /* Use the Bungee font */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Bungee', sans-serif;
+      text-align: center;
+      background: #000;
+    }
+
+    /* Add a thin black outline around all text */
+    body, h1, h2, h3, h4, h5, h6, p, span, div {
+      text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+    }
+
+    #appContainer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      overflow: hidden;
+      background-size: cover;    /* Fill background images */
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .title {
+      font-size: 5em; 
+      margin-bottom: 20px;
+      line-height: 1.3;
+    }
+
+    .mode-text {
+      font-size: 5em;
+      line-height: 1.2;
+      margin: 20px;
+    }
+
+    .play-button, .end-button {
+      background: rgba(0,0,0,0.7);
+      border: none;
+      padding: 1em 2em;
+      color: #fff;
+      font-size: 0.9em;
+      cursor: pointer;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .play-button:hover, .end-button:hover {
+      background: rgba(0,0,0,0.9);
+    }
+
+    .end-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 0.8em;
+      z-index: 999;
+    }
+
+    .get-ready-text {
+      font-size: 5em;
+      line-height: 1.4;
+    }
+
+    /* Position the score in the top-left corner, large and visible */
+    #scoreDisplay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 2em;
+      color: #fff;
+      z-index: 999;
+    }
+
+    /* Hide the video feed and canvas so we don't see them on screen */
+    #cameraFeed, #cameraCanvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Background music file (looped) -->
+<audio id="backgroundMusic" src="floorbackground.mp3" loop></audio>
+
+<!-- Hidden video to grab webcam frames -->
+<video id="cameraFeed" autoplay playsinline></video>
+<!-- Hidden canvas to process frames -->
+<canvas id="cameraCanvas" width="320" height="240"></canvas>
+
+<!-- The container where our game runs -->
+<div id="appContainer"></div>
+
+<!-- We'll display the score in the corner -->
+<div id="scoreDisplay">Score: 0</div>
+
+<script>
+  // -- GLOBALS --
+  let isGameRunning = false;
+  let activeTimeouts = [];
+  let audioContext = null;  // For "DING DING" beep
+  let lastModeIndex = -1;   // Track last mode index
+
+  // We'll handle background music and override music
+  const backgroundMusic = document.getElementById('backgroundMusic');
+  let overrideMusic = null; 
+
+  // For camera-based scoring
+  let mediaStream = null;      // The webcam stream
+  let cameraInterval = null;   // Interval to process frames
+  let prevFrame = null;        // For comparing consecutive frames
+  let score = 0;               // The player's score
+
+  // New: to enforce a 2-second cooldown on scoring
+  let lastScoreTime = 0;       // store a timestamp when we last scored
+
+  // Define your modes, each with weighting
+  const modes = [
+    {
+      name: 'HAND MODE',
+      color: '#FF3333',
+      backgroundImage: 'handmode.png',
+      overrideMusicUrl: '',
+      minDuration: 15000,
+      maxDuration: 25000,
+      weight: 5
+    },
+    {
+      name: 'KICK MODE',
+      color: '#33CC33',
+      backgroundImage: 'kickmode.png',
+      overrideMusicUrl: '',
+      minDuration: 15000,
+      maxDuration: 25000,
+      weight: 5
+    },
+    {
+      name: 'BAT MODE',
+      color: '#3333FF',
+      backgroundImage: 'batmode.png',
+      overrideMusicUrl: 'batmode.mp3',
+      minDuration: 25000,
+      maxDuration: 31000,
+      weight: 6
+    },
+    {
+      name: 'HEAD MODE',
+      color: '#FF9900',
+      backgroundImage: 'headmode.png',
+      overrideMusicUrl: '',
+      minDuration: 10000,
+      maxDuration: 10000,
+      weight: 2
+    },
+    {
+      name: 'BED MODE',
+      color: '#663399',
+      backgroundImage: 'bedmode.png',
+      overrideMusicUrl: 'bedmode.mp3',
+      minDuration: 10000,
+      maxDuration: 12000,
+      weight: 4
+    },
+    {
+      name: 'ELBOW MODE',
+      color: '#CC33CC',
+      backgroundImage: 'elbowmode.png',
+      overrideMusicUrl: '',
+      minDuration: 9000,
+      maxDuration: 13000,
+      weight: 1
+    },
+    {
+      name: 'NOSE MODE',
+      color: '#FFA500',
+      backgroundImage: 'nosemode.png',
+      overrideMusicUrl: 'nosemode.mp3',
+      minDuration: 10000,
+      maxDuration: 11000,
+      weight: 2
+    }
+  ];
+
+  // Preload images to avoid flicker
+  const preloadImages = () => {
+    modes.forEach(mode => {
+      if (mode.backgroundImage) {
+        const img = new Image();
+        img.src = mode.backgroundImage;
+      }
+    });
+  };
+  preloadImages();
+
+  const appContainer = document.getElementById('appContainer');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const cameraFeed = document.getElementById('cameraFeed');
+  const cameraCanvas = document.getElementById('cameraCanvas');
+  const ctx = cameraCanvas.getContext('2d');
+
+  // -- HELPER: Clear all active timeouts --
+  function clearAllTimeouts() {
+    activeTimeouts.forEach(id => clearTimeout(id));
+    activeTimeouts = [];
+  }
+
+  // -- HELPER: get random duration for a particular mode
+  function getModeDuration(mode) {
+    const minMs = mode.minDuration;
+    const maxMs = mode.maxDuration;
+    return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  }
+
+  // -- HELPER: Weighted random pick of a mode
+  function pickWeightedMode() {
+    let candidateModes = modes.map((m, idx) => ({ ...m, idx }));
+    if (lastModeIndex !== -1 && modes.length > 1) {
+      candidateModes = candidateModes.filter(({ idx }) => idx !== lastModeIndex);
+    }
+
+    const totalWeight = candidateModes.reduce((acc, m) => acc + (m.weight || 1), 0);
+    let rnd = Math.random() * totalWeight;
+
+    for (const m of candidateModes) {
+      const w = m.weight || 1;
+      if (rnd < w) {
+        return m;
+      }
+      rnd -= w;
+    }
+    return candidateModes[candidateModes.length - 1];
+  }
+
+  function playGetReadyBeep() {
+    if (!audioContext) return;
+
+    const now = audioContext.currentTime;
+
+    // Create an oscillator and gain node for the beep
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.frequency.value = 440; // A4 note (adjust if needed)
+    oscillator.type = 'sine';
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    gainNode.gain.setValueAtTime(0.3, now); // Adjust volume if needed
+
+    // Start and stop after 0.3 seconds
+    oscillator.start(now);
+    oscillator.stop(now + 0.3);
+  }
+
+  // -- Show home screen --
+  function showHomeScreen() {
+    // Stop any music if it's playing
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    if (overrideMusic) {
+      overrideMusic.pause();
+      overrideMusic = null;
+    }
+
+    // Stop webcam
+    stopCameraProcessing();
+
+    // Reset score
+    score = 0;
+    scoreDisplay.textContent = `Score: ${score}`;
+
+    appContainer.style.backgroundColor = '#FF00AA';
+    appContainer.style.backgroundImage = 'none';
+    appContainer.innerHTML = `
+      <div class="title">Don't Touch The Floor!</br>For Ada - v1</div>
+      <button class="play-button" onclick="startGame()">PLAY</button>
+    `;
+  }
+
+  // -- GET READY screen
+  function showGetReadyScreen(callback) {
+    playGetReadyBeep(); // beep for GET READY
+
+    appContainer.style.backgroundColor = '#000';
+    appContainer.style.backgroundImage = 'none';
+    appContainer.innerHTML = `
+      <button class="end-button" onclick="endGame()">END GAME</button>
+      <div class="get-ready-text">GET READY!</div>
+    `;
+    const t = setTimeout(callback, 4000);
+    activeTimeouts.push(t);
+  }
+
+  // -- Show a mode screen
+  function showModeScreen() {
+    if (!isGameRunning) return;
+
+    const chosenMode = pickWeightedMode();
+    lastModeIndex = chosenMode.idx;
+
+    // Set background
+    if (chosenMode.backgroundImage) {
+      appContainer.style.backgroundImage = `url('${chosenMode.backgroundImage}')`;
+      appContainer.style.backgroundColor = 'transparent';
+    } else {
+      appContainer.style.backgroundImage = 'none';
+      appContainer.style.backgroundColor = chosenMode.color;
+    }
+
+    // DING DING
+    playDingDing();
+
+    // If override music, play that instead
+    if (chosenMode.overrideMusicUrl) {
+      backgroundMusic.pause();
+      overrideMusic = new Audio(chosenMode.overrideMusicUrl);
+      overrideMusic.play().catch(err => console.warn("Override music error:", err));
+    } else {
+      // Resume background if paused
+      if (backgroundMusic.paused) {
+        backgroundMusic.play().catch(err => console.warn("Music resume error:", err));
+      }
+    }
+
+    // Mode text
+    appContainer.innerHTML = `
+      <button class="end-button" onclick="endGame()">END GAME</button>
+      <div class="mode-text">${chosenMode.name}</div>
+    `;
+
+    // Wait random time, then GET READY
+    const duration = getModeDuration(chosenMode);
+    const t = setTimeout(() => {
+      if (isGameRunning) {
+        // Stop override music if any
+        if (overrideMusic && !overrideMusic.paused) {
+          overrideMusic.pause();
+          overrideMusic = null;
+        }
+        // Resume main music
+        if (backgroundMusic.paused) {
+          backgroundMusic.play().catch(err => console.warn("Music resume error:", err));
+        }
+        showGetReadyScreen(showModeScreen);
+      }
+    }, duration);
+    activeTimeouts.push(t);
+  }
+
+  // -- MAIN cycle
+  function cycleModes() {
+    showGetReadyScreen(showModeScreen);
+  }
+
+  // -- START the game
+  function startGame() {
+    // Must be triggered by user action
+    if (!audioContext) {
+      audioContext = new AudioContext();
+    }
+    clearAllTimeouts();
+    isGameRunning = true;
+
+    // Start background music
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.volume = 1.0;
+    backgroundMusic.play().catch(err => console.warn("Background music error:", err));
+
+    // Ask for webcam permission + start scoring
+    startCameraProcessing();
+
+    cycleModes();
+  }
+
+  // -- END the game
+  function endGame() {
+    isGameRunning = false;
+    clearAllTimeouts();
+
+    if (overrideMusic) {
+      overrideMusic.pause();
+      overrideMusic = null;
+    }
+    showHomeScreen();
+  }
+
+  // -- DING DING
+  function playDingDing() {
+    if (!audioContext) return;
+    const now = audioContext.currentTime;
+    let beepStart = now;
+
+    for (let i = 0; i < 2; i++) {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.frequency.value = 880; // A5 note
+      oscillator.type = 'sine';
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Adjust volume if desired
+      gainNode.gain.setValueAtTime(0.3, now);
+
+      oscillator.start(beepStart);
+      oscillator.stop(beepStart + 0.2);
+
+      beepStart += 0.3;
+    }
+  }
+
+  // ============================================
+  // ==========   CAMERA-BASED SCORING =========
+  // ============================================
+
+  async function startCameraProcessing() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.warn("Camera not supported in this browser.");
+      return;
+    }
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      cameraFeed.srcObject = mediaStream;
+
+      // Wait briefly for video to start
+      await new Promise(r => setTimeout(r, 500));
+      
+      // Repeatedly check frames ~twice per second
+      cameraInterval = setInterval(() => {
+        detectMotionAndScore();
+      }, 500);
+    } catch (err) {
+      console.error("Error accessing webcam:", err);
+    }
+  }
+
+  function stopCameraProcessing() {
+    if (cameraInterval) {
+      clearInterval(cameraInterval);
+      cameraInterval = null;
+    }
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+      mediaStream = null;
+    }
+    prevFrame = null;
+  }
+
+  // Compare consecutive frames:
+  // 1) Draw current frame to canvas
+  // 2) Compare to prev frame
+  // 3) If there's significantly more movement in top half => we guess "balloon going up"
+  // 4) We only allow 1 score every 2 seconds (cooldown)
+  function detectMotionAndScore() {
+    const w = cameraCanvas.width;
+    const h = cameraCanvas.height;
+    ctx.drawImage(cameraFeed, 0, 0, w, h);
+    const currentFrame = ctx.getImageData(0, 0, w, h);
+
+    if (prevFrame) {
+      let topDiff = 0, bottomDiff = 0;
+      for (let i = 0; i < currentFrame.data.length; i += 4) {
+        const y = Math.floor((i / 4) / w);
+        const r1 = currentFrame.data[i],     g1 = currentFrame.data[i + 1],     b1 = currentFrame.data[i + 2];
+        const r2 = prevFrame.data[i],        g2 = prevFrame.data[i + 1],        b2 = prevFrame.data[i + 2];
+        const diff = Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2);
+
+        if (diff > 50) {
+          if (y < h / 2) {
+            topDiff++;
+          } else {
+            bottomDiff++;
+          }
+        }
+      }
+
+      // If there's more top motion => guess "balloon going up"
+      if (topDiff > bottomDiff * 1.5 && topDiff > 100) {
+        const now = performance.now(); // high-resolution time in ms
+        // COOLDOWN CHECK: 2 seconds
+        if (now - lastScoreTime >= 2000) {
+          score++;
+          scoreDisplay.textContent = `Score: ${score}`;
+          lastScoreTime = now; // store this as the last time we scored
+        }
+      }
+    }
+    prevFrame = currentFrame;
+  }
+
+showHomeScreen();
+</script>
+
+</body>
+</html>
