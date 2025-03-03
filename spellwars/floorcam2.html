@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Don't Touch The Floor!</title>
+    
+    <!-- Using Bungee font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+
+    <style>
+        /* General Styles */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Bungee', sans-serif;
+            text-align: center;
+            background: #000;
+        }
+
+        /* Text Shadow */
+        body, h1, h2, h3, h4, h5, h6, p, span, div {
+            text-shadow: 
+                -1px -1px 0 #000,  
+                 1px -1px 0 #000,
+                -1px  1px 0 #000,
+                 1px  1px 0 #000;
+        }
+
+        /* Main Game Container */
+        #appContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Title Styling */
+        .title {
+            font-size: 5em; 
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+
+        /* Mode Text */
+        .mode-text {
+            font-size: 5em;
+            line-height: 1.2;
+            margin: 20px;
+        }
+
+        /* Buttons */
+        .play-button, .end-button {
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            padding: 1em 2em;
+            color: #fff;
+            font-size: 0.9em;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .play-button:hover, .end-button:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        .end-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.8em;
+            z-index: 999;
+        }
+
+        /* Get Ready Screen Text */
+        .get-ready-text {
+            font-size: 5em;
+            line-height: 1.4;
+        }
+
+        /* Score Display */
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 2em;
+            color: #fff;
+            z-index: 999;
+        }
+
+        /* Hide Video and Canvas */
+        #cameraFeed, #cameraCanvas {
+            display: none;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- Background Music -->
+    <audio id="backgroundMusic" src="floorbackground.mp3" loop></audio>
+
+    <!-- Hidden Video for Webcam Processing -->
+    <video id="cameraFeed" autoplay playsinline></video>
+    <canvas id="cameraCanvas" width="320" height="240"></canvas>
+
+    <!-- Main Game Container -->
+    <div id="appContainer"></div>
+
+    <!-- Score Display -->
+    <div id="scoreDisplay">Score: 0</div>
+
+    <script>
+        // -----------------------------
+        //        GLOBAL VARIABLES
+        // -----------------------------
+        let isGameRunning = false;
+        let activeTimeouts = [];
+        let audioContext = null;
+        let lastModeIndex = -1;
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        let overrideMusic = null;
+
+        // Camera Processing Variables
+        let mediaStream = null;
+        let cameraInterval = null;
+        let prevFrame = null;
+        let score = 0;
+        let lastScoreTime = 0;
+
+        // -----------------------------
+        //        GAME MODES
+        // -----------------------------
+        const modes = [
+            { name: 'HAND MODE', color: '#FF3333', backgroundImage: 'handmode.png', backgroundVideo: '', overrideMusicUrl: '', minDuration: 15000, maxDuration: 25000, weight: 5 },
+            { name: 'KICK MODE', color: '#33CC33', backgroundImage: 'kickmode.png', backgroundVideo: '', overrideMusicUrl: '', minDuration: 15000, maxDuration: 25000, weight: 5 },
+            { name: 'BAT MODE', color: '#3333FF', backgroundImage: '', backgroundVideo: 'batmode.mp4', overrideMusicUrl: 'batmode.mp3', minDuration: 25000, maxDuration: 31000, weight: 90 },
+            { name: 'HEAD MODE', color: '#FF9900', backgroundImage: 'headmode.png', backgroundVideo: '', overrideMusicUrl: '', minDuration: 10000, maxDuration: 10000, weight: 2 },
+            { name: 'BED MODE', color: '#663399', backgroundImage: 'bedmode.png', backgroundVideo: '', overrideMusicUrl: 'bedmode.mp3', minDuration: 10000, maxDuration: 12000, weight: 4 },
+            { name: 'ELBOW MODE', color: '#CC33CC', backgroundImage: 'elbowmode.png', backgroundVideo: '', overrideMusicUrl: '', minDuration: 9000, maxDuration: 13000, weight: 1 },
+            { name: 'NOSE MODE', color: '#FFA500', backgroundImage: 'nosemode.png', backgroundVideo: '', overrideMusicUrl: 'nosemode.mp3', minDuration: 10000, maxDuration: 11000, weight: 2 }
+        ];
+
+        // -----------------------------
+        //        SHOW GAME MODES
+        // -----------------------------
+        function showModeScreen() {
+            if (!isGameRunning) return;
+            const chosenMode = pickWeightedMode();
+            lastModeIndex = chosenMode.idx;
+
+            // Clear previous styling
+            appContainer.style.backgroundImage = 'none';
+            appContainer.style.backgroundColor = chosenMode.color;
+
+            // Play sound
+            playDingDing();
+
+            if (chosenMode.overrideMusicUrl) {
+                backgroundMusic.pause();
+                overrideMusic = new Audio(chosenMode.overrideMusicUrl);
+                overrideMusic.play().catch(err => console.warn("Override music error:", err));
+            } else if (backgroundMusic.paused) {
+                backgroundMusic.play().catch(err => console.warn("Music resume error:", err));
+            }
+
+            // Build screen with video if available
+            let backgroundElement = '';
+            if (chosenMode.backgroundVideo) {
+                backgroundElement = `
+                    <video autoplay loop muted playsinline 
+                           style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-1;">
+                        <source src="${chosenMode.backgroundVideo}" type="video/mp4" />
+                    </video>
+                `;
+            } else if (chosenMode.backgroundImage) {
+                appContainer.style.backgroundImage = `url('${chosenMode.backgroundImage}')`;
+            }
+
+            appContainer.innerHTML = `
+                ${backgroundElement}
+                <button class="end-button" onclick="endGame()">END GAME</button>
+                <div class="mode-text">${chosenMode.name}</div>
+            `;
+
+            // Set timeout to transition back
+            const duration = getModeDuration(chosenMode);
+            const t = setTimeout(() => {
+                if (isGameRunning) showGetReadyScreen(showModeScreen);
+            }, duration);
+            activeTimeouts.push(t);
+        }
+
+        // Show Home Screen on Load
+        function showHomeScreen() {
+            appContainer.innerHTML = `
+                <div class="title">Don't Touch The Floor!</br>For Ada - v2</div>
+                <button class="play-button" onclick="startGame()">PLAY</button>
+            `;
+        }
+
+        showHomeScreen();
+    </script>
+
+</body>
+</html>
