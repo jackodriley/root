@@ -69,7 +69,7 @@
       top: 20px;
       right: 20px;
       font-size: 0.8em;
-      z-index: 999;
+      z-index: 2;
     }
     /* Get Ready Screen Text */
     .get-ready-text {
@@ -83,7 +83,7 @@
       left: 20px;
       font-size: 2em;
       color: #fff;
-      z-index: 999;
+      z-index: 2;
     }
     /* Hide Video and Canvas */
     #cameraFeed, #cameraCanvas {
@@ -238,9 +238,10 @@
       const chosenMode = pickWeightedMode();
       lastModeIndex = chosenMode.idx;
       
-      // For video override: if backgroundVideo exists, set container background color to transparent.
+      // For video override: if backgroundVideo exists, set container background to transparent.
       if (chosenMode.backgroundVideo) {
         appContainer.style.backgroundColor = "transparent";
+        appContainer.style.backgroundImage = 'none';
       } else if (chosenMode.backgroundImage) {
         appContainer.style.backgroundColor = 'transparent';
         appContainer.style.backgroundImage = `url('${chosenMode.backgroundImage}')`;
@@ -264,25 +265,28 @@
         }
       }
 
-      // Build the background element. For video override, preload the video.
+      // Build the background element.
       let backgroundElement = '';
       if (chosenMode.backgroundVideo) {
         backgroundElement = `
-          <video autoplay loop muted playsinline preload="auto" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-1;">
+          <video autoplay loop muted playsinline preload="auto" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0;">
             <source src="${chosenMode.backgroundVideo}" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         `;
       }
       
-      // Build the mode screen
-      appContainer.innerHTML = `
-        ${backgroundElement}
-        <button class="end-button" onclick="endGame()">END GAME</button>
-        <div class="mode-text">${chosenMode.name}</div>
+      // Wrap overlay content in a container with higher z-index.
+      const overlayContent = `
+        <div style="position: relative; z-index: 1;">
+          <button class="end-button" onclick="endGame()">END GAME</button>
+          <div class="mode-text">${chosenMode.name}</div>
+        </div>
       `;
       
-      // After the duration, transition back to GET READY screen.
+      appContainer.innerHTML = backgroundElement + overlayContent;
+      
+      // After the mode duration, transition back.
       const duration = getModeDuration(chosenMode);
       const t = setTimeout(() => {
         if (isGameRunning) {
@@ -351,7 +355,6 @@
             else bottomDiff++;
           }
         }
-        // If there's significantly more movement in the top half, count it as a score event.
         if (topDiff > bottomDiff * 1.5 && topDiff > 100) {
           const now = performance.now();
           if (now - lastScoreTime >= 2000) {
