@@ -113,7 +113,12 @@
     //       GLOBAL VARIABLES
     // -----------------------------
     let isGameRunning = false;
+    let highScore = 0;
     let activeTimeouts = [];
+    let currentMode = null;
+    let timedInterval = null;
+    let timeLeft = 0;
+    let bedModePreventCount = 0;  // to limit Bed Mode frequency
     let audioContext = null;
     let lastModeIndex = -1;
     const backgroundMusic = document.getElementById('backgroundMusic');
@@ -133,9 +138,9 @@
     const modes = [
       { name: 'HAND MODE', color: '#FF3333', backgroundImage: 'handmode.png', backgroundVideo: '', overrideMusicUrl: '', minDuration: 15000, maxDuration: 25000, weight: 5 },
       { name: 'KICK MODE', color: '#33CC33', backgroundImage: 'kickmode.png', backgroundVideo: '', overrideMusicUrl: '', minDuration: 15000, maxDuration: 25000, weight: 5 },
-      { name: 'BAT MODE', color: '#3333FF', backgroundImage: '', backgroundVideo: 'batmode.mp4', overrideMusicUrl: 'batmode.mp3', minDuration: 25000, maxDuration: 31000, weight: 10 },
+      { name: 'BAT MODE', color: '#3333FF', backgroundImage: '', backgroundVideo: 'batmode.mp4', overrideMusicUrl: 'batmode.mp3', minDuration: 25000, maxDuration: 31000, weight: 5 },
       { name: 'HEAD MODE', color: '#FF9900', backgroundImage: 'headmode.png', backgroundVideo: '', overrideMusicUrl: '', minDuration: 10000, maxDuration: 10000, weight: 2 },
-      { name: 'BED MODE', color: '#663399', backgroundImage: 'bedmode.png', backgroundVideo: '', overrideMusicUrl: 'bedmode.mp3', minDuration: 10000, maxDuration: 12000, weight: 4 },
+      { name: 'BED MODE', color: '#663399', backgroundImage: 'bedmode.png', backgroundVideo: '', overrideMusicUrl: 'bedmode.mp3', minDuration: 13000, maxDuration: 18000, weight: 4 },
       { name: 'ELBOW MODE', color: '#CC33CC', backgroundImage: 'elbowmode.png', backgroundVideo: '', overrideMusicUrl: '', minDuration: 9000, maxDuration: 13000, weight: 1 },
       { name: 'NOSE MODE', color: '#FFA500', backgroundImage: 'nosemode.png', backgroundVideo: '', overrideMusicUrl: 'nosemode.mp3', minDuration: 10000, maxDuration: 11000, weight: 2 }
     ];
@@ -173,36 +178,46 @@
 
     function pickWeightedMode() {
       let candidateModes = modes.map((m, idx) => ({ ...m, idx }));
+
+      // Exclude the previously used mode if there's more than one
       if (lastModeIndex !== -1 && candidateModes.length > 1) {
         candidateModes = candidateModes.filter(m => m.idx !== lastModeIndex);
       }
+
+      // If bedModePreventCount is active, exclude BED MODE
+      if (bedModePreventCount > 0) {
+        candidateModes = candidateModes.filter(m => m.name !== 'BED MODE');
+      }
+
+      // Weighted random selection
       const totalWeight = candidateModes.reduce((sum, m) => sum + m.weight, 0);
       let rand = Math.random() * totalWeight;
+      let chosenMode = candidateModes[candidateModes.length - 1]; // fallback
+
       for (let mode of candidateModes) {
-        if (rand < mode.weight) return mode;
+        if (rand < mode.weight) {
+          chosenMode = mode;
+          break;
+        }
         rand -= mode.weight;
       }
-      return candidateModes[candidateModes.length - 1];
-    }
 
-    function playGetReadyBeep() {
-      if (!audioContext) return;
-      const now = audioContext.currentTime;
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.frequency.value = 440; // A4 note
-      oscillator.type = 'sine';
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      gainNode.gain.setValueAtTime(0.3, now);
-      oscillator.start(now);
-      oscillator.stop(now + 0.3);
+      // If chosen mode is BED MODE, set bedModePreventCount to 3
+      if (chosenMode.name === 'BED MODE') {
+        bedModePreventCount = 3;
+      } else if (bedModePreventCount > 0) {
+        // Otherwise, if we have a cooldown going, decrement it
+        bedModePreventCount--;
+      }
+
+      return chosenMode;
     }
 
     // -----------------------------
     //       SCREEN FUNCTIONS
     // -----------------------------
     function showHomeScreen() {
+      clearAllTimeouts();
       // Stop any playing music
       backgroundMusic.pause();
       backgroundMusic.currentTime = 0;
@@ -217,12 +232,16 @@
       appContainer.style.backgroundImage = 'none';
       appContainer.innerHTML = `
         <div class="title">Don't Touch The Floor!</br>For Ada - v2</div>
-        <button class="play-button" onclick="startGame()">PLAY</button>
+        <button class="play-button" onclick="startGame()">Play Endless Mode</button>
+        <button class="play-button" onclick="startTimedGame()">Play Timed Mode (5 min)</button>
       `;
     }
 
     function showGetReadyScreen(callback) {
-      playGetReadyBeep();
+  playGetReadyBeep();
+  // Pick a new mode before we show it
+  currentMode = pickWeightedMode();
+  lastModeIndex = currentMode.idx;
       appContainer.style.backgroundColor = '#000';
       appContainer.style.backgroundImage = 'none';
       appContainer.innerHTML = `
@@ -235,8 +254,8 @@
 
     function showModeScreen() {
       if (!isGameRunning) return;
-      const chosenMode = pickWeightedMode();
-      lastModeIndex = chosenMode.idx;
+      // lastModeIndex was set above, so just remove the extra line picking a new mode
+      const chosenMode = currentMode;
       
       // For video override: if backgroundVideo exists, set container background to transparent.
       if (chosenMode.backgroundVideo) {
@@ -278,10 +297,8 @@
       
       // Wrap overlay content in a container with higher z-index.
       const overlayContent = `
-        <div style="position: relative; z-index: 1;">
-          <button class="end-button" onclick="endGame()">END GAME</button>
-          <div class="mode-text">${chosenMode.name}</div>
-        </div>
+        <button class="end-button" onclick="endGame()">END GAME</button>
+        <div class="mode-text">${chosenMode.name}</div>
       `;
       
       appContainer.innerHTML = backgroundElement + overlayContent;
@@ -338,6 +355,30 @@
       prevFrame = null;
     }
 
+  function showFloatingText(text, color) {
+    const floatElem = document.createElement('div');
+    floatElem.style.position = 'absolute';
+    floatElem.style.top = '60%';
+    floatElem.style.left = '50%';
+    floatElem.style.transform = 'translateX(-50%)';
+    floatElem.style.fontSize = '4em';
+    floatElem.style.color = color;
+    floatElem.style.opacity = '1';
+    floatElem.innerHTML = text;
+    appContainer.appendChild(floatElem);
+
+    setTimeout(() => {
+      floatElem.style.transition = 'opacity 2s ease-out';
+      floatElem.style.opacity = '0';
+    }, 50);
+
+    setTimeout(() => {
+      if (floatElem.parentNode) {
+        floatElem.parentNode.removeChild(floatElem);
+      }
+    }, 2050);
+  }
+
     function detectMotionAndScore() {
       const w = cameraCanvas.width;
       const h = cameraCanvas.height;
@@ -358,7 +399,13 @@
         if (topDiff > bottomDiff * 1.5 && topDiff > 100) {
           const now = performance.now();
           if (now - lastScoreTime >= 2000) {
-            score++;
+            if (currentMode && currentMode.name === 'BED MODE') {
+              score--;
+              showFloatingText('-1', 'red');
+            } else {
+              score++;
+              showFloatingText('+1', 'green');
+            }
             scoreDisplay.textContent = `Score: ${score}`;
             lastScoreTime = now;
           }
@@ -370,6 +417,27 @@
     // -----------------------------
     //       AUDIO FUNCTIONS
     // -----------------------------
+    function playGetReadyBeep() {
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+
+      // Create an oscillator for a short beep
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.frequency.value = 440; // A4 note
+      oscillator.type = 'sine';
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Set volume
+      gainNode.gain.setValueAtTime(0.3, now);
+
+      oscillator.start(now);
+      oscillator.stop(now + 0.5); // beep lasts 0.5 seconds
+    }
+    
+    
     function playDingDing() {
       if (!audioContext) return;
       const now = audioContext.currentTime;
@@ -412,7 +480,79 @@
       overrideMusic.pause();
       overrideMusic.src = "";
       stopCameraProcessing();
-      showHomeScreen();
+
+      // Update high score if needed
+      if (score > highScore) {
+        highScore = score;
+      }
+
+      // Show high score screen for 6 seconds
+      showHighScoreScreen();
+    }
+
+    function showHighScoreScreen() {
+      appContainer.style.backgroundColor = '#000';
+      appContainer.style.backgroundImage = 'none';
+      appContainer.innerHTML = `
+        <div style="color: white; font-size: 3em; margin-top: 20vh;">You scored: ${score}<br>High Score: ${highScore}</div>
+      `;
+      const t = setTimeout(showHomeScreen, 6000);
+      activeTimeouts.push(t);
+    }
+
+    // Timed Game function (5 minutes)
+    function startTimedGame() {
+  if (!audioContext) {
+    audioContext = new AudioContext();
+  }
+  clearAllTimeouts();
+  isGameRunning = true;
+  backgroundMusic.currentTime = 0;
+  backgroundMusic.volume = 1.0;
+  backgroundMusic.play().catch(err => console.warn("Background music error:", err));
+  startCameraProcessing();
+  cycleModes();
+ 
+  // Create a timer display element
+  const timerEl = document.createElement('div');
+  timerEl.id = 'timerDisplay';
+  timerEl.style.position = 'absolute';
+  timerEl.style.top = '60px';
+  timerEl.style.left = '20px';
+  timerEl.style.fontSize = '2em';
+  timerEl.style.zIndex = '2';
+  timerEl.style.color = '#fff';
+  document.body.appendChild(timerEl);
+ 
+  // Initialize countdown to 300 seconds = 5 minutes
+  timeLeft = 300;
+ 
+  function updateTimer() {
+    if (!isGameRunning || timeLeft <= 0) {
+      clearInterval(timedInterval);
+      timedInterval = null;
+      return;
+    }
+    timeLeft--;
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    timerEl.textContent = `Time Left: ${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
+ 
+  timedInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+ 
+  // End game after 5 minutes (300000 ms)
+  const endTimer = setTimeout(() => {
+    if (isGameRunning) {
+      endGame();
+    }
+  }, 300000);
+  activeTimeouts.push(endTimer);
+    }
+
+    function endGameOLD() {
+
     }
 
     // -----------------------------

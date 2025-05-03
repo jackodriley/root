@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crocodile Snatch</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #ff6f61, #fddb3a, #3aeabb);
+      color: white;
+      text-align: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-size: cover;
+    }
+
+    #launch-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #ff6f61, #fddb3a, #3aeabb);
+      color: #fdfd96;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 5em;
+      z-index: 10;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 8px #00ffe7, 0 0 16px #ff69b4;
+      overflow: hidden;
+    }
+    #launch-screen video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+    #launch-screen h1,
+    #start-button {
+      z-index: 1;
+    }
+    #launch-screen h1 {
+      color: #fdfd96;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 3em;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 8px #00ffe7, 0 0 16px #ff69b4;
+      margin: 0;
+    }
+
+    #start-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 0.6em;
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 16px #00ffe7;
+      transition: background 0.2s;
+    }
+    #start-button:hover {
+      background-color: #fddb3a;
+      color: #2e003e;
+    }
+    #end-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 8px 16px;
+      font-size: 1em;
+      background-color: #00ffe7;
+      color: #2e003e;
+      border: none;
+      border-radius: 5px;
+      font-family: 'Courier New', Courier, monospace;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 4px #ff69b4;
+      cursor: pointer;
+      box-shadow: 0 4px 16px #ff69b4;
+      z-index: 2;
+    }
+    #end-button:hover {
+      background-color: #ff69b4;
+      color: #fdfd96;
+    }
+
+    #fullscreen-button,
+    #exit-fullscreen-button {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      padding: 8px 12px;
+      font-size: 1.2em;
+      background-color: #00ffe7;
+      color: #2e003e;
+      border: none;
+      border-radius: 5px;
+      font-family: 'Courier New', Courier, monospace;
+      cursor: pointer;
+      box-shadow: 0 4px 16px #ff69b4;
+      z-index: 2;
+    }
+    #fullscreen-button:hover,
+    #exit-fullscreen-button:hover {
+      background-color: #ff69b4;
+      color: #fdfd96;
+    }
+
+    #image-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      z-index: 1;
+    }
+    #image-container img,
+    #image-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      transition: opacity 1s ease;
+      opacity: 0;
+      top: 0;
+      left: 0;
+    }
+
+    #ticker {
+      position: fixed;
+      top: 50%;
+      left: 100%;
+      white-space: nowrap;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 5em;
+      color: #fdfd96;
+      text-shadow: 2px 2px 8px #00ffe7, 0 0 16px #ff69b4;
+      z-index: 3;
+      animation: scrollTicker 8s linear forwards, flashTicker 1s step-start infinite;
+      pointer-events: none;
+    }
+
+    @keyframes scrollTicker {
+      0% { left: 100%; }
+      100% { left: -100%; }
+    }
+
+    @keyframes flashTicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="launch-screen">
+  <video id="launch-video" autoplay loop muted playsinline></video>
+  <h1>Crocodile Snatch</h1>
+  <button id="start-button">Start</button>
+</div>
+
+<div id="image-container"></div>
+<button id="end-button">End Game</button>
+<button id="fullscreen-button">⛶</button>
+<button id="exit-fullscreen-button" style="display:none;">✖</button>
+
+<script>
+  const launchVideo = document.getElementById('launch-video');
+  launchVideo.src = 'crocodile-snatch.mp4';
+
+  let currentAudio = null;
+  let timerId = null;
+  let paused = false;
+  let currentSrc = null;
+  let lastIndex = -1;
+
+  const images = [
+    { src: 'crocodile-shipfire.mp4', sound: '', text: 'Ship on Fire!' }, // fire.mp3 crocodile-shipfire.webp
+    { src: 'crocodile-snatch.mp4', sound: 'seagulls.mp3', text: 'Crocodile Snatch!' }, // HOME SCREEN CrocodileSnatch.png
+    { src: 'monsters.mp4', sound: '', text: 'Monsters Approaching!' }, // lion.mp3 crocodile-monsters.webp
+    { src: 'sharks-monsters.mp4', sound: '', text: 'Sharks and Monsters!' }, // lion.mp3 crocodile-monsters.webp
+   // { src: 'sharks-and-monsters.webp', sound: '', text: 'Sharks and Monsters Image!' }, // sharkbite.mp3
+    { src: 'sharks.mp4', sound: '', text: 'Beware the Sharks!' } // sharkbite.mp3 sharks.webp
+  ];
+
+  const minInterval = 6000; // 2 seconds
+  const maxInterval = 12000; // 5 seconds
+
+  const container = document.getElementById('image-container');
+  const launchScreen = document.getElementById('launch-screen');
+  const startButton = document.getElementById('start-button');
+
+  startButton.addEventListener('click', () => {
+    launchScreen.style.display = 'none';
+    startImageCycle();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      paused = !paused;
+
+      clearTimeout(timerId);
+      if (currentAudio) {
+        if (paused) {
+          currentAudio.pause();
+        } else {
+          currentAudio.play();
+        }
+      }
+
+      const media = container.querySelector('video, img');
+      if (media && media.tagName === 'VIDEO') {
+        if (paused) {
+          media.pause();
+        } else {
+          media.play();
+        }
+      }
+
+      // Pause/resume the ticker animation as well
+      const ticker = document.getElementById('ticker');
+      if (paused) {
+        ticker.style.animationPlayState = 'paused';
+      } else {
+        ticker.style.animationPlayState = 'running';
+      }
+    }
+  });
+
+  const endButton = document.getElementById('end-button');
+  endButton.addEventListener('click', () => {
+    clearTimeout(timerId);
+    paused = false;
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+    container.innerHTML = '';
+    launchScreen.style.display = 'flex';
+  });
+
+  const fullscreenButton = document.getElementById('fullscreen-button');
+  const exitFullscreenButton = document.getElementById('exit-fullscreen-button');
+
+  fullscreenButton.addEventListener('click', () => {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    }
+    fullscreenButton.style.display = 'none';
+    exitFullscreenButton.style.display = 'inline';
+  });
+
+  exitFullscreenButton.addEventListener('click', () => {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+    fullscreenButton.style.display = 'inline';
+    exitFullscreenButton.style.display = 'none';
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+      fullscreenButton.style.display = 'inline';
+      exitFullscreenButton.style.display = 'none';
+    }
+  });
+
+  function startImageCycle() {
+    const initial = images.find(i => i.src === 'crocodile-snatch.mp4');
+    showMedia(initial);
+  }
+
+  function showRandomImage() {
+    let index;
+    do {
+      index = Math.floor(Math.random() * images.length);
+    } while (images[index].src === currentSrc || index === lastIndex);
+
+    lastIndex = index;
+    const randomItem = images[index];
+    showMedia(randomItem);
+  }
+
+  function showMedia(item) {
+    currentSrc = item.src;
+    const previous = container.firstChild;
+    if (previous) {
+      previous.style.opacity = 0;
+      setTimeout(() => {
+        if (previous.parentNode === container) {
+          container.removeChild(previous);
+        }
+      }, 1000);
+    }
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+
+    let mediaElement;
+    const isVideo = item.src.endsWith('.mp4');
+
+    if (isVideo) {
+      mediaElement = document.createElement('video');
+      mediaElement.src = item.src;
+      mediaElement.autoplay = true;
+      mediaElement.loop = true;
+      mediaElement.muted = true;
+      mediaElement.playsInline = true;
+    } else {
+      mediaElement = document.createElement('img');
+      mediaElement.src = item.src;
+    }
+
+    container.appendChild(mediaElement);
+
+    requestAnimationFrame(() => {
+      mediaElement.style.opacity = 1;
+    });
+
+    currentAudio = new Audio(item.sound);
+    currentAudio.play();
+
+    const ticker = document.getElementById('ticker');
+    ticker.textContent = item.text || '';
+    ticker.style.animation = 'none';
+    void ticker.offsetWidth; // trigger reflow
+    ticker.style.animation = 'scrollTicker 8s linear forwards, flashTicker 1s step-start infinite';
+
+    const nextInterval = Math.random() * (maxInterval - minInterval) + minInterval;
+    timerId = setTimeout(showRandomImage, nextInterval);
+  }
+</script>
+
+<div id="ticker"></div>
+</body>
+</html>

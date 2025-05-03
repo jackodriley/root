@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ada's Quiz</title>
+  <style>
+    body {
+      font-family: "Trebuchet MS", sans-serif;
+      font-size: 1.5em;
+      margin: 0; 
+      padding: 0; 
+      background: #fdf0d2;  /* Nicer color background */
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Scoreboard container (fixed at top, full width) */
+    #scoreboard {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 9999;
+      background-color: #eee;
+      border-bottom: 2px solid #ccc;
+      font-weight: bold;
+    }
+
+    /* Inner container (centered), controlling padding */
+    #scoreboardInner {
+      max-width: 900px;  /* or another desired max width */
+      margin: 0 auto;
+      padding: 10px;     /* some vertical padding */
+      display: flex;
+      flex-direction: column;
+      align-items: center;   /* horizontally center content */
+    }
+
+    /* First row: Round info */
+    #scoreboardRow1 {
+      display: flex;
+      justify-content: center; /* center round info */
+      margin-bottom: 5px;
+    }
+
+    /* Second row: Player scores */
+    #scoreboardRow2 {
+      display: flex;
+      justify-content: center; /* center both scores as a group */
+    }
+
+    /* Score text styling */
+    #scoreboardRow2 span {
+      margin: 0 20px;  /* space between the two score labels */
+    }
+
+    /* Main content area */
+    #mainView {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      margin-top: 80px; /* so it's not hidden under scoreboard */
+    }
+
+    /* Video screens for correct/incorrect */
+    .videoScreen {
+      position: fixed; /* so it fills entire screen behind scoreboard */
+      top: 0; 
+      left: 0;
+      width: 100%; 
+      height: 100%;
+      background-color: #000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: #fff;
+      z-index: 999;  /* scoreboard is 9999 */
+      text-align: center;
+      padding: 20px;
+    }
+
+    .videoScreen video {
+      max-width: 80%;
+      max-height: 50vh;
+    }
+
+    /* Final winning screen */
+    #winningScreen {
+      position: fixed;
+      top: 0; 
+      left: 0;
+      width: 100%; 
+      height: 100%;
+      background-color: #0008; /* dark overlay */
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: #fff;
+      z-index: 999;
+      text-align: center;
+      font-size: 1.2em; /* slightly smaller than the page base, adjust as desired */
+      padding: 20px;
+    }
+
+    /* Simple input styling */
+    input[type="text"] {
+      padding: 8px;
+      font-size: 1em;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top scoreboard -->
+  <div id="scoreboard">
+    <div id="scoreboardInner">
+      <div id="scoreboardRow1">
+        <span id="roundInfo">Round 1</span>
+      </div>
+      <div id="scoreboardRow2">
+        <span id="player1Score">Player 1: 0</span>
+        <span id="player2Score">Player 2: 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main view / dynamic content -->
+  <div id="mainView">
+    <!-- This will change depending on game state -->
+  </div>
+
+  <!-- Correct answer screen (looping video + once-off sound effect) -->
+  <div id="correctScreen" class="videoScreen">
+    <h1>Correct!</h1>
+    <video id="correctVideo" loop autoplay muted src="right.mp4"></video>
+    <!-- (Not requested to add 'Press space to proceed' here, 
+         but you could add it if you want.) -->
+  </div>
+
+  <!-- Wrong answer screen (looping video + once-off sound effect) -->
+  <div id="incorrectScreen" class="videoScreen">
+    <h1>Wrong!</h1>
+    <video id="incorrectVideo" loop autoplay muted src="wrong.mp4"></video>
+    <p>Press space to proceed</p>
+  </div>
+
+  <!-- Final winning screen -->
+  <div id="winningScreen">
+    <div id="winnerMessage">Congratulations, Player X!</div>
+    <p id="winnerPoints"></p>
+    <p>Press space to proceed</p>
+  </div>
+
+  <!-- Audio elements -->
+  <audio id="bgMusic" src="Dreamscape Reflections ext v1.mp3" loop></audio>
+  <audio id="correctSound" src="right.mp3"></audio>
+  <audio id="wrongSound" src="wrong.mp3"></audio>
+
+  <script>
+    /*************************************************************
+     * Global state variables
+     *************************************************************/
+    let gameState = "LAUNCH"; // LAUNCH, NAME_ENTRY, QUESTION, RESULT, END
+    let currentQuestionIndex = 0; // 0..9 for main game (10 questions), tie-break if needed
+    let isTieBreak = false;       // True if we’re in tie-break mode after main 10 questions
+    let player1Name = "Player 1";
+    let player2Name = "Player 2";
+    let score1 = 0;
+    let score2 = 0;
+
+    // Audio / video references
+    const bgMusic = document.getElementById("bgMusic");
+    const correctSound = document.getElementById("correctSound");
+    const wrongSound = document.getElementById("wrongSound");
+    const correctScreen = document.getElementById("correctScreen");
+    const incorrectScreen = document.getElementById("incorrectScreen");
+    const correctVideo = document.getElementById("correctVideo");
+    const incorrectVideo = document.getElementById("incorrectVideo");
+    const winningScreen = document.getElementById("winningScreen");
+
+    // Main content area
+    const mainView = document.getElementById("mainView");
+
+    // Scoreboard references
+    const roundInfo = document.getElementById("roundInfo");
+    const player1Score = document.getElementById("player1Score");
+    const player2Score = document.getElementById("player2Score");
+
+    /*************************************************************
+     * Functions to update UI
+     *************************************************************/
+    function updateScoreboard() {
+      // Determine the round number or tie-break label
+      let roundNumber = Math.floor(currentQuestionIndex / 2) + 1; 
+      let isMainGame = (currentQuestionIndex < 10);
+
+      if (isMainGame) {
+        roundInfo.textContent = `Round ${roundNumber}`;
+      } else {
+        // Tie-break rounds start after round 5 (10 questions)
+        // Each tie-break 'round' is 2 questions
+        let tieRoundNumber = Math.floor((currentQuestionIndex - 10) / 2) + 1;
+        roundInfo.textContent = `Tie-Break Round ${tieRoundNumber}`;
+      }
+
+      // Display player scores + names
+      player1Score.textContent = `${player1Name}: ${score1}`;
+      player2Score.textContent = `${player2Name}: ${score2}`;
+    }
+
+    function showLaunchScreen() {
+      mainView.innerHTML = `
+        <h1>Ada's quiz!</h1>
+        <p>Press space to begin</p>
+      `;
+    }
+
+    function showNameEntryScreen() {
+      mainView.innerHTML = `
+        <h2>Enter names for the two players</h2>
+        <p>
+          <input id="player1Input" type="text" placeholder="Player 1" value="${player1Name}"><br/>
+          <input id="player2Input" type="text" placeholder="Player 2" value="${player2Name}">
+        </p>
+        <p>(Press Space when done)</p>
+      `;
+    }
+
+    function showQuestionScreen() {
+      // Figure out which player’s turn it is:
+      // Even questionIndex → Player 1, Odd → Player 2
+      let currentPlayer = (currentQuestionIndex % 2 === 0) ? player1Name : player2Name;
+      let roundNumber = Math.floor(currentQuestionIndex / 2) + 1;
+      let roundLabel = (currentQuestionIndex < 10) 
+                       ? `Round ${roundNumber}`   
+                       : `Tie-Break Round ${Math.floor((currentQuestionIndex - 10) / 2) + 1}`;
+
+      mainView.innerHTML = `
+        <h2>${roundLabel} - Question for ${currentPlayer}</h2>
+        <p>Press G for correct ✅ / Press B for wrong ❌</p>
+      `;
+    }
+
+    function showResultScreen(isCorrect) {
+      // Show/hide the correct or incorrect screen
+      if (isCorrect) {
+        correctScreen.style.display = "flex";
+        correctVideo.currentTime = 0; // Restart video
+      } else {
+        incorrectScreen.style.display = "flex";
+        incorrectVideo.currentTime = 0; // Restart video
+      }
+      // We remain in this 'RESULT' state until quizmaster presses SPACE
+    }
+
+    function hideResultScreens() {
+      correctScreen.style.display = "none";
+      incorrectScreen.style.display = "none";
+    }
+
+    function showWinningScreen(winnerName, winnerPoints) {
+      // Clear out the main view
+      mainView.innerHTML = "";
+
+      // Play the 'correct' sound on final win
+      correctSound.currentTime = 0;
+      correctSound.play().catch(() => {});
+
+      const winnerMessage = document.getElementById("winnerMessage");
+      winnerMessage.textContent = `Congratulations, ${winnerName}!`;
+
+      const winnerPointsText = document.getElementById("winnerPoints");
+      winnerPointsText.textContent = `You scored ${winnerPoints} points!`;
+
+      winningScreen.style.display = "flex";
+    }
+
+    /*************************************************************
+     * Main flow logic
+     *************************************************************/
+    function startQuiz() {
+      // Reset indexes and scores
+      currentQuestionIndex = 0;
+      score1 = 0;
+      score2 = 0;
+      isTieBreak = false;
+
+      // Start background music
+      bgMusic.currentTime = 0;
+      bgMusic.play().catch(err => { /* user interaction might be required by the browser */ });
+
+      updateScoreboard();
+      showQuestionScreen();
+      gameState = "QUESTION";
+    }
+
+    function handleAnswer(isCorrect) {
+      // Assign point if correct
+      let currentPlayerIndex = (currentQuestionIndex % 2 === 0) ? 1 : 2;
+      if (isCorrect) {
+        if (currentPlayerIndex === 1) {
+          score1++;
+        } else {
+          score2++;
+        }
+        correctSound.currentTime = 0;
+        correctSound.play().catch(() => {});
+      } else {
+        wrongSound.currentTime = 0;
+        wrongSound.play().catch(() => {});
+      }
+      updateScoreboard();
+      // Show result screen (correct or wrong)
+      showResultScreen(isCorrect);
+      gameState = "RESULT";
+    }
+
+    function proceedToNextQuestion() {
+      // Hide correct/wrong screens
+      hideResultScreens();
+
+      // Move to next question
+      currentQuestionIndex++;
+
+      // Check if the main 10 questions are done, or if we’re in tie-break
+      if (currentQuestionIndex >= 10) {
+        // Check if we’re finishing the main game or in tie-break
+        if (!isTieBreak) {
+          // We just finished main game
+          if (score1 === score2) {
+            // Tied → go to tie-break
+            isTieBreak = true;
+          }
+        }
+
+        if (isTieBreak) {
+          // We’re in tie-break mode
+          // We keep going in pairs of questions until someone leads after a pair.
+          let questionsAnsweredInTieBreak = currentQuestionIndex - 10; 
+          // If we've done an even number of tie-break questions (meaning both players have answered),
+          // check if there’s a winner.
+          if (questionsAnsweredInTieBreak > 0 && questionsAnsweredInTieBreak % 2 === 0) {
+            if (score1 !== score2) {
+              // We have a winner
+              endQuiz();
+              return;
+            }
+          }
+        } else {
+          // Not a tie, so we must have a winner after the main game
+          if (score1 !== score2) {
+            endQuiz();
+            return;
+          }
+          // else keep going if it's still tied, but isTieBreak was set above
+        }
+      }
+
+      // If the game isn’t over, show the next question
+      updateScoreboard();
+      showQuestionScreen();
+      gameState = "QUESTION";
+    }
+
+    function endQuiz() {
+      gameState = "END";
+
+      let winnerName, winnerPoints;
+      if (score1 > score2) {
+        winnerName = player1Name;
+        winnerPoints = score1;
+      } else {
+        winnerName = player2Name;
+        winnerPoints = score2;
+      }
+      showWinningScreen(winnerName, winnerPoints);
+    }
+
+    function restartQuizSameNames() {
+      // Hide winning screen
+      winningScreen.style.display = "none";
+      startQuiz();
+    }
+
+    /*************************************************************
+     * Keyboard handler
+     *************************************************************/
+    document.addEventListener("keydown", function(e) {
+      const key = e.key.toLowerCase(); // handle uppercase by converting
+
+      switch (gameState) {
+        case "LAUNCH":
+          if (key === " ") { // space
+            // Go to name entry
+            gameState = "NAME_ENTRY";
+            showNameEntryScreen();
+          }
+          break;
+
+        case "NAME_ENTRY":
+          if (key === " ") {
+            // Grab player names from inputs
+            const p1Input = document.getElementById("player1Input");
+            const p2Input = document.getElementById("player2Input");
+            if (p1Input && p2Input) {
+              player1Name = p1Input.value.trim() || "Player 1";
+              player2Name = p2Input.value.trim() || "Player 2";
+            }
+            // Start quiz
+            startQuiz();
+          }
+          break;
+
+        case "QUESTION":
+          if (key === "g") {
+            handleAnswer(true);
+          } else if (key === "b") {
+            handleAnswer(false);
+          }
+          break;
+
+        case "RESULT":
+          if (key === " ") {
+            // Move to next question
+            proceedToNextQuestion();
+          }
+          break;
+
+        case "END":
+          if (key === " ") {
+            // The prompt says 'in subsequent games until refresh, the same names are used'
+            // So we simply restart with same names and scores reset
+            restartQuizSameNames();
+          }
+          break;
+      }
+    });
+
+    /*************************************************************
+     * Initial launch screen
+     *************************************************************/
+    showLaunchScreen();
+    updateScoreboard();
+  </script>
+</body>
+</html>
