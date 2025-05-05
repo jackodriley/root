@@ -172,12 +172,12 @@
   <video id="launch-video" autoplay loop muted playsinline></video>
   <h1>Dance island</h1>
   <button id="start-button">Start</button>
+  <button id="fullscreen-button">⛶</button>
+  <button id="exit-fullscreen-button" style="display:none;">✖</button>
 </div>
 
 <div id="image-container"></div>
 <button id="end-button">End Game</button>
-<button id="fullscreen-button">⛶</button>
-<button id="exit-fullscreen-button" style="display:none;">✖</button>
 
 <script>
   const launchVideo = document.getElementById('launch-video');
@@ -195,7 +195,9 @@
     { src: 'monsters.mp4', sound: '', text: 'Monsters on the island!' }, // lion.mp3 crocodile-monsters.webp
     { src: 'sharks-monsters.mp4', sound: '', text: 'Sharks and Monsters!' }, // lion.mp3 crocodile-monsters.webp
    // { src: 'sharks-and-monsters.webp', sound: '', text: 'Sharks and Monsters Image!' }, // sharkbite.mp3
-    { src: 'sharks.mp4', sound: '', text: 'Look out! Sharks!' } // sharkbite.mp3 sharks.webp
+    { src: 'sharks.mp4', sound: '', text: '🦈 Look out! Sharks! 🦈' }, // sharkbite.mp3 sharks.webp
+    { src: 'crocodiles.mp4', sound: '', text: '🐊 Oh no! Crocodiles! 🐊' }, // sharkbite.mp3 sharks.webp
+    { src: 'hamster.mp4', sound: '', text: '🐹 Giant hamsters! 🐹' } // sharkbite.mp3 sharks.webp
   ];
 
   const minInterval = 6000; // 2 seconds
