@@ -1,227 +1,147 @@
-// le-app.js — Poquettewhack French theme
-// -------------------------------------
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  setLogLevel,
-  orderBy,
-  getDoc,
-  doc
-} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-
-// Your Firebase configuration
-const firebaseConfig = {
-  // Your Firebase configuration details
-  apiKey: "YOUR_API_KEY",
-  authDomain: "pocketwang-a2d56.firebaseapp.com",
-  projectId: "pocketwang-a2d56",
-  storageBucket: "pocketwang-a2d56.appspot.com",
-  messagingSenderId: "321549602257",
-  appId: "YOUR_APP_ID",
-  measurementId: "G-R6J2X0JHJW"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Enable Firestore debug logging (for troubleshooting)
-setLogLevel('debug');
-
-document.getElementById('entryForm').addEventListener('submit', submitEntry);
-
-async function submitEntry(e) {
-  e.preventDefault();
-
-  const name = document.getElementById('name').value.trim();
-  let pockets = parseInt(document.getElementById('pockets').value);
-  const today = new Date();
-  const dateStr = today.toISOString().split('T')[0];
-
-  if (name && !isNaN(pockets)) {
-    const state = name.toLowerCase() === 'danny'
-      ? 'naughty'
-      : (name.toLowerCase() === 'dan' ? 'nice' : (Math.random() < 0.5 ? 'naughty' : 'nice'));
-
-    // Christmas bonus day
-    const specialDates = {
-      "2024-12-25": {
-        message: "It's Christmas Day and Santa and his good friends at POTATOCORP have gifted you a pocket! Your new pockets count is ",
-        modifier: 1
-      },
-      "2024-12-26": {
-        message: "It's Boxing Day! You found a SINGLE extra pocket in your POTATOCORP gift box! Your new pockets count is ",
-        modifier: 1
-      }
-    };
-
-    if (specialDates[dateStr]) {
-      pockets += specialDates[dateStr].modifier;
-      alert(specialDates[dateStr].message + pockets);
-      document.getElementById('message').innerText = specialDates[dateStr].message + pockets;
-    } else {
-      const message = `Ho Ho Ho ${state} elf, ${name}! Your festive pockets count is ${pockets}.`;
-      document.getElementById('message').innerText = message;
-      alert(message);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>POQUETTEWHÁCK</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'VT323',monospace;background:#fff;color:#002366;margin:20px}
+    /* TITLE */
+    h1.title{font-size:8vw;text-align:center;margin:0 0 20px;white-space:nowrap}
+    h1.title span{display:inline-block}
+    h1.title span:nth-child(odd){color:blue}
+    h1.title span:nth-child(even){color:red}
+    @keyframes wave{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+    h1.title span{animation:wave 1s ease-in-out}
+    /* stagger */
+    h1.title span:nth-child(1){animation-delay:0s}
+    h1.title span:nth-child(2){animation-delay:.1s}
+    h1.title span:nth-child(3){animation-delay:.2s}
+    h1.title span:nth-child(4){animation-delay:.3s}
+    h1.title span:nth-child(5){animation-delay:.4s}
+    h1.title span:nth-child(6){animation-delay:.5s}
+    h1.title span:nth-child(7){animation-delay:.6s}
+    h1.title span:nth-child(8){animation-delay:.7s}
+    h1.title span:nth-child(9){animation-delay:.8s}
+    h1.title span:nth-child(10){animation-delay:.9s}
+    h1.title span:nth-child(11){animation-delay:1s}
+    h1.title span:nth-child(12){animation-delay:1.1s}
+    h1.title span:nth-child(13){animation-delay:1.2s}
+    /* FORM & TABLES */
+    form{text-align:center;margin-bottom:30px}
+    input,button{font-family:'VT323',monospace;font-size:5vw;padding:5px;margin:5px;border:1px solid #002366;background:#fff;color:#002366;width:80%;max-width:300px}
+    input::placeholder{color:#002366}
+    table{width:100%;border-collapse:collapse;margin-bottom:30px}
+    th,td{border:1px solid #002366;padding:8px;text-align:left;font-size:4vw}
+    tr.highlight{background:#000080;color:#fff}
+    .winner::before{content:'🐸🐌🇫🇷🍟 '}
+    .subheading{text-align:center;font-size:3vw;margin-bottom:10px}
+    @media(min-width:600px){
+      input,button{font-size:20px;width:auto;max-width:none}
+      th,td{font-size:16px}.subheading{font-size:14px}
     }
+    /* ANIMATION LAYOUT */
+    h1.title.centered{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+    h1.title.move-up{transition:top 1s ease-in-out,transform 1s ease-in-out;top:0;transform:translate(-50%,0)}
+    #mainContent{opacity:0;visibility:hidden;transition:opacity 1s ease-in-out}
+    #mainContent.visible{opacity:1;visibility:visible}
+  </style>
+</head>
+<body>
+  <!-- Animated title -->
+  <h1 class="title centered">
+    <span>P</span><span>O</span><span>Q</span><span>U</span><span>E</span><span>T</span><span>T</span><span>E</span><span>W</span><span>H</span><span>Á</span><span>C</span><span>K</span>
+  </h1>
 
-    // Play the submit sound
-    document.getElementById('submit-sound').play();
+  <div id="mainContent">
+    <h2>🇫🇷 Entrez les poquettes d'aujourd'hui 🇫🇷</h2>
+    <form id="entryForm">
+      <input id="name" type="text" placeholder="Your Name" required>
+      <input id="pockets" type="number" placeholder="Nombre de Poquettes" required min="0">
+      <br><button type="submit">Submitte</button>
+    </form>
 
-    try {
-      await addDoc(collection(db, 'entries'), {
-        name,
-        pockets,
-        date: dateStr,
-        state
+    <div id="message"></div>
+
+    <h2>Le Today's Leaderboard</h2>
+    <p class="subheading">Lowest unique number of poquettes over 0 wins!</p>
+    <table id="todayLeaderboard">
+      <thead><tr><th>Ami</th><th>Poquette Count</th><th>État</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2 style="margin-bottom:10px">La Leaderboard Du Yesterday</h2>
+    <table id="yesterdayLeaderboard">
+      <thead><tr><th>Ami</th><th>Poquette Count</th><th>État</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2 style="margin-bottom:10px">Daily champignons</h2>
+    <table id="winnersTable">
+      <thead><tr><th>Date</th><th>Winner</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Firebase/game logic -->
+  <script type="module" src="le-app.js"></script>
+
+  <!-- Background audio -->
+  <audio id="background-audio" autoplay>
+    <source src="reve-flamboyant.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Mobile autoplay fallback -->
+  <script>
+    document.addEventListener('DOMContentLoaded',()=>{
+      const audio=document.getElementById('background-audio');
+      audio.play().catch(()=>{
+        const btn=document.createElement('button');
+        btn.id='play-audio-button';
+        btn.textContent='Play Audio';
+        btn.onclick=()=>{audio.play();btn.remove();};
+        document.getElementById('mainContent').insertBefore(btn,document.getElementById('mainContent').firstChild);
       });
-
-      const { winners } = await getWinnerForDate(dateStr);
-      const userIsWinner = winners.some(w => w.name === name && w.pockets === pockets);
-
-      if (userIsWinner) {
-        alert("Thaaaat's STOCKINGWHACK! Congratulations from your friends at POTATOCORP!");
-      }
-
-      await loadLeaderboardForDate('todayLeaderboard', new Date());
-
-    } catch (error) {
-      console.error('Error writing document: ', error);
-      document.getElementById('message').innerText = 'Error writing document: ' + error.message;
-    }
-  }
-}
-
-async function getWinnerForDate(dateStr) {
-  const q = query(collection(db, 'entries'), where('date', '==', dateStr));
-  const querySnapshot = await getDocs(q);
-  const entries = querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    data.pockets = Number(data.pockets);
-    return data;
-  });
-
-  const pocketCounts = entries.filter(e => e.pockets > 0).map(e => e.pockets);
-  const uniquePockets = pocketCounts.filter((p, _, arr) => arr.indexOf(p) === arr.lastIndexOf(p));
-  const minUniquePockets = uniquePockets.length > 0 ? Math.min(...uniquePockets) : null;
-
-  const winners = entries.filter(e => e.pockets === minUniquePockets && e.pockets > 0);
-  return { winners, minUniquePockets };
-}
-
-window.onload = loadLeaderboard;
-
-async function loadLeaderboard() {
-  await loadLeaderboardForDate('todayLeaderboard', new Date());
-  await loadLeaderboardForDate('yesterdayLeaderboard', new Date(Date.now() - 86400000));
-  await loadDailyWinners();
-}
-
-async function loadLeaderboardForDate(tableId, dateObj) {
-  const dateStr = dateObj.toISOString().split('T')[0];
-
-  const q = query(collection(db, 'entries'), where('date', '==', dateStr));
-
-  try {
-    const querySnapshot = await getDocs(q);
-    const entries = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      data.pockets = Number(data.pockets);
-      entries.push(data);
     });
-    displayLeaderboard(entries, tableId);
-  } catch (error) {
-    console.error('Error getting documents: ', error);
-  }
-}
+  </script>
 
-function displayLeaderboard(entries, tableId) {
-  const tableElement = document.getElementById(tableId);
-  const tbody = tableElement.getElementsByTagName('tbody')[0];
-  tbody.innerHTML = '';
-
-  if (entries.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3">No entries.</td></tr>';
-    return;
-  }
-
-  entries.sort((a, b) => a.pockets - b.pockets);
-
-  const pocketCounts = entries.filter(e => e.pockets > 0).map(e => e.pockets);
-  const uniquePockets = pocketCounts.filter((p, _, arr) => arr.indexOf(p) === arr.lastIndexOf(p));
-  const minUniquePockets = uniquePockets.length > 0 ? Math.min(...uniquePockets) : null;
-
-  entries.forEach((entry) => {
-    const row = tbody.insertRow();
-    const nameCell = row.insertCell(0);
-    const pocketsCell = row.insertCell(1);
-    const stateCell = row.insertCell(2);
-
-    nameCell.innerText = entry.name;
-    pocketsCell.innerText = (entry.pockets === 0) ? '0 (DNP)' : entry.pockets;
-    stateCell.innerText = entry.state || 'Unknown';
-
-    if (entry.pockets === minUniquePockets && entry.pockets > 0) {
-      row.classList.add('highlight');
-      nameCell.classList.add('winner');
-    }
-  });
-}
-
-async function loadDailyWinners() {
-  const winnersTable = document.getElementById('winnersTable').getElementsByTagName('tbody')[0];
-  winnersTable.innerHTML = '';
-
-  try {
-    const q = query(collection(db, 'entries'));
-    const querySnapshot = await getDocs(q);
-
-    const entriesByDate = {};
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      const date = data.date;
-      data.pockets = Number(data.pockets);
-      if (!entriesByDate[date]) {
-        entriesByDate[date] = [];
-      }
-      entriesByDate[date].push(data);
+  <!-- Title entrance & reveal -->
+  <script>
+    document.addEventListener('DOMContentLoaded',()=>{
+      const title=document.querySelector('h1.title');
+      const lastSpan=title.querySelector('span:last-child');
+      const content=document.getElementById('mainContent');
+      content.style.paddingTop=title.offsetHeight+'px';
+      lastSpan.addEventListener('animationend',()=>{
+        title.classList.add('move-up');
+        content.classList.add('visible');
+      },{once:true});
+      title.addEventListener('transitionend',e=>{
+        if(e.propertyName==='top'){
+          title.classList.remove('centered','move-up');
+          title.style.position='static';title.style.transform='none';title.style.top='auto';
+          content.style.paddingTop='0';
+        }
+      },{once:true});
     });
+  </script>
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const startDateStr = '2024-12-20';
+  <!-- Submit sound -->
+  <audio id="submit-sound">
+    <source src="https://jackodriley.github.io/pocketwang/sad%20dads%20club%20wake%20word.wav" type="audio/wav">
+  </audio>
 
-    const dates = Object.keys(entriesByDate)
-      .filter(date => date !== todayStr && date >= startDateStr)
-      .sort((a, b) => new Date(b) - new Date(a));
+  <footer style="text-align:center;margin-top:40px;font-size:4vw">v0.4 / © Poquettecorp 2025</footer>
 
-    dates.forEach((date) => {
-      const entries = entriesByDate[date];
-      const pocketCounts = entries.filter(e => e.pockets > 0).map(e => e.pockets);
-      const uniquePockets = pocketCounts.filter((p, _, arr) => arr.indexOf(p) === arr.lastIndexOf(p));
-      const minUniquePockets = uniquePockets.length > 0 ? Math.min(...uniquePockets) : null;
-      const winners = entries.filter(e => e.pockets === minUniquePockets && e.pockets > 0);
-
-      const row = winnersTable.insertRow();
-      const dateCell = row.insertCell(0);
-      const winnerCell = row.insertCell(1);
-
-      dateCell.innerText = date;
-
-      if (winners.length > 0) {
-        const winnerNames = winners.map(w => '⭐ ' + w.name).join(', ');
-        winnerCell.innerText = winnerNames;
-      } else {
-        winnerCell.innerText = 'No winner';
-      }
+  <!-- Translate naughty/nice → bien/pas mal -->
+  <script>
+    const map={'bon':'bien','mauvais':'pas mal','nice':'bien','naughty':'pas mal'};
+    function translate(tbl){tbl.querySelectorAll('td:nth-child(3)').forEach(td=>{const t=td.textContent.toLowerCase();if(map[t]) td.textContent=map[t];});}
+    ['todayLeaderboard','yesterdayLeaderboard'].forEach(id=>{
+      const tbl=document.getElementById(id);
+      new MutationObserver(()=>translate(tbl)).observe(tbl,{childList:true,subtree:true});
     });
-
-  } catch (error) {
-    console.error('Error loading daily winners: ', error);
-  }
-}
+  </script>
+</body>
+</html>
