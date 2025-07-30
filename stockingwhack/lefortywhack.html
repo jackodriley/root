@@ -36,7 +36,8 @@
     table{width:100%;border-collapse:collapse;margin-bottom:30px}
     th,td{border:1px solid #002366;padding:8px;text-align:left;font-size:4vw}
     tr.highlight{background:#000080;color:#fff}
-    .winner::before{content:'🐸🐌🇫🇷🍟 '}
+    /* base: no badge — tables will override or script will prepend */
+    .winner::before{content:'';}
     /* Override winner badges per table */
     #todayLeaderboard .winner::before      { content:'🐸 '; }
     #yesterdayLeaderboard .winner::before  { content:'🐌 '; }
