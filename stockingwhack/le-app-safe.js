@@ -12,7 +12,6 @@ import {
   getDocs,
   setLogLevel
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11?module';
 
 // *** FILL IN your own project keys before deploying ***
 const firebaseConfig = {
@@ -29,18 +28,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 setLogLevel('error'); // reduce console noise
-
-// -----------------------------------------------------
-// SweetAlert2 wrapper
-// -----------------------------------------------------
-const popup = (txt) =>
-  Swal.fire({
-    html: '🥖 ' + txt,
-    background: '#ffffff',
-    color: '#002366',
-    confirmButtonColor: '#d60000',   // French red
-    customClass: {popup: 'baguette-popup'}
-  });
 
 // -----------------------------------------------------
 // Helpers
@@ -193,10 +180,7 @@ async function loadDailyWinners() {
 }
 
 // -----------------------------------------------------
-function showMessage(txt){
-  document.getElementById('message').innerText = txt;
-  popup(txt);
-}
+function showMessage(txt){ document.getElementById('message').innerText = txt; }
 
 // Kick things off
 refreshTables().catch(console.error);
