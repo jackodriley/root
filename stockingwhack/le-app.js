@@ -125,7 +125,7 @@ async function submitEntry(e) {
     const youWin = winnersToday.some(w => w.name === name && w.pockets === pockets);
 
     if (youWin) {
-      const winTxt = "Thaaaat's BAGUETTEWHACK ! 🐸 Tu es en tête pour l'instant !";
+      const winTxt = "Zaaaat's POQUETTEWHACK ! 🐸 Tu es en tête 🏆 - pour l'instant !";
       showMessage(winTxt);            // updates div and shows SweetAlert
     } else {
       showMessage(baseMsg);
@@ -211,7 +211,7 @@ async function loadDailyWinners() {
 
   const today = todayISO();
   const dates = Object.keys(byDate)
-    .filter(d => d !== today && d >= '2024-12-20')
+    .filter(d => d !== today && d >= '2025-07-29')
     .sort((a,b)=> new Date(b) - new Date(a));
 
   dates.forEach(date=>{
@@ -232,8 +232,8 @@ async function loadDailyWinners() {
 }
 
 // -----------------------------------------------------
+// Show a SweetAlert2 pop‑up only; keep the page clean
 function showMessage(txt){
-  document.getElementById('message').innerText = txt;
   popup(txt);
 }
 

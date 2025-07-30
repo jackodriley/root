@@ -78,21 +78,21 @@
   <div id="mainContent">
     <h2>🇫🇷 Entrez les poquettes 🇫🇷</h2>
     <form id="entryForm">
-      <input id="name" type="text" placeholder="Your Name" required>
+      <input id="name" type="text" placeholder="Your Nom" required>
       <input id="pockets" type="number" placeholder="Nombre de Poquettes" required min="0">
       <br><button type="submit">Submitte</button>
     </form>
 
     <div id="message"></div>
 
-    <h2>Le Leaderboard Du Today</h2>
+    <h2>Le Leaderboard Du Todáy</h2>
     <p class="subheading">Lowest unique nombre de poquettes over zero wins!</p>
     <table id="todayLeaderboard">
       <thead><tr><th>Ami</th><th>Poquette Count</th><th>État</th></tr></thead>
       <tbody></tbody>
     </table>
 
-    <h2 style="margin-bottom:10px">La Leaderboard Du Yesterday</h2>
+    <h2 style="margin-bottom:10px">La Leaderboard Du Yusterdáy</h2>
     <table id="yesterdayLeaderboard">
       <thead><tr><th>Ami</th><th>Poquette Count</th><th>État</th></tr></thead>
       <tbody></tbody>
@@ -157,7 +157,7 @@
 
   <!-- Translate naughty/nice → bien/pas mal -->
   <script>
-    const map={'bon':'bien','mauvais':'pas mal','nice':'bien','naughty':'pas mal'};
+    const map={'bon':'bien','mauvais':'comme ci, comme ca','nice':'bien','naughty':' comme ci, comma ca'};
     function translate(tbl){tbl.querySelectorAll('td:nth-child(3)').forEach(td=>{const t=td.textContent.toLowerCase();if(map[t]) td.textContent=map[t];});}
     ['todayLeaderboard','yesterdayLeaderboard'].forEach(id=>{
       const tbl=document.getElementById(id);
