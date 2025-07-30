@@ -12,7 +12,7 @@ import {
   getDocs,
   setLogLevel
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11?module';
+import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.esm.min.js';
 
 // *** FILL IN your own project keys before deploying ***
 const firebaseConfig = {
