@@ -14,6 +14,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.esm.min.js';
 
+// Inject SweetAlert2 default CSS
+const swalCss = document.createElement('link');
+swalCss.rel  = 'stylesheet';
+swalCss.href = 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css';
+document.head.appendChild(swalCss);
+
 // *** FILL IN your own project keys before deploying ***
 const firebaseConfig = {
   apiKey:            'YOUR_API_KEY',
@@ -33,14 +39,17 @@ setLogLevel('error'); // reduce console noise
 // -----------------------------------------------------
 // SweetAlert2 wrapper
 // -----------------------------------------------------
-const popup = (txt) =>
-  Swal.fire({
+const popup = (txt) => {
+  // Prevent the Chrome aria‑hidden warning by removing focus first
+  if (document.activeElement) document.activeElement.blur();
+  return Swal.fire({
     html: '🥖 ' + txt,
     background: '#ffffff',
     color: '#002366',
-    confirmButtonColor: '#d60000',   // French red
-    customClass: {popup: 'baguette-popup'}
+    confirmButtonColor: '#d60000', // French red
+    customClass: { popup: 'baguette-popup' }
   });
+};
 
 // -----------------------------------------------------
 // Helpers
