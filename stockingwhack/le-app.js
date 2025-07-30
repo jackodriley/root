@@ -165,9 +165,13 @@ async function loadDailyWinners() {
 
   const snap = await getDocs(collection(db, 'entries'));
   const byDate = {};
-  snap.forEach(doc=>{
+  snap.forEach(doc => {
     const d = doc.data();
-    (byDate[d.date] ??= []).push({ ...d, pockets: Number(d.pockets) });
+    const dateKey = d.date;
+    if (!byDate[dateKey]) {
+      byDate[dateKey] = [];
+    }
+    byDate[dateKey].push({ ...d, pockets: Number(d.pockets) });
   });
 
   const today = todayISO();
