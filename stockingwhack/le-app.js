@@ -97,7 +97,7 @@ async function submitEntry(e) {
 // -----------------------------------------------------
 async function refreshTables() {
   await loadLeaderboard('todayLeaderboard', new Date());
-  await loadLeaderboard('yesterdayLeaderboard', new Date(Date.now() - 86_400_000));
+  await loadLeaderboard('yesterdayLeaderboard', new Date(Date.now() - 86400000));
   await loadDailyWinners();
 }
 
