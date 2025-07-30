@@ -94,7 +94,8 @@
     tr.highlight td {
       color: white;
     }
-    .winner::before { content: '⭐ '; }
+    /* French‑flavoured winner badge */
+    .winner::before { content: '🐸🐌🇫🇷🍟 '; }
 
     /* Responsive adjustments */
     @media (min-width: 600px) {
@@ -290,9 +291,9 @@
             audio.play();
             playButton.remove();
           };
-          // Insert the button after the title
-          const title = document.querySelector('h1.title');
-          title.parentNode.insertBefore(playButton, title.nextSibling);
+          // Insert at the very top of #mainContent so it remains hidden until fade‑in
+          const main = document.getElementById('mainContent');
+          main.insertBefore(playButton, main.firstChild);
         });
       };
       playAudio();
@@ -305,21 +306,27 @@
       const lastSpan = title.querySelector('span:last-child');
       const content  = document.getElementById('mainContent');
 
+      // Reserve space for the title before any animation starts, preventing layout jump
+      const initialTitleHeight = title.offsetHeight;
+      content.style.paddingTop = initialTitleHeight + 'px';
+
       // When the final letter finishes its wave animation…
       lastSpan.addEventListener('animationend', function () {
         title.classList.add('move-up');   // slide the whole title to the top
         content.classList.add('visible'); // fade‑in the rest of the page
       }, { once: true });
 
-      /* After the slide‑up transition ends, return the heading to normal document flow
-         so it stops sitting on top of other elements. */
       title.addEventListener('transitionend', function (e) {
         if (e.propertyName === 'top') {
+          // Put the heading back into normal flow so it no longer overlays content
           title.classList.remove('centered', 'move-up');
-          title.style.position   = 'static';
-          title.style.transform  = 'none';
-          title.style.top        = 'auto';
-          title.style.left       = 'auto';
+          title.style.position  = 'static';
+          title.style.transform = 'none';
+          title.style.top       = 'auto';
+          title.style.left      = 'auto';
+          // Remove any temporary spacing now that the heading takes its own space
+          content.style.paddingTop  = '0';
+          content.style.marginTop   = '0';
         }
       }, { once: true });
     });
@@ -336,5 +343,48 @@
    v0.4 / © Poquettecorp 2025
   </footer>
 
+  <script>
+    // Map old state strings → new French labels
+    const stateMap = {
+      'bon': 'bien',
+      'mauvais': 'pas mal',
+      'nice': 'bien',
+      'naughty': 'pas mal'
+    };
+
+    // Helper to translate state cells inside a table
+    function translateStateCells(table) {
+      table.querySelectorAll('td:nth-child(3)').forEach(td => {
+        const raw = td.innerText.trim().toLowerCase();
+        if (stateMap[raw] !== undefined) {
+          td.innerText = stateMap[raw];
+        }
+      });
+    }
+
+    // Observe both leaderboards for changes so we can translate after they render
+    ['todayLeaderboard', 'yesterdayLeaderboard'].forEach(id => {
+      const tbl = document.getElementById(id);
+      if (!tbl) return;
+
+      // Initial pass
+      translateStateCells(tbl);
+
+      // Watch for future updates
+      const obs = new MutationObserver(() => translateStateCells(tbl));
+      obs.observe(tbl, { childList: true, subtree: true });
+    });
+
+    // Also translate the in‑page message when it appears
+    const messageBox = document.getElementById('message');
+    new MutationObserver(() => {
+      const txt = messageBox.innerText.toLowerCase();
+      Object.keys(stateMap).forEach(key => {
+        if (txt.includes(key)) {
+          messageBox.innerText = messageBox.innerText.replace(new RegExp(key, 'i'), stateMap[key]);
+        }
+      });
+    }).observe(messageBox, { childList: true });
+  </script>
 </body>
 </html>

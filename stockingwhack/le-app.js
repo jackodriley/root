@@ -46,6 +46,15 @@
 
   <script>
     // existing audio-autoplay script
+
+    // Replace the insertion of the playButton to keep it hidden until fade-in
+    // Assuming the playButton is created somewhere in this script, find:
+    // title.parentNode.insertBefore(playButton, title.nextSibling);
+    // and replace with:
+    /*
+    const main = document.getElementById('mainContent');
+    main.insertBefore(playButton, main.firstChild);
+    */
   </script>
 
   <script>
@@ -59,6 +68,7 @@
         title.classList.add('move-up');   // slide the whole title to the top
         content.classList.add('visible'); // fade‑in the rest of the page
       }, { once: true });
+
     });
   </script>
 </body>
