@@ -1,0 +1,124 @@
+times:
+  url: "https://www.thetimes.com/subscribe/digital/"
+  price_selectors:
+    - ".price-block .price"
+    - "div.subscription-price"
+
+ft:
+  url: "https://www.ft.com/subscription"
+  price_selectors:
+    - ".o-teaser__heading"
+    - ".subscription__price .amount"
+
+guardian:
+  url: "https://www.theguardian.com/subscriber"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+spectator:
+  url: "https://www.theguardian.com/subscriber"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+telegraph:
+  url: "https://www.telegraph.co.uk/customer/subscribe/"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+economist:
+  url: "https://www.telegraph.co.uk/customer/subscribe/"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+new_statesman:
+  url: "https://www.telegraph.co.uk/customer/subscribe/"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+new_european:
+  url: "https://www.telegraph.co.uk/customer/subscribe/"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+prospect:
+  url: "https://www.telegraph.co.uk/customer/subscribe/"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+independent:
+  url: "https://www.telegraph.co.uk/customer/subscribe/"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+the_week:
+  url: "https://www.telegraph.co.uk/customer/subscribe/"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+
+
+    
+times:
+  url: "https://www.thetimes.co.uk/subscribe/digital/"
+  price_selectors:
+    - ".price-block .price"
+
+ft:
+  url: "https://www.ft.com/subscription"
+  price_selectors:
+    - ".o-teaser__heading"
+
+guardian:
+  url: "https://subscribe.theguardian.com/"
+  price_selectors:
+    - ".selling-price__amount"
+
+spectator:
+  url: "https://www.spectator.co.uk/subscribe"
+  price_selectors:
+    - ".subscription-offer__price"
+
+telegraph:
+  url: "https://www.telegraph.co.uk/subscriptions/digital/"
+  price_selectors:
+    - ".offer-price"
+    - ".price"
+
+economist:
+  url: "https://www.economist.com/subscribe"
+  price_selectors:
+    - ".pricing__price"
+
+new_statesman:
+  url: "https://www.newstatesman.com/subscribe"
+  price_selectors:
+    - ".subscription__price"
+
+new_european:
+  url: "https://www.theneweuropean.co.uk/subscribe"
+  price_selectors:
+    - ".subscription__price"
+
+prospect:
+  url: "https://www.prospectmagazine.co.uk/subscriptions"
+  price_selectors:
+    - ".subscription-price"
+
+independent:
+  url: "https://subscriptions.independent.co.uk/subscribe/digital"
+  price_selectors:
+    - ".subscription-tier__price"
+
+the_week:
+  url: "https://www.theweek.co.uk/subscriptions"
+  price_selectors:
+    - ".subscription__price"
