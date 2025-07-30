@@ -71,6 +71,20 @@ const specialDates = {
   }
 };
 
+// Returns an array of winning entries for a given date
+async function getWinnerForDate(dateStr){
+  const snap = await getDocs(
+    query(collection(db, 'entries'), where('date', '==', dateStr))
+  );
+  const entries = snap.docs.map(d => ({ ...d.data(), pockets: Number(d.data().pockets) }));
+  const uniques = entries
+    .filter(e => e.pockets > 0)
+    .map(e => e.pockets)
+    .filter((v, _, arr) => arr.indexOf(v) === arr.lastIndexOf(v));
+  const winScore = uniques.length ? Math.min(...uniques) : null;
+  return entries.filter(e => e.pockets === winScore && e.pockets > 0);
+}
+
 // -----------------------------------------------------
 // Submit‑entry handler
 // -----------------------------------------------------
@@ -90,11 +104,13 @@ async function submitEntry(e) {
 
   const state = assignState(name);
 
+  // Build (but don’t yet display) the base message
+  let baseMsg;
   if (specialDates[dateStr]) {
     pockets += specialDates[dateStr].modifier;
-    showMessage(specialDates[dateStr].message + pockets);
+    baseMsg = specialDates[dateStr].message + pockets;
   } else {
-    showMessage(`Bonjour ${state} ami, ${name} ! Votre nombre de poquettes est ${pockets}.`);
+    baseMsg = `Bonjour ${state} ami, ${name} ! Votre nombre de poquettes est ${pockets}.`;
   }
 
   // Play submit sound (non‑blocking)
@@ -104,6 +120,16 @@ async function submitEntry(e) {
   try {
     await addDoc(collection(db, 'entries'), { name, pockets, date: dateStr, state });
     await refreshTables();
+    // Check if the current entry is the lowest unique > 0 so far today
+    const winnersToday = await getWinnerForDate(dateStr);
+    const youWin = winnersToday.some(w => w.name === name && w.pockets === pockets);
+
+    if (youWin) {
+      const winTxt = "Thaaaat's BAGUETTEWHACK ! 🐸 Tu es en tête pour l'instant !";
+      showMessage(winTxt);            // updates div and shows SweetAlert
+    } else {
+      showMessage(baseMsg);
+    }
   } catch (err) {
     console.error(err);
     showMessage('Erreur Firestore : ' + err.message);
