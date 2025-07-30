@@ -16,10 +16,11 @@
       margin: 20px;
     }
     h1.title {
-      font-size: 10vw; /* Responsive font size */
+      font-size: 8vw; /* Responsive font size */
       text-align: center;
       margin-bottom: 20px;
       margin-top: 0; /* Remove any top margin */
+      white-space: nowrap;
     }
     h1.title span {
       display: inline-block; /* Needed for animation */
@@ -175,7 +176,7 @@
     }
     h1.title.move-up {
       transition: top 1s ease-in-out, transform 1s ease-in-out;
-      top: 10px;
+      top: 0;
       transform: translate(-50%, 0);
     }
     /* Hide the rest of the page until the title animation finishes */
@@ -309,6 +310,18 @@
         title.classList.add('move-up');   // slide the whole title to the top
         content.classList.add('visible'); // fade‑in the rest of the page
       }, { once: true });
+
+      /* After the slide‑up transition ends, return the heading to normal document flow
+         so it stops sitting on top of other elements. */
+      title.addEventListener('transitionend', function (e) {
+        if (e.propertyName === 'top') {
+          title.classList.remove('centered', 'move-up');
+          title.style.position   = 'static';
+          title.style.transform  = 'none';
+          title.style.top        = 'auto';
+          title.style.left       = 'auto';
+        }
+      }, { once: true });
     });
   </script>
 
@@ -320,7 +333,7 @@
 
   <!-- Footer -->
   <footer>
-   v0.3 / © Poquettecorp 2025
+   v0.4 / © Poquettecorp 2025
   </footer>
 
 </body>
