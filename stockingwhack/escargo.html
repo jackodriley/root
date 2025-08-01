@@ -26,6 +26,28 @@
     #lettuce { position: absolute; width: 100%; font-size: 6vw; }
     /* Tap button */
     #tapButton { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); padding: 10px 20px; font-size: 6vw; background: #fff; color: #002366; border: 2px solid #002366; border-radius: 8px; }
+
+    /* Timer reposition */
+    #timer {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 12vw;
+      color: #002366;
+    }
+    /* Buttons styling */
+    #tapButton, #restartButton {
+      font-family: 'VT323', monospace;
+      color: #000;
+    }
+    #restartButton {
+      font-size: 8vw;
+      padding: 15px 30px;
+      background: #ffd700;
+      border: 3px solid #002366;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
@@ -35,11 +57,11 @@
   </h1>
 
   <div id="gameContainer">
-    <div id="timer" style="position:absolute; top:2%; left:5%; font-size:6vw; color:#002366;">0.00s</div>
+    <div id="timer">0.00s</div>
     <div id="snail">🐌</div>
     <div id="meter"><div id="lettuce">🥬</div></div>
     <button id="tapButton">Start</button>
-    <button id="restartButton" hidden>Restart</button>
+    <button id="restartButton" hidden>Try Again</button>
   </div>
 
   <!-- Firebase + Game Logic -->

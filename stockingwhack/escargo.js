@@ -35,7 +35,7 @@ const timerEl = document.getElementById('timer');
 const restartBtn = document.getElementById('restartButton');
 let timerInterval;
 let gameStarted = false;
-const tapCooldown = 300; // milliseconds
+const tapCooldown = 700; // milliseconds
 
 // ask name
 await Swal.fire({
@@ -67,6 +67,11 @@ btn.addEventListener('click', async () => {
       timerEl.textContent = ((now - startTime) / 1000).toFixed(2) + 's';
     }, 100);
   }
+  if (lettucePos >= 0.5) {
+    btn.disabled = true;
+    setTimeout(() => { btn.disabled = false; }, tapCooldown);
+    return;
+  }
   // compute move: min 2 , max 8
   const move = 2 + (1 - lettucePos) * 6;
   distance += move;
@@ -85,7 +90,9 @@ btn.addEventListener('click', async () => {
     await Swal.fire({
       title: 'Terminé!',
       text: `Temps: ${elapsed}s`,
-      confirmButtonText: 'Envoyer Score'
+      confirmButtonText: 'Envoyer Score',
+      allowOutsideClick: false,
+      allowEscapeKey: false
     }).then(async () => {
       // submit to Firebase
       await addDoc(collection(db, 'scores'), { name: playerName, time: Number(elapsed) });
