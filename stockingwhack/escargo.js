@@ -52,6 +52,8 @@ await Swal.fire({
 function animateLettuce() {
   lettucePos += lettuceDir * lettuceSpeed;
   if (lettucePos >= 1 || lettucePos <= 0) {
+    // clamp
+    lettucePos = Math.min(Math.max(lettucePos, 0), 1);
     lettuceDir *= -1;
     // randomize speed between 0.005 and 0.02
     lettuceSpeed = 0.005 + Math.random() * 0.015;
@@ -86,7 +88,7 @@ btn.addEventListener('click', async () => {
   snailEl.style.left = `${pct}vw`;
 
   // scroll background proportional to distance
-  containerEl.style.backgroundPositionX = `${-distance * 2}px`;
+  containerEl.style.backgroundPositionX = `${-distance * 4}px`;
 
   btn.disabled = true;
   setTimeout(() => { btn.disabled = false; }, tapCooldown);

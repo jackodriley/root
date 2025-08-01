@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Escar-Go!</title>
   <!-- VT323 Title Font -->
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -11,10 +11,21 @@
   <style>
     body { margin: 0; padding: 0; overflow: hidden; font-family: 'VT323', monospace; background: #f0f0f0; color: #002366; }
     /* Title */
-    h1.title { font-size: 8vw; text-align: center; margin: 10px 0; white-space: nowrap; }
-    h1.title span { display: inline-block; animation: wave 1s ease-in-out infinite; }
-    h1.title span:nth-child(odd) { color: blue; }
-    h1.title span:nth-child(even) { color: red; }
+    h1.title {
+      position: absolute;
+      top: 2%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      color: #fff;
+      font-size: 8vw; text-align: center; margin: 10px 0; white-space: nowrap;
+    }
+    h1.title span {
+      color: #fff !important;
+      display: inline-block; animation: wave 1s ease-in-out infinite;
+    }
+    h1.title span:nth-child(odd) { color: #fff !important; }
+    h1.title span:nth-child(even) { color: #fff !important; }
     @keyframes wave { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-10px); } }
 
     /* Game container with scrolling background */
@@ -41,7 +52,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       font-size: 12vw;
-      color: #002366;
+      color: #fff;
     }
     /* Buttons styling */
     #tapButton, #restartButton {
