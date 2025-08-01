@@ -1,0 +1,47 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Escar-Go!</title>
+  <!-- VT323 Title Font -->
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <!-- SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; font-family: 'VT323', monospace; background: #f0f0f0; color: #002366; }
+    /* Title */
+    h1.title { font-size: 8vw; text-align: center; margin: 10px 0; white-space: nowrap; }
+    h1.title span { display: inline-block; animation: wave 1s ease-in-out infinite; }
+    h1.title span:nth-child(odd) { color: blue; }
+    h1.title span:nth-child(even) { color: red; }
+    @keyframes wave { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-10px); } }
+
+    /* Game container */
+    #gameContainer { position: relative; width: 100vw; height: calc(100vh - 12vw); overflow: hidden; background: linear-gradient(#a0d080, #70a050); }
+    /* Snail */
+    #snail { position: absolute; bottom: 10%; left: 0%; font-size: 8vw; transform: translateY(0) } 
+    /* Lettuce meter */
+    #meter { position: absolute; right: 5%; top: 10%; width: 6%; height: 80%; background: #fff; border: 2px solid #002366; }
+    #lettuce { position: absolute; width: 100%; font-size: 6vw; }
+    /* Tap button */
+    #tapButton { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); padding: 10px 20px; font-size: 6vw; background: #fff; color: #002366; border: 2px solid #002366; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1 class="title">
+    <!-- E S C A R - G O ! -->
+    <span>E</span><span>S</span><span>C</span><span>A</span><span>R</span><span>-</span><span>G</span><span>O</span><span>!</span>
+  </h1>
+
+  <div id="gameContainer">
+    <div id="snail">🐌</div>
+    <div id="meter"><div id="lettuce">🥬</div></div>
+    <button id="tapButton">TAP!</button>
+  </div>
+
+  <!-- Firebase + Game Logic -->
+  <script type="module" src="escargo.js"></script>
+</body>
+</html>
