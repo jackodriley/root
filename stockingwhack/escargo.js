@@ -26,6 +26,8 @@ let lettuceDir = 1;
 let lettucePos = 0; // 0 = bottom, 1 = top
 let animFrame;
 
+let lowerBound = 0, upperBound = 1;
+
 // Elements
 const snailEl = document.getElementById('snail');
 const meterEl = document.getElementById('meter');
@@ -51,11 +53,15 @@ await Swal.fire({
 // animate lettuce
 function animateLettuce() {
   lettucePos += lettuceDir * lettuceSpeed;
-  if (lettucePos >= 1 || lettucePos <= 0) {
-    // clamp
-    lettucePos = Math.min(Math.max(lettucePos, 0), 1);
-    lettuceDir *= -1;
-    // randomize speed between 0.005 and 0.02
+  if (lettucePos >= upperBound) {
+    lettucePos = upperBound;
+    lettuceDir = -1;
+    lowerBound = Math.random() * 0.6; // between 0 and 60%
+    lettuceSpeed = 0.005 + Math.random() * 0.015;
+  } else if (lettucePos <= lowerBound) {
+    lettucePos = lowerBound;
+    lettuceDir = 1;
+    upperBound = 0.4 + Math.pow(Math.random(), 0.5) * 0.6; // bias towards higher
     lettuceSpeed = 0.005 + Math.random() * 0.015;
   }
   lettuceEl.style.top = `${(1 - lettucePos) * 100}%`;

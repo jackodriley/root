@@ -18,7 +18,7 @@
       transform: translateX(-50%);
       z-index: 10;
       color: #fff;
-      font-size: 8vw; text-align: center; margin: 10px 0; white-space: nowrap;
+      font-size: 10vw; text-align: center; margin: 10px 0; white-space: nowrap;
     }
     h1.title span {
       color: #fff !important;
@@ -27,6 +27,18 @@
     h1.title span:nth-child(odd) { color: #fff !important; }
     h1.title span:nth-child(even) { color: #fff !important; }
     @keyframes wave { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-10px); } }
+
+    .subtitle {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'VT323', monospace;
+      font-size: 5vw;
+      color: #fff;
+      z-index: 10;
+      white-space: nowrap;
+    }
 
     /* Game container with scrolling background */
     #gameContainer {
@@ -40,10 +52,10 @@
     /* Snail */
     #snail { position: absolute; bottom: 10%; left: 0%; font-size: 8vw; transform: translateY(0) } 
     /* Lettuce meter */
-    #meter { position: absolute; right: 5%; top: 10%; width: 6%; height: 80%; background: #fff; border: 2px solid #002366; }
+    #meter { position: absolute; right: 5%; top: 10%; width: 6%; height: 80%; background: linear-gradient(to bottom, red, green); border: 2px solid #002366; }
     #lettuce { position: absolute; width: 100%; font-size: 6vw; }
     /* Tap button */
-    #tapButton { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); padding: 10px 20px; font-size: 6vw; background: #fff; color: #002366; border: 2px solid #002366; border-radius: 8px; }
+    #tapButton { position: absolute; bottom: 2%; left: 50%; width: 90vw; transform: translateX(-50%); padding: 10px 20px; font-size: 6vw; background: #fff; color: #002366; border: 2px solid #002366; border-radius: 8px; }
 
     /* Timer reposition */
     #timer {
@@ -77,6 +89,7 @@
     <!-- E S C A R - G O ! -->
     <span>E</span><span>S</span><span>C</span><span>A</span><span>R</span><span>-</span><span>G</span><span>O</span><span>!</span>
   </h1>
+  <div class="subtitle">get the snail to the finish line</div>
 
   <div id="gameContainer">
     <div id="timer">0.00s</div>
