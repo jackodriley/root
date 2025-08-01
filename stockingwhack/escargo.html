@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,9 +35,11 @@
   </h1>
 
   <div id="gameContainer">
+    <div id="timer" style="position:absolute; top:2%; left:5%; font-size:6vw; color:#002366;">0.00s</div>
     <div id="snail">🐌</div>
     <div id="meter"><div id="lettuce">🥬</div></div>
-    <button id="tapButton">TAP!</button>
+    <button id="tapButton">Start</button>
+    <button id="restartButton" hidden>Restart</button>
   </div>
 
   <!-- Firebase + Game Logic -->

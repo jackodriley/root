@@ -31,6 +31,11 @@ const snailEl = document.getElementById('snail');
 const meterEl = document.getElementById('meter');
 const lettuceEl = document.getElementById('lettuce');
 const btn = document.getElementById('tapButton');
+const timerEl = document.getElementById('timer');
+const restartBtn = document.getElementById('restartButton');
+let timerInterval;
+let gameStarted = false;
+const tapCooldown = 300; // milliseconds
 
 // ask name
 await Swal.fire({
@@ -52,7 +57,16 @@ animateLettuce();
 
 // tap handler
 btn.addEventListener('click', async () => {
-  if (!startTime) startTime = Date.now();
+  if (!gameStarted) {
+    gameStarted = true;
+    btn.textContent = 'TAP!';
+    startTime = Date.now();
+    // start visual timer
+    timerInterval = setInterval(() => {
+      const now = Date.now();
+      timerEl.textContent = ((now - startTime) / 1000).toFixed(2) + 's';
+    }, 100);
+  }
   // compute move: min 2 , max 8
   const move = 2 + (1 - lettucePos) * 6;
   distance += move;
@@ -60,10 +74,13 @@ btn.addEventListener('click', async () => {
   const pct = Math.min(distance / finishDist, 1) * 80; // move up to 80vw
   snailEl.style.left = `${pct}vw`;
 
+  btn.disabled = true;
+  setTimeout(() => { btn.disabled = false; }, tapCooldown);
+
   if (distance >= finishDist) {
     cancelAnimationFrame(animFrame);
+    clearInterval(timerInterval);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    btn.disabled = true;
     // finish alert
     await Swal.fire({
       title: 'Terminé!',
@@ -78,6 +95,24 @@ btn.addEventListener('click', async () => {
       const rows = snap.docs.map(d => d.data());
       const html = rows.map(r => `<p>${r.name}: ${r.time}s</p>`).join('');
       Swal.fire({ title: 'Leaderboard', html });
+      restartBtn.hidden = false;
+      btn.hidden = true;
     });
   }
+});
+
+restartBtn.addEventListener('click', () => {
+  // reset state
+  distance = 0;
+  startTime = 0;
+  gameStarted = false;
+  timerEl.textContent = '0.00s';
+  snailEl.style.left = '0%';
+  btn.textContent = 'Start';
+  btn.hidden = false;
+  restartBtn.hidden = true;
+  // re-enable button
+  btn.disabled = false;
+  // restart lettuce animation if needed
+  animateLettuce();
 });
