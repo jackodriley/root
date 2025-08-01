@@ -17,8 +17,15 @@
     h1.title span:nth-child(even) { color: red; }
     @keyframes wave { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-10px); } }
 
-    /* Game container */
-    #gameContainer { position: relative; width: 100vw; height: calc(100vh - 12vw); overflow: hidden; background: linear-gradient(#a0d080, #70a050); }
+    /* Game container with scrolling background */
+    #gameContainer {
+      position: relative;
+      width: 100vw;
+      height: calc(100vh - 12vw);
+      overflow: hidden;
+      background: url('track-bg.png') repeat-x bottom center;
+      background-size: auto 100%;
+    }
     /* Snail */
     #snail { position: absolute; bottom: 10%; left: 0%; font-size: 8vw; transform: translateY(0) } 
     /* Lettuce meter */
@@ -42,6 +49,10 @@
       color: #000;
     }
     #restartButton {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       font-size: 8vw;
       padding: 15px 30px;
       background: #ffd700;

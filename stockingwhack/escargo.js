@@ -33,6 +33,8 @@ const lettuceEl = document.getElementById('lettuce');
 const btn = document.getElementById('tapButton');
 const timerEl = document.getElementById('timer');
 const restartBtn = document.getElementById('restartButton');
+const containerEl = document.getElementById('gameContainer');
+let lettuceSpeed = 0.01;
 let timerInterval;
 let gameStarted = false;
 const tapCooldown = 700; // milliseconds
@@ -48,8 +50,12 @@ await Swal.fire({
 
 // animate lettuce
 function animateLettuce() {
-  lettucePos += lettuceDir * 0.01;
-  if (lettucePos >= 1 || lettucePos <= 0) lettuceDir *= -1;
+  lettucePos += lettuceDir * lettuceSpeed;
+  if (lettucePos >= 1 || lettucePos <= 0) {
+    lettuceDir *= -1;
+    // randomize speed between 0.005 and 0.02
+    lettuceSpeed = 0.005 + Math.random() * 0.015;
+  }
   lettuceEl.style.top = `${(1 - lettucePos) * 100}%`;
   animFrame = requestAnimationFrame(animateLettuce);
 }
@@ -79,6 +85,9 @@ btn.addEventListener('click', async () => {
   const pct = Math.min(distance / finishDist, 1) * 80; // move up to 80vw
   snailEl.style.left = `${pct}vw`;
 
+  // scroll background proportional to distance
+  containerEl.style.backgroundPositionX = `${-distance * 2}px`;
+
   btn.disabled = true;
   setTimeout(() => { btn.disabled = false; }, tapCooldown);
 
@@ -96,11 +105,17 @@ btn.addEventListener('click', async () => {
     }).then(async () => {
       // submit to Firebase
       await addDoc(collection(db, 'scores'), { name: playerName, time: Number(elapsed) });
-      // get top 5
-      const q = query(collection(db, 'scores'), orderBy('time', 'asc'), limit(5));
+      // get top 15
+      const q = query(collection(db, 'scores'), orderBy('time', 'asc'), limit(15));
       const snap = await getDocs(q);
       const rows = snap.docs.map(d => d.data());
-      const html = rows.map(r => `<p>${r.name}: ${r.time}s</p>`).join('');
+      const html = rows.map((r, i) => {
+        let medal = '';
+        if (i === 0) medal = ' 🥇';
+        else if (i === 1) medal = ' 🥈';
+        else if (i === 2) medal = ' 🥉';
+        return `<p>${i+1}. ${r.name}: ${r.time}s${medal}</p>`;
+      }).join('');
       Swal.fire({ title: 'Leaderboard', html });
       restartBtn.hidden = false;
       btn.hidden = true;
@@ -115,6 +130,7 @@ restartBtn.addEventListener('click', () => {
   gameStarted = false;
   timerEl.textContent = '0.00s';
   snailEl.style.left = '0%';
+  containerEl.style.backgroundPositionX = `0px`;
   btn.textContent = 'Start';
   btn.hidden = false;
   restartBtn.hidden = true;
