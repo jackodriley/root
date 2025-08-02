@@ -94,7 +94,7 @@ btn.addEventListener('click', async () => {
   snailEl.style.left = `${pct}vw`;
 
   // scroll background proportional to distance
-  containerEl.style.backgroundPositionX = `${-distance * 4}px`;
+  containerEl.style.backgroundPositionX = `${-distance * 8}px`;
 
   btn.disabled = true;
   setTimeout(() => { btn.disabled = false; }, tapCooldown);

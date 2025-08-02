@@ -46,11 +46,7 @@
       input,button{font-size:20px;width:auto;max-width:none}
       th,td{font-size:16px}.subheading{font-size:14px}
     }
-    /* ANIMATION LAYOUT */
-    h1.title.centered{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-    h1.title.move-up{transition:top 1s ease-in-out,transform 1s ease-in-out;top:0;transform:translate(-50%,0)}
-    #mainContent{opacity:0;visibility:hidden;transition:opacity 1s ease-in-out}
-    #mainContent.visible{opacity:1;visibility:visible}
+    
 
     #play-audio-button{
       display:block;
@@ -70,118 +66,15 @@
   </style>
 </head>
 <body>
-  <!-- Animated title -->
-  <h1 class="title centered">
+    <h1 class="title centered">
     <span>P</span><span>O</span><span>Q</span><span>U</span><span>E</span><span>T</span><span>T</span><span>E</span><span>W</span><span>H</span><span>Á</span><span>C</span><span>K</span>
   </h1>
+  <div class="placeholder">Bonjour! Due to a labour dispute over the quality of free croissants in the complementary staff canteen, PoquetteCorp workers in our French HQ will be on strike / their summer holidays for the remainder of 2025. In the meantime, please continue to count your own poquettes and compare your daily score with your amis et petit copines. Merci! </div>
 
-  <div id="mainContent">
-    <h2>🇫🇷 Entrez les poquettes 🇫🇷</h2>
-    <form id="entryForm">
-      <input id="name" type="text" placeholder="Your Nom" required>
-      <input id="pockets" type="number" placeholder="Nombre de Poquettes" required min="0">
-      <br><button type="submit">Submitte</button>
-    </form>
-
-    <div id="message"></div>
-
-    <h2>Le Leaderboard Du Todáy</h2>
-    <p class="subheading">Lowest unique nombre de poquettes over zero wins!</p>
-    <table id="todayLeaderboard">
-      <thead><tr><th>Ami</th><th>Poquette Count</th><th>État</th></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <h2 style="margin-bottom:10px">La Leaderboard Du Yusterdáy</h2>
-    <table id="yesterdayLeaderboard">
-      <thead><tr><th>Ami</th><th>Poquette Count</th><th>État</th></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <h2 style="margin-bottom:10px">Daily champignons</h2>
-    <table id="winnersTable">
-      <thead><tr><th>Date</th><th>Winner</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- Firebase/game logic -->
-  <script type="module" src="le-app.js"></script>
-
-  <!-- Background audio -->
   <audio id="background-audio" autoplay>
     <source src="reve-flamboyant.mp3" type="audio/mpeg">
   </audio>
 
-  <!-- Mobile autoplay fallback -->
-  <script>
-    document.addEventListener('DOMContentLoaded',()=>{
-      const audio=document.getElementById('background-audio');
-      audio.play().catch(()=>{
-        const btn=document.createElement('button');
-        btn.id='play-audio-button';
-        btn.textContent='Ecoutaz la bangin musique';
-        btn.onclick=()=>{audio.play();btn.remove();};
-        document.getElementById('mainContent').insertBefore(btn,document.getElementById('mainContent').firstChild);
-      });
-    });
-  </script>
-
-  <!-- Title entrance & reveal -->
-  <script>
-    document.addEventListener('DOMContentLoaded',()=>{
-      const title=document.querySelector('h1.title');
-      const lastSpan=title.querySelector('span:last-child');
-      const content=document.getElementById('mainContent');
-      content.style.paddingTop=title.offsetHeight+'px';
-      lastSpan.addEventListener('animationend',()=>{
-        title.classList.add('move-up');
-        content.classList.add('visible');
-      },{once:true});
-      title.addEventListener('transitionend',e=>{
-        if(e.propertyName==='top'){
-          title.classList.remove('centered','move-up');
-          title.style.position='static';title.style.transform='none';title.style.top='auto';
-          content.style.paddingTop='0';
-        }
-      },{once:true});
-    });
-  </script>
-
-  <!-- Submit sound -->
-  <audio id="submit-sound">
-    <source src="https://jackodriley.github.io/pocketwang/sad%20dads%20club%20wake%20word.wav" type="audio/wav">
-  </audio>
-
   <footer style="text-align:center;margin-top:40px;font-size:3vw">v0.4 / © Poquettecorp 2025</footer>
-
-  <!-- Translate naughty/nice → bien/pas mal -->
-  <script>
-    const map={'bon':'bien','mauvais':'comme ci, comme ca','nice':'bien','naughty':' comme ci, comma ca'};
-    function translate(tbl){tbl.querySelectorAll('td:nth-child(3)').forEach(td=>{const t=td.textContent.toLowerCase();if(map[t]) td.textContent=map[t];});}
-    ['todayLeaderboard','yesterdayLeaderboard'].forEach(id=>{
-      const tbl=document.getElementById(id);
-      new MutationObserver(()=>translate(tbl)).observe(tbl,{childList:true,subtree:true});
-    });
-  </script>
-
-  <script>
-    (function(){
-      const emojis=['🧀','🐌','🇫🇷'];
-      const tbody=document.querySelector('#winnersTable tbody');
-      const decorate=()=>{
-        tbody.querySelectorAll('tr').forEach(tr=>{
-          const cell=tr.cells[1];
-          if(cell && !cell.dataset.decorated && cell.innerText.trim()!=='No winner' && cell.innerText.trim()!=='Pas de gagnant'){
-            const emoji=emojis[Math.floor(Math.random()*emojis.length)];
-            cell.innerHTML=emoji+' '+cell.innerHTML;
-            cell.dataset.decorated='yes';
-          }
-        });
-      };
-      new MutationObserver(decorate).observe(tbody,{childList:true});
-      decorate();
-    })();
-  </script>
 </body>
 </html>
