@@ -43,11 +43,10 @@ const popup = (txt) => {
   // Prevent the Chrome aria‑hidden warning by removing focus first
   if (document.activeElement) document.activeElement.blur();
   return Swal.fire({
-    html: '🥖 ' + txt,
+    html: txt,
     background: '#ffffff',
-    color: '#002366',
-    confirmButtonColor: '#d60000', // French red
-    customClass: { popup: 'baguette-popup' }
+    color: '#000000',
+    confirmButtonColor: '#000000'
   });
 };
 
@@ -58,15 +57,15 @@ const todayISO = (d = new Date()) => d.toISOString().split('T')[0];
 
 const assignState = name => {
   const n = name.toLowerCase();
-  if (n === 'danny') return 'mauvais';
-  if (n === 'dan')   return 'bon';
-  return Math.random() < 0.5 ? 'mauvais' : 'bon';
+  if (n === 'danny') return 'bad';
+  if (n === 'dan')   return 'good';
+  return Math.random() < 0.5 ? 'bad' : 'good';
 };
 
 // Bonus day: 5 Aug 2025
 const specialDates = {
   '2025-08-05': {
-    message : "C'est la fête des quarante ! Vive la France ! Vous gagnez une poquette ! Nouveau total : ",
+    message : 'Bonus day! You gain a pocket! New total: ',
     modifier: 1
   }
 };
@@ -110,7 +109,7 @@ async function submitEntry(e) {
     pockets += specialDates[dateStr].modifier;
     baseMsg = specialDates[dateStr].message + pockets;
   } else {
-    baseMsg = `Bonjour ${state} ami, ${name} ! Votre nombre de poquettes est ${pockets}.`;
+    baseMsg = `Hello ${name}! Status: ${state}. Your pocket count is ${pockets}.`;
   }
 
   // Play submit sound (non‑blocking)
@@ -125,7 +124,7 @@ async function submitEntry(e) {
     const youWin = winnersToday.some(w => w.name === name && w.pockets === pockets);
 
     if (youWin) {
-      const winTxt = "Zaaaat's POQUETTEWHACK ! 🐸 Tu es en tête 🏆 - pour l'instant !";
+      const winTxt = "That's RADIOWHACK! 🏆 You're leading—for now!";
       showMessage(winTxt);            // updates div and shows SweetAlert
     } else {
       showMessage(baseMsg);
