@@ -9,11 +9,6 @@
     body{
       font-family:'VT323',monospace;
       background-color:#fff;
-      background-image:url('radiowhack-background.jpg');
-      background-repeat:no-repeat;
-      background-position:center top;
-      background-size:cover;
-      background-attachment:fixed;
       color:#000;
       margin:20px;
     }
@@ -24,7 +19,9 @@
     input::placeholder{color:#000}
     table{width:100%;border-collapse:collapse;margin-bottom:30px}
     th,td{border:1px solid #000;padding:8px;text-align:left;font-size:4vw}
-    table, th, td{background:transparent}
+    th{background:#ccc;}
+    td{background:rgba(255,255,255,0.7)}
+    table{background:transparent}
     tr.highlight{background:rgba(0,0,0,0.08);color:#000}
     /* base: no badge — tables will override or script will prepend */
     .winner::before{content:'';}
@@ -57,7 +54,7 @@
 </head>
 <body>
   <!-- Static logo -->
-  <div id="logoWrap" style="text-align:center">
+  <div id="logoWrap" style="text-align:center; background-image:url('radiowhack-background.jpg'); background-repeat:no-repeat; background-position:center top; background-size:cover;">
     <img id="app-logo" src="radiowhack.png" alt="radiowhack">
   </div>
 
@@ -122,7 +119,7 @@
 
   <script>
     (function(){
-      const emojis=['🎧','📻','🎵'];
+      const emojis=['🚫😮','📻😒','🔺🎵','🐺🚪','👶🅰️','💨👜','👀🤖'];
       const tbody=document.querySelector('#winnersTable tbody');
       const decorate=()=>{
         tbody.querySelectorAll('tr').forEach(tr=>{

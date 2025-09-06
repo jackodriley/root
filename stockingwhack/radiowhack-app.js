@@ -124,7 +124,7 @@ async function submitEntry(e) {
     const youWin = winnersToday.some(w => w.name === name && w.pockets === pockets);
 
     if (youWin) {
-      const winTxt = "That's RADIOWHACK! 🏆 You're leading—for now!";
+      const winTxt = "You JUST won!";
       showMessage(winTxt);            // updates div and shows SweetAlert
     } else {
       showMessage(baseMsg);
@@ -180,7 +180,7 @@ function populateTable(tableId, entries) {
     const stateCell   = tr.insertCell(2);
 
     nameCell.textContent    = entry.name;
-    pocketsCell.textContent = entry.pockets === 0 ? '0 (DNP)' : entry.pockets;
+    pocketsCell.textContent = entry.pockets === 0 ? '0 (Nude)' : entry.pockets;
     stateCell.textContent   = entry.state || '---';
 
     if (entry.pockets === winningScore && entry.pockets > 0) {
@@ -225,7 +225,7 @@ async function loadDailyWinners() {
     if (winners.length){
       tr.insertCell(1).innerHTML = winners.map(w=>`<span class="winner">${w.name}</span>`).join(', ');
     } else {
-      tr.insertCell(1).textContent = 'No winner';
+      tr.insertCell(1).textContent = 'Losers only';
     }
   });
 }
