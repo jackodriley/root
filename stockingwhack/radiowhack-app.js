@@ -56,10 +56,9 @@ const popup = (txt) => {
 const todayISO = (d = new Date()) => d.toISOString().split('T')[0];
 
 const assignState = name => {
-  const n = name.toLowerCase();
-  if (n === 'danny') return 'bad';
-  if (n === 'dan')   return 'good';
-  return Math.random() < 0.5 ? 'bad' : 'good';
+const options = ['🚫😮','📻😒','🔺🎵','🐺🚪','👶🅰️','💨👜','👀🤖'];
+return options[Math.floor(Math.random() * options.length)];
+  // '🚫😮','📻😒','🔺🎵','🐺🚪','👶🅰️','💨👜','👀🤖',
 };
 
 // Bonus day: 5 Aug 2025
@@ -105,12 +104,19 @@ async function submitEntry(e) {
 
   // Build (but don’t yet display) the base message
   let baseMsg;
-  if (specialDates[dateStr]) {
+if (specialDates[dateStr]) {
     pockets += specialDates[dateStr].modifier;
     baseMsg = specialDates[dateStr].message + pockets;
-  } else {
-    baseMsg = `Hello ${name}! Status: ${state}. Your pocket count is ${pockets}.`;
-  }
+} else {
+    const messages = [
+        `Some people might be IN RAINBOWS, but ${name} is in clothes - clothes with ${pockets} to be precise. ${state}`,
+        `Hey  ${name}, I hope you really do have ${pockets} pockets. Otherwise I'll have to call the KARMA POLICE! ${state}`,
+        `${name}, I know there are NO SURPRISES for you here, but you have ${pockets}. ${state}`,
+        `${name}, you CREEP. Enjoy your ${pockets}. ${state}`,
+        `ANYONE CAN PLAY GUITAR but not anyone can have ${pockets} pockets, ${name}! ${state}`
+    ];
+    baseMsg = messages[Math.floor(Math.random() * messages.length)];
+}
 
   // Play submit sound (non‑blocking)
   document.getElementById('submit-sound')?.play().catch(()=>{});
