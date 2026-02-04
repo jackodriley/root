@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tidy for Christmas</title>
+
+  <!-- Nunito Sans font -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Nunito Sans', sans-serif;
+      text-align: center;
+      background: #060608 radial-gradient(circle at 20% 20%, #2c1b52, transparent 35%),
+                  #060608 radial-gradient(circle at 80% 10%, #8b123b, transparent 35%),
+                  #060608 radial-gradient(circle at 70% 70%, #0e7f7f, transparent 40%),
+                  #060608;
+      color: #f6f7fb;
+    }
+
+    body, h1, h2, h3, h4, h5, h6, p, span, div {
+      text-shadow: -1px -1px 0 #000,
+                   1px -1px 0 #000,
+                   -1px 1px 0 #000,
+                   1px 1px 0 #000;
+    }
+
+    #appContainer {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    .panel {
+      background: rgba(0, 0, 0, 0.45);
+      border: none;
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .title {
+      font-size: clamp(2.5rem, 4vw, 4rem);
+      margin-bottom: 10px;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      margin-bottom: 18px;
+    }
+
+    .controls-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-bottom: 12px;
+    }
+
+    .control-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      text-align: left;
+      margin-bottom: 6px;
+      opacity: 0.9;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-family: 'Nunito Sans', sans-serif;
+      letter-spacing: 0.02em;
+      box-sizing: border-box;
+    }
+
+    .play-button {
+      background: linear-gradient(135deg, #ff6f61, #ffa726);
+      border: none;
+      padding: 1em 2em;
+      color: #fff;
+      font-size: 1.05em;
+      cursor: pointer;
+      border-radius: 10px;
+      margin-top: 14px;
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+      width: 100%;
+    }
+
+    .play-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+
+    .inline-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    #timerDisplay {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+    }
+
+    #gameArea {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      width: 100%;
+      flex: 1 1 auto;
+      height: auto;
+      box-sizing: border-box;
+    }
+
+    .player-card {
+      position: relative;
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 360px;
+      overflow: hidden;
+      background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      border: 2px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.45);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 3;
+      margin-bottom: 6px;
+    }
+
+    .player-name {
+      font-size: 1.6rem;
+      margin: 0;
+    }
+
+    .score {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3.8rem;
+      margin: 0;
+      text-align: center;
+      width: 100%;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .instruction {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .bar-container {
+      position: absolute;
+      top: 60px;
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      border: 1px dashed rgba(255,255,255,0.25);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.3);
+      z-index: 1;
+    }
+
+    .time-outer {
+      position: relative;
+      width: 100%;
+      height: 18px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .time-inner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      background: linear-gradient(90deg, #4caf50, #8bc34a);
+      transition: width 1s linear, background 0.4s ease;
+    }
+
+    .time-label {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      top: 0;
+      left: 0;
+      right: 0;
+      line-height: 18px;
+      font-size: 0.95rem;
+      z-index: 2;
+      text-shadow: 0 1px 2px #000;
+    }
+
+    .total-score {
+      font-size: 1.4rem;
+      margin: 4px 0 10px;
+      text-align: center;
+      letter-spacing: 0.04em;
+      position: relative;
+    }
+
+    .total-score.bump {
+      animation: bump 0.4s ease;
+    }
+
+    @keyframes bump {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.1); }
+      60% { transform: scale(0.98); }
+      100% { transform: scale(1); }
+    }
+
+    .leader-glow {
+      display: inline-block;
+      background: linear-gradient(90deg, #ff4d4d, #ffa94d, #ffee4d, #6aff4d, #4dd0ff, #b44dff, #ff4df7);
+      background-size: 300% 300%;
+      color: #fff;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: rainbow 3s linear infinite;
+      text-shadow: none;
+    }
+
+    @keyframes rainbow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .score-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      transition: height 0.25s ease-out;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    .key-chip {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.2);
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+    }
+
+    .emoji-rain {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 3;
+    }
+
+    .emoji {
+      position: absolute;
+      top: 35%;
+      animation: fall 2.8s linear forwards;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(120%); opacity: 0; }
+    }
+
+    .game-over-text {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+
+    .results-list {
+      text-align: left;
+      margin: 0 auto 10px;
+      max-width: 420px;
+      line-height: 1.5;
+      font-size: 1.05rem;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      margin-left: 6px;
+      font-size: 0.9rem;
+    }
+
+    .notice {
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="appContainer"></div>
+  <audio id="backgroundMusic" autoplay loop></audio>
+
+  <script>
+    const appContainer = document.getElementById('appContainer');
+
+    let isGameRunning = false;
+    let timeLeft = 0;
+    let timerInterval = null;
+    let audioContext = null;
+    let players = [];
+    let soundtrack = 'AdaKPoP.mp3';
+    const gameDuration = 300; // seconds
+
+    const SOUNDTRACKS = [
+      { label: 'K Pop Slop', file: 'AdaKPoP.mp3' },
+      { label: 'Rave Slop', file: 'floorbackground.mp3' }
+    ];
+
+    const EMOJI_BANK = [
+      ['🎄','✨','❄️','☃️','🎁','🧣','🧦'],
+      ['⭐','🌟','💫','🌠','🪄','✨'],
+      ['❤️','💖','💕','💗','💓','💘'],
+      ['🎈','🎉','🥳','🎊','🎀'],
+      ['🧹','🧺','🪣','🧽','🧴'],
+      ['🐧','🦊','🐻','🐰','🦄'],
+      ['🌈','☀️','🌊','🔥','🍀']
+    ];
+
+    const COLOR_BANK = [
+      ['#ff6f61','#7e1f1f'],
+      ['#42a5f5','#103a65'],
+      ['#ab47bc','#411650'],
+      ['#66bb6a','#1b4b2b'],
+      ['#ffa726','#6b3c05']
+    ];
+
+    // -----------------------------
+    // AUDIO (Bell chime)
+    // -----------------------------
+    function initAudio() {
+      if (!audioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          audioContext = new AudioCtx();
+        }
+      }
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+    }
+
+    function playChime() {
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+
+      const osc1 = audioContext.createOscillator();
+      const gain1 = audioContext.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.value = 880;
+      osc1.connect(gain1);
+      gain1.connect(audioContext.destination);
+      gain1.gain.setValueAtTime(0.4, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
+
+      const osc2 = audioContext.createOscillator();
+      const gain2 = audioContext.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.value = 660;
+      osc2.connect(gain2);
+      gain2.connect(audioContext.destination);
+      gain2.gain.setValueAtTime(0.25, now + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc2.start(now + 0.08);
+      osc2.stop(now + 0.5);
+    }
+
+    // -----------------------------
+    // UTILITIES
+    // -----------------------------
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function deriveKey(name, usedKeys) {
+      const cleaned = (name || '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+      for (const ch of cleaned) {
+        if (!usedKeys.has(ch)) {
+          usedKeys.add(ch);
+          return ch;
+        }
+      }
+      const fallback = 'asdfghjklqwertyuiopzxcvbnm12345';
+      for (const ch of fallback) {
+        if (!usedKeys.has(ch)) {
+          usedKeys.add(ch);
+          return ch;
+        }
+      }
+      return null;
+    }
+
+    function randomFrom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // -----------------------------
+    // EMOJI RAIN
+    // -----------------------------
+    function triggerEmojiRain(playerId, emojiChar) {
+      const card = document.getElementById(`player-${playerId}`);
+      if (!card) return;
+
+      const container = document.createElement('div');
+      container.className = 'emoji-rain';
+
+      const emojiCount = 24;
+      for (let i = 0; i < emojiCount; i++) {
+        const span = document.createElement('span');
+        span.className = 'emoji';
+        span.textContent = emojiChar;
+        span.style.left = Math.random() * 100 + '%';
+        span.style.fontSize = (Math.random() * 1.4 + 0.8) + 'rem';
+        span.style.animationDelay = (Math.random() * 0.5) + 's';
+        container.appendChild(span);
+      }
+
+      card.appendChild(container);
+      setTimeout(() => container.remove(), 3200);
+    }
+
+    // -----------------------------
+    // TIMER
+    // -----------------------------
+    function updateTimerDisplay() {
+      const timerEl = document.getElementById('timerDisplay');
+      if (timerEl) timerEl.textContent = `Time Left: ${formatTime(timeLeft)}`;
+      updateTimeBar();
+    }
+
+    function updateTimeBar() {
+      const fill = document.getElementById('timeFill');
+      const label = document.getElementById('timeLabel');
+      if (!fill || !label) return;
+      const ratio = Math.max(timeLeft, 0) / gameDuration;
+      fill.style.width = `${ratio * 100}%`;
+      const hue = Math.max(0, Math.min(120, ratio * 120)); // 120=green, 0=red
+      fill.style.background = `linear-gradient(90deg, hsl(${hue},80%,45%), hsl(${Math.max(hue-20,0)},80%,45%))`;
+      label.textContent = `Time Left: ${formatTime(timeLeft)}`;
+    }
+
+    function startTimer() {
+      timeLeft = gameDuration;
+      updateTimerDisplay();
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (!isGameRunning) return;
+        timeLeft--;
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          updateTimerDisplay();
+          clearInterval(timerInterval);
+          timerInterval = null;
+          endGame();
+        } else {
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    // -----------------------------
+    // KEY HANDLING
+    // -----------------------------
+    function handleKeyDown(e) {
+      if (!isGameRunning) return;
+      const key = e.key.toLowerCase();
+      const player = players.find(p => p.key === key);
+      if (!player) return;
+      player.score++;
+      updateScores();
+      playChime();
+      triggerEmojiRain(player.id, randomFrom(player.emojis));
+    }
+
+    function updateScores() {
+      const scores = players.map(p => p.score);
+      const maxScore = Math.max(...scores, 20);
+      const topScore = Math.max(...scores);
+      players.forEach(p => {
+        const scoreEl = document.getElementById(`score-${p.id}`);
+        const barEl = document.getElementById(`bar-${p.id}`);
+        const crownEl = document.getElementById(`crown-${p.id}`);
+        const nameEl = document.getElementById(`name-${p.id}`);
+        if (scoreEl) scoreEl.textContent = `${p.score} pts`;
+        if (barEl) barEl.style.height = `${(p.score / maxScore) * 100}%`;
+        const leading = p.score === topScore && topScore > 0;
+        if (crownEl) crownEl.style.opacity = leading ? 1 : 0.15;
+        if (nameEl) {
+          nameEl.classList.toggle('leader-glow', leading);
+        }
+      });
+      const totalScoreEl = document.getElementById('totalScore');
+      if (totalScoreEl) {
+        const total = scores.reduce((a, b) => a + b, 0);
+        totalScoreEl.textContent = `Tidy Score: ${total}`;
+        totalScoreEl.classList.remove('bump');
+        void totalScoreEl.offsetWidth; // force reflow
+        totalScoreEl.classList.add('bump');
+        totalScoreEl.classList.toggle('leader-glow', total > 50);
+      }
+    }
+
+    // -----------------------------
+    // SCREENS
+    // -----------------------------
+    function showStartScreen() {
+      isGameRunning = false;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      window.removeEventListener('keydown', handleKeyDown);
+
+      const defaultNames = ['Ada','Daddy','Buddy','Sunny','Nova'];
+      const playerCount = 2;
+      renderStartForm(playerCount, defaultNames.slice(0, playerCount));
+    }
+
+    function renderStartForm(count, names) {
+      const namesInputs = [];
+      for (let i = 0; i < count; i++) {
+        const nameVal = names[i] || `Player ${i+1}`;
+        namesInputs.push(`
+          <div class="control-card">
+            <label>Player ${i+1} name</label>
+            <input id="name-${i}" value="${nameVal}" maxlength="12" />
+          </div>
+        `);
+      }
+
+      const soundtrackOptions = SOUNDTRACKS.map(opt =>
+        `<option value="${opt.file}" ${opt.file === soundtrack ? 'selected' : ''}>${opt.label}</option>`
+      ).join('');
+
+      appContainer.innerHTML = `
+        <div class="panel">
+          <div class="title">Tidy Up Game</div>
+          <div class="subtitle">Choose players, assign names, pick a soundtrack, then mash your keys to tidy!</div>
+          <div class="controls-grid">
+            <div class="control-card">
+              <label>Number of players (1-5)</label>
+              <select id="playerCount">
+                ${[1,2,3,4,5].map(n => `<option value="${n}" ${n===count?'selected':''}>${n}</option>`).join('')}
+              </select>
+              <p class="notice">Keys will auto-assign from each name's first unique letter.</p>
+            </div>
+            <div class="control-card">
+              <label>Soundtrack</label>
+              <select id="soundtrackSelect">${soundtrackOptions}</select>
+              <p class="notice">Music loops; change it anytime on restart.</p>
+            </div>
+            ${namesInputs.join('')}
+          </div>
+          <button class="play-button" id="startBtn">Start the tidy!</button>
+        </div>
+      `;
+
+      document.getElementById('playerCount').addEventListener('change', (e) => {
+        const newCount = parseInt(e.target.value, 10);
+        const currentNames = [];
+        for (let i = 0; i < namesInputs.length; i++) {
+          const input = document.getElementById(`name-${i}`);
+          if (input) currentNames[i] = input.value;
+        }
+        renderStartForm(newCount, currentNames);
+      });
+
+      document.getElementById('startBtn').addEventListener('click', () => {
+        const countVal = parseInt(document.getElementById('playerCount').value, 10);
+        const chosenNames = [];
+        for (let i = 0; i < countVal; i++) {
+          const input = document.getElementById(`name-${i}`);
+          chosenNames[i] = input && input.value.trim() ? input.value.trim() : `Player ${i+1}`;
+        }
+        soundtrack = document.getElementById('soundtrackSelect').value;
+        configurePlayers(chosenNames);
+        startGame();
+      });
+    }
+
+    function renderGameScreen() {
+      const playerCards = players.map((p, idx) => {
+        const colors = COLOR_BANK[idx % COLOR_BANK.length];
+        return `
+          <div class="player-card" id="player-${p.id}" style="background: linear-gradient(150deg, ${colors[0]}55, ${colors[1]}aa); border-color:${colors[0]}55;">
+            <div class="card-header">
+              <h3 class="player-name"><span id="name-${p.id}">${p.name}</span> <span id="crown-${p.id}" style="opacity:0.15;">👑</span></h3>
+              <span class="key-chip">Press ${p.key.toUpperCase()}</span>
+            </div>
+            <div class="score" id="score-${p.id}">0 pts</div>
+            <div class="bar-container">
+              <div class="score-bar" id="bar-${p.id}" style="background:${colors[0]}cc;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      appContainer.innerHTML = `
+        <div class="panel" style="width:100%;">
+          <div class="time-outer">
+            <div class="time-inner" id="timeFill"></div>
+            <div class="time-label" id="timeLabel">Time Left</div>
+          </div>
+          <div id="timerDisplay" style="display:none;"></div>
+          <div class="total-score" id="totalScore">Tidy Score: 0</div>
+          <div id="gameArea">${playerCards}</div>
+          <div style="margin-top:12px;" class="inline-buttons">
+            <button class="play-button" style="background:linear-gradient(135deg,#ef5350,#d81b60);" id="giveUp">Give up</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('giveUp').addEventListener('click', () => endGame());
+    }
+
+    function showGameOverScreen() {
+      const sorted = [...players].sort((a, b) => b.score - a.score);
+      const winnerScore = sorted[0]?.score || 0;
+      const winnerNames = sorted.filter(p => p.score === winnerScore).map(p => p.name).join(', ');
+
+      const results = sorted.map((p, idx) => {
+        return `${idx+1}. ${p.name} — ${p.score} pts <span class="pill">Key ${p.key.toUpperCase()}</span>`;
+      }).join('<br/>');
+
+      appContainer.innerHTML = `
+        <div class="panel">
+          <div class="game-over-text">Time's up!</div>
+          <div class="subtitle">${winnerScore > 0 ? `Winner: ${winnerNames}` : 'No points? Maybe tidy faster next time!'}</div>
+          <div class="results-list">${results}</div>
+          <div class="inline-buttons">
+            <button class="play-button" style="background:linear-gradient(135deg,#26c6da,#0097a7);" id="restartSameEnd">Tidy more!</button>
+            <button class="play-button" style="background:linear-gradient(135deg,#ef5350,#d81b60);" id="restartNewEnd">New setup</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('restartSameEnd').addEventListener('click', restartSameSetup);
+      document.getElementById('restartNewEnd').addEventListener('click', showStartScreen);
+    }
+
+    // -----------------------------
+    // GAME CONTROL
+    // -----------------------------
+    function configurePlayers(nameList) {
+      const usedKeys = new Set();
+      players = nameList.map((name, idx) => {
+        const key = deriveKey(name, usedKeys);
+        return {
+          id: idx,
+          name,
+          key: key || 'x',
+          score: 0,
+          color: COLOR_BANK[idx % COLOR_BANK.length],
+          emojis: randomFrom(EMOJI_BANK.slice(idx, idx + 3)) || randomFrom(EMOJI_BANK)
+        };
+      });
+    }
+
+    function startGame() {
+      initAudio();
+      const bgm = document.getElementById('backgroundMusic');
+      bgm.src = soundtrack;
+      bgm.volume = 0.6;
+      bgm.play().catch(()=>{});
+
+      isGameRunning = true;
+      players.forEach(p => p.score = 0);
+
+      renderGameScreen();
+      updateScores();
+      startTimer();
+
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    function endGame() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      isGameRunning = false;
+      window.removeEventListener('keydown', handleKeyDown);
+      const bgm = document.getElementById('backgroundMusic');
+      if (bgm) bgm.pause();
+      showGameOverScreen();
+    }
+
+    function restartSameSetup() {
+      isGameRunning = false;
+      clearInterval(timerInterval);
+      startGame();
+    }
+
+    // Initialise
+    showStartScreen();
+  </script>
+</body>
+</html>
