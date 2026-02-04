@@ -297,6 +297,8 @@
       border: 1px solid rgba(255,255,255,0.2);
       font-size: 0.95rem;
       letter-spacing: 0.05em;
+      cursor: pointer;
+      user-select: none;
     }
 
     .emoji-rain {
@@ -540,6 +542,11 @@
       triggerEmojiRain(player.id, randomFrom(player.emojis));
     }
 
+    // allow programmatic / tap scoring
+    function simulateKeyPress(key) {
+      handleKeyDown({ key });
+    }
+
     function updateScores() {
       const scores = players.map(p => p.score);
       const maxScore = Math.max(...scores, 20);
@@ -651,7 +658,7 @@
           <div class="player-card" id="player-${p.id}" style="background: linear-gradient(150deg, ${colors[0]}55, ${colors[1]}aa); border-color:${colors[0]}55;">
             <div class="card-header">
               <h3 class="player-name"><span id="name-${p.id}">${p.name}</span> <span id="crown-${p.id}" style="opacity:0.15;">👑</span></h3>
-              <span class="key-chip">Press ${p.key.toUpperCase()}</span>
+              <span class="key-chip" data-key="${p.key}">Press ${p.key.toUpperCase()}</span>
             </div>
             <div class="score" id="score-${p.id}">0 pts</div>
             <div class="bar-container">
@@ -677,6 +684,12 @@
       `;
 
       document.getElementById('giveUp').addEventListener('click', () => endGame());
+      document.querySelectorAll('.key-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const key = chip.dataset.key;
+          simulateKeyPress(key);
+        });
+      });
     }
 
     function showGameOverScreen() {
