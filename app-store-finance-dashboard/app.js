@@ -17,6 +17,14 @@ const palette = {
   ideasBlue: "#AAD9FF",
   sportGreen: "#A0D0C0",
   foodYellow: "#E0E00A",
+  fxBlue: "#6C8EAD",
+};
+
+// Fixed for now; can be made live/adjustable later.
+const USD_TO_GBP = {
+  rate: 0.74231,
+  date: "2026-02-27",
+  source: "Frankfurter / ECB reference data",
 };
 
 const elements = {
@@ -31,6 +39,8 @@ const elements = {
   kpiRenewal: document.getElementById("kpi-renewal"),
   kpiChurn: document.getElementById("kpi-churn"),
   kpiCash: document.getElementById("kpi-cash"),
+  kpiCashGbp: document.getElementById("kpi-cash-gbp"),
+  kpiFxNote: document.getElementById("kpi-fx-note"),
   orderTable: document.getElementById("order-table"),
   termTable: document.getElementById("term-table"),
   periodTable: document.getElementById("period-table"),
@@ -40,6 +50,7 @@ const charts = {
   order: null,
   term: null,
   period: null,
+  trend: null,
 };
 
 function resetState() {
@@ -104,6 +115,14 @@ function formatCurrency(value) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatCurrencyGbp(value) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
     maximumFractionDigits: 2,
   }).format(value);
 }
@@ -219,27 +238,63 @@ function updateStatus() {
   elements.dataWindow.textContent = `Data window: ${formatDateIso(start)} to ${latestIso} (${state.lookbackDays} days).`;
 }
 
+function inferSalesBucket(row) {
+  const subscription = String(row["Subscription"] || "").trim().toLowerCase();
+  const orderType = String(row["Order Type"] || "").trim().toLowerCase();
+  const proceedsReason = String(row["Proceeds Reason"] || "").trim().toLowerCase();
+  const signal = `${subscription} ${orderType} ${proceedsReason}`;
+
+  const isGraceOrRetry = /grace|retry/.test(signal);
+  const isCancellationLike = /cancel|refund|revoke|expired|expire|churn/.test(signal);
+
+  if (subscription === "new" || /\bnew\b/.test(orderType)) return "new";
+  if (subscription === "renewal" || /renew/.test(orderType)) return "renewal";
+  if (isCancellationLike && !isGraceOrRetry) return "churn";
+  return "other";
+}
+
+function getSubscriptionTypeLabel(row) {
+  const candidates = [row["Title"], row["Subscription Name"], row["SKU"], row["Apple Identifier"]];
+  for (const value of candidates) {
+    const text = String(value || "").trim();
+    if (text) return text;
+  }
+  return "Unknown";
+}
+
 function aggregateDetailedSales(rows) {
   let newSubs = 0;
   let renewals = 0;
   let churn = 0;
   let grossCash = 0;
-  const periodMap = new Map();
+  const typeMap = new Map();
+  const dailyMap = new Map();
 
   for (const row of rows) {
-    const orderType = String(row["Order Type"] || "").trim().toLowerCase();
-    const period = String(row["Period"] || "Unknown").trim() || "Unknown";
     const units = parseNumber(row["Units"]);
     const customerPrice = parseNumber(row["Customer Price"]);
-    const isChurnType = /cancel|refund|revoke|churn/.test(orderType);
+    const bucket = inferSalesBucket(row);
+    const date = extractDetailedRowDate(row);
+    const dateKey = formatDateIso(date) || "Unknown Date";
+    const subTypeLabel = getSubscriptionTypeLabel(row);
 
-    if (orderType === "new") newSubs += units;
-    if (orderType === "renewal") renewals += units;
+    if (bucket === "new") newSubs += units;
+    if (bucket === "renewal") renewals += units;
+    // Apple billing grace period/retry still grants access; don't treat as churn until explicit cancellation/refund/expiry.
     if (units < 0) churn += Math.abs(units);
-    if (isChurnType && units > 0) churn += units;
+    if (bucket === "churn" && units > 0) churn += units;
 
     grossCash += customerPrice * units;
-    periodMap.set(period, (periodMap.get(period) || 0) + units);
+    typeMap.set(subTypeLabel, (typeMap.get(subTypeLabel) || 0) + units);
+
+    if (!dailyMap.has(dateKey)) {
+      dailyMap.set(dateKey, { newUnits: 0, renewalUnits: 0, churnUnits: 0 });
+    }
+    const day = dailyMap.get(dateKey);
+    if (bucket === "new") day.newUnits += units;
+    if (bucket === "renewal") day.renewalUnits += units;
+    if (units < 0) day.churnUnits += Math.abs(units);
+    if (bucket === "churn" && units > 0) day.churnUnits += units;
   }
 
   return {
@@ -247,7 +302,9 @@ function aggregateDetailedSales(rows) {
     renewals,
     churn,
     grossCash,
-    periodMap,
+    grossCashGbp: grossCash * USD_TO_GBP.rate,
+    typeMap,
+    dailyMap,
   };
 }
 
@@ -277,14 +334,16 @@ function renderTable(target, rows) {
     .join("");
 }
 
-function renderCharts(orderSummary, termMap, periodMap) {
+function renderCharts(orderSummary, termMap, typeMap, dailyMap) {
   const orderCtx = document.getElementById("order-chart");
   const termCtx = document.getElementById("term-chart");
   const periodCtx = document.getElementById("period-chart");
+  const trendCtx = document.getElementById("trend-chart");
 
   if (charts.order) charts.order.destroy();
   if (charts.term) charts.term.destroy();
   if (charts.period) charts.period.destroy();
+  if (charts.trend) charts.trend.destroy();
 
   charts.order = new Chart(orderCtx, {
     type: "bar",
@@ -322,7 +381,7 @@ function renderCharts(orderSummary, termMap, periodMap) {
     options: { responsive: true, maintainAspectRatio: false },
   });
 
-  const periodEntries = Array.from(periodMap.entries()).sort((a, b) => b[1] - a[1]);
+  const periodEntries = Array.from(typeMap.entries()).sort((a, b) => b[1] - a[1]);
   charts.period = new Chart(periodCtx, {
     type: "bar",
     data: {
@@ -339,6 +398,45 @@ function renderCharts(orderSummary, termMap, periodMap) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
+    },
+  });
+
+  const trendEntries = Array.from(dailyMap.entries())
+    .filter(([day]) => day !== "Unknown Date")
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  charts.trend = new Chart(trendCtx, {
+    type: "line",
+    data: {
+      labels: trendEntries.map(([day]) => day),
+      datasets: [
+        {
+          label: "New",
+          data: trendEntries.map(([, metrics]) => metrics.newUnits),
+          borderColor: palette.newsOrange,
+          backgroundColor: palette.newsOrange,
+          tension: 0.25,
+        },
+        {
+          label: "Renewal",
+          data: trendEntries.map(([, metrics]) => metrics.renewalUnits),
+          borderColor: palette.sportGreen,
+          backgroundColor: palette.sportGreen,
+          tension: 0.25,
+        },
+        {
+          label: "Churn",
+          data: trendEntries.map(([, metrics]) => metrics.churnUnits),
+          borderColor: palette.styleRed,
+          backgroundColor: palette.styleRed,
+          tension: 0.25,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: { legend: { display: true } },
     },
   });
 }
@@ -361,13 +459,17 @@ function downloadSummaryCsv() {
     `KPIs,Total New Subscribers,${escapeCsv(state.summary.kpis.newSubs)}`,
     `KPIs,Total Renewals,${escapeCsv(state.summary.kpis.renewals)}`,
     `KPIs,Estimated Churn,${escapeCsv(state.summary.kpis.churn)}`,
-    `KPIs,Gross Cash Collected (USD display),${escapeCsv(state.summary.kpis.grossCash)}`,
+    `KPIs,Gross Cash Collected (USD),${escapeCsv(state.summary.kpis.grossCashUsd)}`,
+    `KPIs,Gross Cash Collected (GBP),${escapeCsv(state.summary.kpis.grossCashGbp)}`,
+    `KPIs,USD to GBP Rate (${USD_TO_GBP.date}),${escapeCsv(USD_TO_GBP.rate)}`,
     "",
     "Term Breakdown,Term,Unique Subscribers",
     ...state.summary.terms.map((row) => `${escapeCsv("Term Breakdown")},${escapeCsv(row.term)},${escapeCsv(row.count)}`),
     "",
-    "Period Summary,Period,Units",
-    ...state.summary.periods.map((row) => `${escapeCsv("Period Summary")},${escapeCsv(row.period)},${escapeCsv(row.units)}`),
+    "Subscription Type Summary,Subscription Type,Units",
+    ...state.summary.periods.map(
+      (row) => `${escapeCsv("Subscription Type Summary")},${escapeCsv(row.period)},${escapeCsv(row.units)}`,
+    ),
   ];
 
   const blob = new Blob([`${lines.join("\n")}\n`], { type: "text/csv;charset=utf-8;" });
@@ -390,12 +492,15 @@ function refreshDashboard() {
   elements.kpiRenewal.textContent = formatInt(orderSummary.renewals);
   elements.kpiChurn.textContent = formatInt(orderSummary.churn);
   elements.kpiCash.textContent = formatCurrency(orderSummary.grossCash);
+  elements.kpiCashGbp.textContent = formatCurrencyGbp(orderSummary.grossCashGbp);
+  elements.kpiFxNote.textContent = `FX ${USD_TO_GBP.rate} (USD->GBP, ${USD_TO_GBP.date})`;
 
   renderTable(elements.orderTable, [
     ["Total New Subscribers", formatInt(orderSummary.newSubs)],
     ["Total Renewals", formatInt(orderSummary.renewals)],
     ["Estimated Churn", formatInt(orderSummary.churn)],
-    ["Gross Cash Collected", formatCurrency(orderSummary.grossCash)],
+    ["Gross Cash Collected (USD)", formatCurrency(orderSummary.grossCash)],
+    ["Gross Cash Collected (GBP)", formatCurrencyGbp(orderSummary.grossCashGbp)],
   ]);
 
   const termEntries = Array.from(termMap.entries()).sort((a, b) => b[1] - a[1]);
@@ -404,7 +509,7 @@ function refreshDashboard() {
     termEntries.length ? termEntries.map(([term, count]) => [term, formatInt(count)]) : [["No subscriber data yet", "0"]],
   );
 
-  const periodEntries = Array.from(orderSummary.periodMap.entries()).sort((a, b) => b[1] - a[1]);
+  const periodEntries = Array.from(orderSummary.typeMap.entries()).sort((a, b) => b[1] - a[1]);
   renderTable(
     elements.periodTable,
     periodEntries.length ? periodEntries.map(([period, units]) => [period, formatInt(units)]) : [["No sales data yet", "0"]],
@@ -415,14 +520,15 @@ function refreshDashboard() {
       newSubs: formatInt(orderSummary.newSubs),
       renewals: formatInt(orderSummary.renewals),
       churn: formatInt(orderSummary.churn),
-      grossCash: formatCurrency(orderSummary.grossCash),
+      grossCashUsd: formatCurrency(orderSummary.grossCash),
+      grossCashGbp: formatCurrencyGbp(orderSummary.grossCashGbp),
     },
     terms: termEntries.map(([term, count]) => ({ term, count: formatInt(count) })),
     periods: periodEntries.map(([period, units]) => ({ period, units: formatInt(units) })),
   };
   setDownloadEnabled(Boolean(state.files.length));
 
-  renderCharts(orderSummary, termMap, orderSummary.periodMap);
+  renderCharts(orderSummary, termMap, orderSummary.typeMap, orderSummary.dailyMap);
 }
 
 async function handleFiles(files) {
