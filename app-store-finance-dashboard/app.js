@@ -28,8 +28,9 @@ const USD_TO_GBP = {
 };
 
 const BUILD_INFO = {
-  version: "v0.4.0",
+  version: "v0.4.1",
   deployedDate: "2026-02-27",
+  deployedTime: "15:35 PT",
 };
 
 const elements = {
@@ -42,6 +43,7 @@ const elements = {
   error: document.getElementById("error"),
   buildVersion: document.getElementById("build-version"),
   buildDate: document.getElementById("build-date"),
+  buildTime: document.getElementById("build-time"),
   kpiNew: document.getElementById("kpi-new"),
   kpiRenewal: document.getElementById("kpi-renewal"),
   kpiChurn: document.getElementById("kpi-churn"),
@@ -72,8 +74,9 @@ function resetState() {
 }
 
 function renderBuildInfo() {
-  elements.buildVersion.textContent = BUILD_INFO.version;
-  elements.buildDate.textContent = BUILD_INFO.deployedDate;
+  if (elements.buildVersion) elements.buildVersion.textContent = BUILD_INFO.version;
+  if (elements.buildDate) elements.buildDate.textContent = BUILD_INFO.deployedDate;
+  if (elements.buildTime) elements.buildTime.textContent = BUILD_INFO.deployedTime;
 }
 
 function parseNumber(value) {
@@ -265,13 +268,45 @@ function inferSalesBucket(row) {
   return "other";
 }
 
-function getSubscriptionTypeLabel(row) {
-  const candidates = [row["Title"], row["Subscription Name"], row["SKU"], row["Apple Identifier"]];
-  for (const value of candidates) {
-    const text = String(value || "").trim();
-    if (text) return text;
-  }
-  return "Unknown";
+function inferTermFromText(text) {
+  const value = String(text || "").trim().toLowerCase();
+  if (!value) return null;
+  if (value.includes("year") || value.includes("annual") || value.includes("12 month")) return "Annual";
+  if (value.includes("month")) return "Monthly";
+  if (value.includes("week")) return "Weekly";
+  if (value.includes("day")) return "Daily";
+  return null;
+}
+
+function getSubscriptionTermLabel(row) {
+  const fromPeriod = inferTermFromText(row["Period"]);
+  if (fromPeriod) return fromPeriod;
+
+  const fromSubscriptionName = inferTermFromText(row["Subscription Name"]);
+  if (fromSubscriptionName) return fromSubscriptionName;
+
+  const fromTitle = inferTermFromText(row["Title"]);
+  if (fromTitle) return fromTitle;
+
+  const fromSku = inferTermFromText(row["SKU"]);
+  if (fromSku) return fromSku;
+
+  return "Other/Unspecified";
+}
+
+function isSubscriptionLikeRow(row) {
+  const subscription = String(row["Subscription"] || "").trim().toLowerCase();
+  if (subscription === "new" || subscription === "renewal") return true;
+
+  const termSignal = getSubscriptionTermLabel(row);
+  if (termSignal !== "Other/Unspecified") return true;
+
+  const productType = String(row["Product Type Identifier"] || "").trim().toLowerCase();
+  if (/^iay|^iam|^iaw/.test(productType)) return true;
+
+  const title = String(row["Title"] || "").toLowerCase();
+  if (title.includes("subscription")) return true;
+  return false;
 }
 
 function aggregateDetailedSales(rows) {
@@ -283,12 +318,14 @@ function aggregateDetailedSales(rows) {
   const dailyMap = new Map();
 
   for (const row of rows) {
+    if (!isSubscriptionLikeRow(row)) continue;
+
     const units = parseNumber(row["Units"]);
     const customerPrice = parseNumber(row["Customer Price"]);
     const bucket = inferSalesBucket(row);
     const date = extractDetailedRowDate(row);
     const dateKey = formatDateIso(date) || "Unknown Date";
-    const subTypeLabel = getSubscriptionTypeLabel(row);
+    const termLabel = getSubscriptionTermLabel(row);
 
     if (bucket === "new") newSubs += units;
     if (bucket === "renewal") renewals += units;
@@ -297,7 +334,7 @@ function aggregateDetailedSales(rows) {
     if (bucket === "churn" && units > 0) churn += units;
 
     grossCash += customerPrice * units;
-    typeMap.set(subTypeLabel, (typeMap.get(subTypeLabel) || 0) + units);
+    typeMap.set(termLabel, (typeMap.get(termLabel) || 0) + units);
 
     if (!dailyMap.has(dateKey)) {
       dailyMap.set(dateKey, { newUnits: 0, renewalUnits: 0, churnUnits: 0 });
@@ -478,9 +515,9 @@ function downloadSummaryCsv() {
     "Term Breakdown,Term,Unique Subscribers",
     ...state.summary.terms.map((row) => `${escapeCsv("Term Breakdown")},${escapeCsv(row.term)},${escapeCsv(row.count)}`),
     "",
-    "Subscription Type Summary,Subscription Type,Units",
+    "Subscription Term Summary,Term,Units",
     ...state.summary.periods.map(
-      (row) => `${escapeCsv("Subscription Type Summary")},${escapeCsv(row.period)},${escapeCsv(row.units)}`,
+      (row) => `${escapeCsv("Subscription Term Summary")},${escapeCsv(row.period)},${escapeCsv(row.units)}`,
     ),
   ];
 
@@ -627,6 +664,6 @@ elements.lookback.addEventListener("change", (event) => {
 });
 elements.downloadCsv.addEventListener("click", downloadSummaryCsv);
 
+renderBuildInfo();
 updateStatus();
 refreshDashboard();
-renderBuildInfo();
