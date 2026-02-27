@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App Store Finance Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body class="min-h-screen bg-slate-100 text-slate-900">
+    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <header class="mb-6">
+        <h1 class="text-3xl font-semibold tracking-tight">App Store Finance Dashboard</h1>
+        <p class="mt-2 text-sm text-slate-600">
+          Drop App Store Connect .txt reports to compute Finance-ready SaaS metrics in your browser.
+          No data is uploaded.
+        </p>
+      </header>
+
+      <section class="mb-6 rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-base font-semibold">Upload Reports</h2>
+          <button
+            id="download-csv"
+            type="button"
+            class="rounded-md border border-slate-300 bg-[#F99A0A] px-4 py-2 text-sm font-semibold text-slate-900 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled
+          >
+            Download CSV Summary
+          </button>
+        </div>
+        <div
+          id="drop-zone"
+          class="rounded-lg border-2 border-dashed border-[#AAD9FF] bg-slate-50 p-6 text-center transition"
+        >
+          <p class="text-sm font-medium">Drag and drop one or more report files here</p>
+          <p class="mt-1 text-xs text-slate-600">
+            Accepted: <span class="font-mono">Subscriber_*.txt</span>,
+            <span class="font-mono">S_D_*.txt</span> (TSV format)
+          </p>
+          <input id="file-input" type="file" multiple accept=".txt,.tsv,text/plain" class="mt-4 block w-full text-sm" />
+        </div>
+        <div id="status" class="mt-4 text-sm text-slate-700"></div>
+        <div id="error" class="mt-3 hidden rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800"></div>
+      </section>
+
+      <section class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <article class="rounded-xl border border-[#F99A0A] bg-white p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Total New Subs</p>
+          <p id="kpi-new" class="mt-2 text-2xl font-semibold text-[#F99A0A]">0</p>
+        </article>
+        <article class="rounded-xl border border-[#A0D0C0] bg-white p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Total Renewals</p>
+          <p id="kpi-renewal" class="mt-2 text-2xl font-semibold text-[#A0D0C0]">0</p>
+        </article>
+        <article class="rounded-xl border border-[#FF505A] bg-white p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Estimated Churn</p>
+          <p id="kpi-churn" class="mt-2 text-2xl font-semibold text-[#FF505A]">0</p>
+        </article>
+        <article class="rounded-xl border border-[#B5B0D0] bg-white p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Gross Cash Collected</p>
+          <p id="kpi-cash" class="mt-2 text-2xl font-semibold text-[#B5B0D0]">$0.00</p>
+        </article>
+      </section>
+
+      <section class="mb-8 grid gap-4 lg:grid-cols-2">
+        <article class="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <h2 class="text-base font-semibold">New vs Renewal vs Churn</h2>
+          <canvas id="order-chart" class="mt-3 h-64 w-full"></canvas>
+        </article>
+        <article class="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <h2 class="text-base font-semibold">Subscriber Base by Term</h2>
+          <canvas id="term-chart" class="mt-3 h-64 w-full"></canvas>
+        </article>
+      </section>
+
+      <section class="mb-8 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+        <h2 class="text-base font-semibold">Sales Units by Subscription Period</h2>
+        <canvas id="period-chart" class="mt-3 h-72 w-full"></canvas>
+      </section>
+
+      <section class="mb-8 grid gap-4 lg:grid-cols-2">
+        <article class="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <h2 class="text-base font-semibold">Order Summary</h2>
+          <div class="mt-3 overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-slate-100">
+                <tr>
+                  <th class="px-3 py-2 font-medium">Metric</th>
+                  <th class="px-3 py-2 font-medium">Value</th>
+                </tr>
+              </thead>
+              <tbody id="order-table"></tbody>
+            </table>
+          </div>
+        </article>
+        <article class="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <h2 class="text-base font-semibold">Term Breakdown</h2>
+          <div class="mt-3 overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-slate-100">
+                <tr>
+                  <th class="px-3 py-2 font-medium">Term</th>
+                  <th class="px-3 py-2 font-medium">Unique Subscribers</th>
+                </tr>
+              </thead>
+              <tbody id="term-table"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="mb-8 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+        <h2 class="text-base font-semibold">Period Summary (Detailed Sales)</h2>
+        <div class="mt-3 overflow-x-auto">
+          <table class="min-w-full text-left text-sm">
+            <thead class="bg-slate-100">
+              <tr>
+                <th class="px-3 py-2 font-medium">Period</th>
+                <th class="px-3 py-2 font-medium">Units</th>
+              </tr>
+            </thead>
+            <tbody id="period-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
+        <h2 class="text-base font-semibold">How To Collect Reports In App Store Connect</h2>
+        <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm text-slate-700">
+          <li>Sign in to App Store Connect and open <strong>Sales and Trends</strong>.</li>
+          <li>Export the <strong>Detailed Sales</strong> report (filename usually starts with <span class="font-mono">S_D_</span>).</li>
+          <li>
+            Export the <strong>Subscriber</strong> report (filename usually starts with
+            <span class="font-mono">Subscriber_</span>).
+          </li>
+          <li>Save both files as the raw tab-separated <span class="font-mono">.txt</span> format.</li>
+          <li>Drag both files into the upload area above.</li>
+          <li>Copy values from the tables into your Finance models if needed.</li>
+        </ol>
+        <p class="mt-3 text-xs text-slate-500">
+          All processing is client-side only. Files never leave your browser session.
+        </p>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+  </html>

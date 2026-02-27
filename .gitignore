@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python caches and build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+build/
+dist/
+
+# Jupyter
+.ipynb_checkpoints/
