@@ -27,6 +27,11 @@ const USD_TO_GBP = {
   source: "Frankfurter / ECB reference data",
 };
 
+const BUILD_INFO = {
+  version: "v0.4.0",
+  deployedDate: "2026-02-27",
+};
+
 const elements = {
   dropZone: document.getElementById("drop-zone"),
   fileInput: document.getElementById("file-input"),
@@ -35,6 +40,8 @@ const elements = {
   status: document.getElementById("status"),
   dataWindow: document.getElementById("data-window"),
   error: document.getElementById("error"),
+  buildVersion: document.getElementById("build-version"),
+  buildDate: document.getElementById("build-date"),
   kpiNew: document.getElementById("kpi-new"),
   kpiRenewal: document.getElementById("kpi-renewal"),
   kpiChurn: document.getElementById("kpi-churn"),
@@ -62,6 +69,11 @@ function resetState() {
   state.files = [];
   state.summary = null;
   state.maxDataDate = null;
+}
+
+function renderBuildInfo() {
+  elements.buildVersion.textContent = BUILD_INFO.version;
+  elements.buildDate.textContent = BUILD_INFO.deployedDate;
 }
 
 function parseNumber(value) {
@@ -617,3 +629,4 @@ elements.downloadCsv.addEventListener("click", downloadSummaryCsv);
 
 updateStatus();
 refreshDashboard();
+renderBuildInfo();

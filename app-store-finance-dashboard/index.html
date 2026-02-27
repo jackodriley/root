@@ -11,7 +11,13 @@
   <body class="min-h-screen bg-slate-100 text-slate-900">
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <header class="mb-6">
-        <h1 class="text-3xl font-semibold tracking-tight">App Store Finance Dashboard</h1>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <h1 class="text-3xl font-semibold tracking-tight">App Store Finance Dashboard</h1>
+          <div class="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm">
+            <div><span class="font-semibold">Version:</span> <span id="build-version">-</span></div>
+            <div><span class="font-semibold">Deployed:</span> <span id="build-date">-</span></div>
+          </div>
+        </div>
         <p class="mt-2 text-sm text-slate-600">
           Drop App Store Connect .txt reports to compute Finance-ready SaaS metrics in your browser.
           No data is uploaded.
