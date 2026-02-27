@@ -1,8 +1,13 @@
 const state = {
+  rawDetailedRows: [],
+  rawSubscriberRows: [],
   detailedRows: [],
   subscriberRows: [],
+  earningsSummaryRows: [],
   files: [],
   summary: null,
+  lookbackDays: null,
+  maxDataDate: null,
 };
 
 const palette = {
@@ -18,7 +23,9 @@ const elements = {
   dropZone: document.getElementById("drop-zone"),
   fileInput: document.getElementById("file-input"),
   downloadCsv: document.getElementById("download-csv"),
+  lookback: document.getElementById("lookback"),
   status: document.getElementById("status"),
+  dataWindow: document.getElementById("data-window"),
   error: document.getElementById("error"),
   kpiNew: document.getElementById("kpi-new"),
   kpiRenewal: document.getElementById("kpi-renewal"),
@@ -36,10 +43,14 @@ const charts = {
 };
 
 function resetState() {
+  state.rawDetailedRows = [];
+  state.rawSubscriberRows = [];
   state.detailedRows = [];
   state.subscriberRows = [];
+  state.earningsSummaryRows = [];
   state.files = [];
   state.summary = null;
+  state.maxDataDate = null;
 }
 
 function parseNumber(value) {
@@ -53,20 +64,30 @@ function normalizeHeader(header) {
   return String(header || "").trim().toLowerCase();
 }
 
-function detectFileType(fields) {
+function detectFileType(fields, fileName = "") {
   const normalized = new Set((fields || []).map(normalizeHeader));
+  const lowerName = String(fileName || "").toLowerCase();
   const isSubscriber =
     normalized.has("subscriber id") &&
     normalized.has("standard subscription duration") &&
     normalized.has("customer price");
+  const isEarningsSummary =
+    normalized.has("date") &&
+    normalized.has("event") &&
+    normalized.has("metric") &&
+    normalized.has("time frame");
   const isDetailedSales =
     normalized.has("order type") &&
     normalized.has("period") &&
     normalized.has("units") &&
     normalized.has("customer price");
 
+  if (!isSubscriber && lowerName.startsWith("subscriber_")) return "subscriber";
+  if (!isDetailedSales && lowerName.startsWith("s_d_")) return "detailedSales";
+  if (!isEarningsSummary && lowerName.startsWith("s_e_d_")) return "earningsSummary";
   if (isSubscriber) return "subscriber";
   if (isDetailedSales) return "detailedSales";
+  if (isEarningsSummary) return "earningsSummary";
   return "unknown";
 }
 
@@ -91,6 +112,74 @@ function formatInt(value) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
+function parseDateValue(raw, formats = []) {
+  if (!raw) return null;
+  const text = String(raw).trim();
+  if (!text) return null;
+
+  if (formats.includes("mm/dd/yyyy")) {
+    const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) {
+      const [, mm, dd, yyyy] = match;
+      return new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`);
+    }
+  }
+
+  if (formats.includes("yyyy-mm-dd")) {
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      return new Date(`${text}T00:00:00Z`);
+    }
+  }
+
+  const fallback = new Date(text);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
+}
+
+function extractDetailedRowDate(row) {
+  return parseDateValue(row["End Date"] || row["Begin Date"], ["mm/dd/yyyy", "yyyy-mm-dd"]);
+}
+
+function extractSubscriberRowDate(row) {
+  return parseDateValue(row["Event Date"] || row["Purchase Date"], ["yyyy-mm-dd", "mm/dd/yyyy"]);
+}
+
+function extractEarningsSummaryDate(row) {
+  return parseDateValue(row["Date"], ["mm/dd/yyyy", "yyyy-mm-dd"]);
+}
+
+function formatDateIso(date) {
+  if (!date) return null;
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+function applyLookback() {
+  const allDates = [
+    ...state.rawDetailedRows.map(extractDetailedRowDate).filter(Boolean),
+    ...state.rawSubscriberRows.map(extractSubscriberRowDate).filter(Boolean),
+    ...state.earningsSummaryRows.map(extractEarningsSummaryDate).filter(Boolean),
+  ];
+  state.maxDataDate = allDates.length ? new Date(Math.max(...allDates.map((d) => d.getTime()))) : null;
+
+  if (!state.lookbackDays || !state.maxDataDate) {
+    state.detailedRows = [...state.rawDetailedRows];
+    state.subscriberRows = [...state.rawSubscriberRows];
+    return;
+  }
+
+  const threshold = new Date(state.maxDataDate);
+  threshold.setUTCDate(threshold.getUTCDate() - (state.lookbackDays - 1));
+
+  state.detailedRows = state.rawDetailedRows.filter((row) => {
+    const date = extractDetailedRowDate(row);
+    return date ? date >= threshold : true;
+  });
+  state.subscriberRows = state.rawSubscriberRows.filter((row) => {
+    const date = extractSubscriberRowDate(row);
+    return date ? date >= threshold : true;
+  });
+}
+
 function setError(message) {
   if (!message) {
     elements.error.classList.add("hidden");
@@ -104,14 +193,30 @@ function setError(message) {
 function updateStatus() {
   if (!state.files.length) {
     elements.status.textContent = "No files loaded yet.";
+    elements.dataWindow.textContent = "";
     return;
   }
   const detailedCount = state.files.filter((f) => f.type === "detailedSales").length;
   const subscriberCount = state.files.filter((f) => f.type === "subscriber").length;
+  const earningsSummaryCount = state.files.filter((f) => f.type === "earningsSummary").length;
   const unknownCount = state.files.filter((f) => f.type === "unknown").length;
   elements.status.textContent =
     `Loaded ${state.files.length} file(s): ${detailedCount} Detailed Sales, ` +
-    `${subscriberCount} Subscriber, ${unknownCount} Unrecognized.`;
+    `${subscriberCount} Subscriber, ${earningsSummaryCount} Earnings Summary, ${unknownCount} Unrecognized.`;
+
+  const latestIso = formatDateIso(state.maxDataDate);
+  if (!latestIso) {
+    elements.dataWindow.textContent = "No date columns detected in loaded files.";
+    return;
+  }
+  if (!state.lookbackDays) {
+    elements.dataWindow.textContent = `Data window: all loaded rows (latest date ${latestIso}).`;
+    return;
+  }
+
+  const start = new Date(state.maxDataDate);
+  start.setUTCDate(start.getUTCDate() - (state.lookbackDays - 1));
+  elements.dataWindow.textContent = `Data window: ${formatDateIso(start)} to ${latestIso} (${state.lookbackDays} days).`;
 }
 
 function aggregateDetailedSales(rows) {
@@ -326,8 +431,9 @@ async function handleFiles(files) {
   if (!list.length) return;
 
   const nextState = {
-    detailedRows: [],
-    subscriberRows: [],
+    rawDetailedRows: [],
+    rawSubscriberRows: [],
+    earningsSummaryRows: [],
     files: [],
   };
 
@@ -345,11 +451,12 @@ async function handleFiles(files) {
       }
 
       const fields = parsed.meta.fields || [];
-      const type = detectFileType(fields);
+      const type = detectFileType(fields, file.name);
       nextState.files.push({ name: file.name, type });
 
-      if (type === "detailedSales") nextState.detailedRows.push(...parsed.data);
-      if (type === "subscriber") nextState.subscriberRows.push(...parsed.data);
+      if (type === "detailedSales") nextState.rawDetailedRows.push(...parsed.data);
+      if (type === "subscriber") nextState.rawSubscriberRows.push(...parsed.data);
+      if (type === "earningsSummary") nextState.earningsSummaryRows.push(...parsed.data);
     } catch (error) {
       setError(error.message);
       return;
@@ -358,13 +465,15 @@ async function handleFiles(files) {
 
   resetState();
   state.files = nextState.files;
-  state.detailedRows = nextState.detailedRows;
-  state.subscriberRows = nextState.subscriberRows;
+  state.rawDetailedRows = nextState.rawDetailedRows;
+  state.rawSubscriberRows = nextState.rawSubscriberRows;
+  state.earningsSummaryRows = nextState.earningsSummaryRows;
+  applyLookback();
 
   const unknownUploaded = nextState.files.some((f) => f.type === "unknown");
   if (unknownUploaded) {
     setError(
-      "One or more files were not recognized. Upload App Store Detailed Sales (S_D_) and Subscriber reports as tab-separated .txt files.",
+      "One or more files were not recognized. Upload App Store Detailed Sales (S_D_), Earnings Summary (S_E_D_), and Subscriber reports as tab-separated .txt files.",
     );
   }
 
@@ -391,6 +500,13 @@ elements.dropZone.addEventListener("dragover", onDragOver);
 elements.dropZone.addEventListener("dragleave", onDragLeave);
 elements.dropZone.addEventListener("drop", onDrop);
 elements.fileInput.addEventListener("change", (event) => handleFiles(event.target.files));
+elements.lookback.addEventListener("change", (event) => {
+  const value = event.target.value;
+  state.lookbackDays = value === "all" ? null : Number.parseInt(value, 10);
+  applyLookback();
+  updateStatus();
+  refreshDashboard();
+});
 elements.downloadCsv.addEventListener("click", downloadSummaryCsv);
 
 updateStatus();
