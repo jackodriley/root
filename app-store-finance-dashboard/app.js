@@ -8,6 +8,12 @@ const state = {
   summary: null,
   lookbackDays: null,
   maxDataDate: null,
+  job: {
+    id: null,
+    apiBase: "",
+    pollTimer: null,
+    status: null,
+  },
 };
 
 const palette = {
@@ -28,9 +34,14 @@ const USD_TO_GBP = {
 };
 
 const BUILD_INFO = {
-  version: "v0.4.1",
+  version: "v0.5.0",
   deployedDate: "2026-02-27",
-  deployedTime: "15:35 PT",
+  deployedTime: "16:20 PT",
+};
+
+const API_PULL_DEFAULTS = {
+  pollIntervalMs: 5000,
+  defaultLookbackDays: 30,
 };
 
 const elements = {
@@ -41,6 +52,17 @@ const elements = {
   status: document.getElementById("status"),
   dataWindow: document.getElementById("data-window"),
   error: document.getElementById("error"),
+  requestJob: document.getElementById("request-job"),
+  refreshJob: document.getElementById("refresh-job"),
+  jobStartDate: document.getElementById("job-start-date"),
+  jobEndDate: document.getElementById("job-end-date"),
+  jobAppId: document.getElementById("job-app-id"),
+  jobApiBase: document.getElementById("job-api-base"),
+  jobStatus: document.getElementById("job-status"),
+  jobMeta: document.getElementById("job-meta"),
+  jobError: document.getElementById("job-error"),
+  jobSummaryLink: document.getElementById("job-summary-link"),
+  jobCsvLink: document.getElementById("job-csv-link"),
   buildVersion: document.getElementById("build-version"),
   buildDate: document.getElementById("build-date"),
   buildTime: document.getElementById("build-time"),
@@ -222,6 +244,213 @@ function setError(message) {
   }
   elements.error.textContent = message;
   elements.error.classList.remove("hidden");
+}
+
+function setJobError(message) {
+  if (!elements.jobError) return;
+  if (!message) {
+    elements.jobError.classList.add("hidden");
+    elements.jobError.textContent = "";
+    return;
+  }
+  elements.jobError.textContent = message;
+  elements.jobError.classList.remove("hidden");
+}
+
+function setJobLink(anchor, href) {
+  if (!anchor) return;
+  if (!href) {
+    anchor.classList.add("hidden");
+    anchor.removeAttribute("href");
+    return;
+  }
+  anchor.href = href;
+  anchor.classList.remove("hidden");
+}
+
+function stopJobPolling() {
+  if (state.job.pollTimer) {
+    window.clearInterval(state.job.pollTimer);
+    state.job.pollTimer = null;
+  }
+}
+
+function startJobPolling() {
+  stopJobPolling();
+  state.job.pollTimer = window.setInterval(() => {
+    refreshPullJobStatus();
+  }, API_PULL_DEFAULTS.pollIntervalMs);
+}
+
+function formatDateInput(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function initJobFormDefaults() {
+  if (!elements.jobStartDate || !elements.jobEndDate) return;
+  const end = new Date();
+  const start = new Date();
+  start.setUTCDate(start.getUTCDate() - (API_PULL_DEFAULTS.defaultLookbackDays - 1));
+  elements.jobEndDate.value = formatDateInput(end);
+  elements.jobStartDate.value = formatDateInput(start);
+}
+
+function getSelectedReportTypes() {
+  return Array.from(document.querySelectorAll(".job-report-type:checked")).map((input) => input.value);
+}
+
+function parseJobResponse(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  const id = payload.job_id || payload.id;
+  if (!id) return null;
+  const outputs = payload.outputs || {};
+  return {
+    id,
+    status: payload.status || "queued",
+    createdAt: payload.created_at || null,
+    updatedAt: payload.updated_at || null,
+    error: payload.error || null,
+    workflowRunId: payload.workflow_run_id || null,
+    workflowRunUrl: payload.workflow_run_url || null,
+    summaryUrl: outputs.summary_url || payload.summary_url || null,
+    csvUrl: outputs.csv_url || payload.csv_url || null,
+    dateMin: outputs.date_min || payload.date_min || null,
+    dateMax: outputs.date_max || payload.date_max || null,
+    rowCount: outputs.row_count ?? payload.row_count ?? null,
+  };
+}
+
+function renderJobState(job) {
+  if (!elements.jobStatus || !elements.jobMeta) return;
+  if (!job) {
+    elements.jobStatus.textContent = "No job requested yet.";
+    elements.jobMeta.textContent = "";
+    setJobLink(elements.jobSummaryLink, null);
+    setJobLink(elements.jobCsvLink, null);
+    return;
+  }
+
+  const status = String(job.status || "queued");
+  elements.jobStatus.textContent = `Job ${job.id}: ${status}`;
+  const details = [];
+  if (job.createdAt) details.push(`Created: ${job.createdAt}`);
+  if (job.updatedAt) details.push(`Updated: ${job.updatedAt}`);
+  if (job.workflowRunId) details.push(`Workflow run: ${job.workflowRunId}`);
+  if (job.dateMin && job.dateMax) details.push(`Coverage: ${job.dateMin} to ${job.dateMax}`);
+  if (Number.isFinite(job.rowCount)) details.push(`Rows: ${formatInt(job.rowCount)}`);
+  elements.jobMeta.textContent = details.join(" | ");
+  setJobLink(elements.jobSummaryLink, job.summaryUrl);
+  setJobLink(elements.jobCsvLink, job.csvUrl);
+  setJobError(job.error || "");
+}
+
+function getApiBase() {
+  const typed = String(elements.jobApiBase?.value || "").trim();
+  if (!typed) return "";
+  return typed.replace(/\/+$/, "");
+}
+
+function buildJobPayload() {
+  const startDate = String(elements.jobStartDate?.value || "").trim();
+  const endDate = String(elements.jobEndDate?.value || "").trim();
+  const reportTypes = getSelectedReportTypes();
+  const appAppleId = String(elements.jobAppId?.value || "").trim();
+  return {
+    start_date: startDate,
+    end_date: endDate,
+    report_types: reportTypes,
+    app_apple_id: appAppleId || null,
+  };
+}
+
+function validateJobPayload(payload) {
+  if (!payload.start_date || !payload.end_date) {
+    return "Start date and end date are required.";
+  }
+  if (payload.start_date > payload.end_date) {
+    return "Start date must be on or before end date.";
+  }
+  if (!payload.report_types.length) {
+    return "Select at least one report type.";
+  }
+  return "";
+}
+
+async function requestPullJob() {
+  setJobError("");
+  const apiBase = getApiBase();
+  if (!apiBase) {
+    setJobError("Enter Backend API Base URL first (for example, https://your-broker.example.com).");
+    return;
+  }
+  const payload = buildJobPayload();
+  const validationError = validateJobPayload(payload);
+  if (validationError) {
+    setJobError(validationError);
+    return;
+  }
+
+  elements.requestJob.disabled = true;
+  elements.jobStatus.textContent = "Submitting job request...";
+
+  try {
+    const response = await fetch(`${apiBase}/api/jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}.`);
+    }
+    const body = await response.json();
+    const parsed = parseJobResponse(body);
+    if (!parsed) {
+      throw new Error("Backend response is missing job_id.");
+    }
+    state.job.id = parsed.id;
+    state.job.apiBase = apiBase;
+    state.job.status = parsed.status;
+    renderJobState(parsed);
+    startJobPolling();
+    if (parsed.status === "succeeded" || parsed.status === "failed" || parsed.status === "cancelled") {
+      stopJobPolling();
+    }
+  } catch (error) {
+    setJobError(error.message || "Could not submit job request.");
+    elements.jobStatus.textContent = "Job request failed.";
+  } finally {
+    elements.requestJob.disabled = false;
+  }
+}
+
+async function refreshPullJobStatus() {
+  setJobError("");
+  const apiBase = state.job.apiBase || getApiBase();
+  const jobId = state.job.id;
+  if (!apiBase || !jobId) return;
+
+  try {
+    const response = await fetch(`${apiBase}/api/jobs/${encodeURIComponent(jobId)}`, {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+    });
+    if (!response.ok) {
+      throw new Error(`Status check failed with status ${response.status}.`);
+    }
+    const body = await response.json();
+    const parsed = parseJobResponse(body);
+    if (!parsed) {
+      throw new Error("Backend status response is missing job_id.");
+    }
+    state.job.status = parsed.status;
+    renderJobState(parsed);
+    if (parsed.status === "succeeded" || parsed.status === "failed" || parsed.status === "cancelled") {
+      stopJobPolling();
+    }
+  } catch (error) {
+    setJobError(error.message || "Could not refresh job status.");
+    stopJobPolling();
+  }
 }
 
 function updateStatus() {
@@ -663,7 +892,15 @@ elements.lookback.addEventListener("change", (event) => {
   refreshDashboard();
 });
 elements.downloadCsv.addEventListener("click", downloadSummaryCsv);
+if (elements.requestJob) {
+  elements.requestJob.addEventListener("click", requestPullJob);
+}
+if (elements.refreshJob) {
+  elements.refreshJob.addEventListener("click", refreshPullJobStatus);
+}
 
 renderBuildInfo();
+initJobFormDefaults();
+renderJobState(null);
 updateStatus();
 refreshDashboard();
