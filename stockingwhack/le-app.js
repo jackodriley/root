@@ -71,6 +71,16 @@ const specialDates = {
   }
 };
 
+function appendWinnerNames(cell, winners) {
+  winners.forEach((winner, index) => {
+    if (index > 0) cell.append(', ');
+    const span = document.createElement('span');
+    span.className = 'winner';
+    span.textContent = winner.name;
+    cell.appendChild(span);
+  });
+}
+
 // Returns an array of winning entries for a given date
 async function getWinnerForDate(dateStr){
   const snap = await getDocs(
@@ -224,7 +234,7 @@ async function loadDailyWinners() {
     const tr = tbody.insertRow();
     tr.insertCell(0).textContent = date;
     if (winners.length){
-      tr.insertCell(1).innerHTML = winners.map(w=>`<span class="winner">${w.name}</span>`).join(', ');
+      appendWinnerNames(tr.insertCell(1), winners);
     } else {
       tr.insertCell(1).textContent = 'No winner';
     }

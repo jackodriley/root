@@ -41,6 +41,20 @@ let timerInterval;
 let gameStarted = false;
 const tapCooldown = 700; // milliseconds
 
+function buildLeaderboardContent(rows) {
+  const container = document.createElement('div');
+  rows.forEach((row, index) => {
+    const item = document.createElement('p');
+    let medal = '';
+    if (index === 0) medal = ' 🥇';
+    else if (index === 1) medal = ' 🥈';
+    else if (index === 2) medal = ' 🥉';
+    item.textContent = `${index + 1}. ${row.name}: ${row.time}s${medal}`;
+    container.appendChild(item);
+  });
+  return container;
+}
+
 // ask name
 await Swal.fire({
   title: 'Votre Nom?',
@@ -117,14 +131,7 @@ btn.addEventListener('click', async () => {
       const q = query(collection(db, 'scores'), orderBy('time', 'asc'), limit(15));
       const snap = await getDocs(q);
       const rows = snap.docs.map(d => d.data());
-      const html = rows.map((r, i) => {
-        let medal = '';
-        if (i === 0) medal = ' 🥇';
-        else if (i === 1) medal = ' 🥈';
-        else if (i === 2) medal = ' 🥉';
-        return `<p>${i+1}. ${r.name}: ${r.time}s${medal}</p>`;
-      }).join('');
-      Swal.fire({ title: 'Leaderboard', html });
+      Swal.fire({ title: 'Leaderboard', html: buildLeaderboardContent(rows) });
       restartBtn.hidden = false;
       btn.hidden = true;
     });
