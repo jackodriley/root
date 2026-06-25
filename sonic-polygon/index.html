@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sonic Polygon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="stage-panel">
+      <div class="stage-header">
+        <h1 id="appTitle">Sonic Polygon</h1>
+        <p class="subtitle">Each wall collision triggers a note inside the selected key while the shape flashes and the balls keep moving.</p>
+      </div>
+      <div class="stage-frame">
+        <div id="targetHud" class="hud hud-target is-hidden">
+          <span class="hud-label">Target</span>
+          <strong id="targetNote">--</strong>
+        </div>
+        <div id="scoreHud" class="hud hud-score is-hidden">
+          <span class="hud-label">Score</span>
+          <strong id="scoreValue">0</strong>
+        </div>
+        <div id="gameDialog" class="game-dialog is-hidden">
+          <p id="gameDialogText">Level complete</p>
+        </div>
+        <canvas id="visualizer" width="960" height="720" aria-label="Musical physics visualization"></canvas>
+      </div>
+    </section>
+
+    <aside id="controlPanel" class="control-panel">
+      <div id="controlStack" class="control-stack">
+        <label class="control">
+          <span>Speed</span>
+          <input id="speed" type="range" min="0.4" max="2.4" step="0.05" value="1.1">
+          <strong id="speedValue">1.10x</strong>
+        </label>
+
+        <label class="control">
+          <span>Number of Balls</span>
+          <input id="ballCount" type="range" min="1" max="10" step="1" value="4">
+          <strong id="ballCountValue">4</strong>
+        </label>
+
+        <label class="control">
+          <span>Base Tone</span>
+          <select id="rootSelect"></select>
+        </label>
+
+        <label class="control">
+          <span>Scale Type</span>
+          <select id="scaleTypeSelect">
+            <option value="major">Major</option>
+            <option value="minor">Minor</option>
+            <option value="pentatonic">Pentatonic</option>
+            <option value="chromatic">Chromatic</option>
+          </select>
+        </label>
+
+        <label class="control">
+          <span>Release</span>
+          <select id="releaseMode">
+            <option value="random">Random</option>
+            <option value="synced">Synced</option>
+            <option value="delayed">Delayed</option>
+          </select>
+        </label>
+
+        <label id="delayControl" class="control is-hidden">
+          <span>Release Delay</span>
+          <input id="releaseDelay" type="range" min="0.08" max="1.2" step="0.02" value="0.24">
+          <strong id="releaseDelayValue">0.24s</strong>
+        </label>
+
+        <label class="control">
+          <span>Ball Speed Variance</span>
+          <input id="speedVariance" type="range" min="0" max="10" step="1" value="3">
+          <strong id="speedVarianceValue">3</strong>
+        </label>
+
+        <label class="control">
+          <span>Volume</span>
+          <input id="volume" type="range" min="0" max="100" step="1" value="12">
+          <strong id="volumeValue">12%</strong>
+        </label>
+
+        <label class="control">
+          <span>Sound Style</span>
+          <select id="soundStyle">
+            <option value="arcade">Arcade</option>
+            <option value="glass">Glass</option>
+            <option value="pulse">Pulse</option>
+            <option value="bass">Bass</option>
+          </select>
+        </label>
+
+        <label class="control">
+          <span>Tone</span>
+          <select id="toneMode">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </label>
+
+        <label class="control">
+          <span>Collision Mode</span>
+          <select id="collisionMode">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </label>
+
+        <label class="control">
+          <span>Magnet Mode</span>
+          <select id="magnetMode">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </label>
+
+        <label id="magnetStrengthControl" class="control is-hidden">
+          <span>Magnet Strength</span>
+          <input id="magnetStrength" type="range" min="0" max="10" step="0.1" value="1.2">
+          <strong id="magnetStrengthValue">1.2</strong>
+        </label>
+
+        <label class="control">
+          <span>Trails</span>
+          <input id="trailLength" type="range" min="0" max="10" step="1" value="4">
+          <strong id="trailLengthValue">4</strong>
+        </label>
+
+        <label class="control">
+          <span>Trail Style</span>
+          <select id="trailStyle">
+            <option value="solid">Solid Colour</option>
+            <option value="impressions">Fading Impressions</option>
+            <option value="rainbow">Rainbow Mode</option>
+          </select>
+        </label>
+
+        <label class="control">
+          <span>Precision Mode</span>
+          <select id="precisionMode">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </label>
+
+        <label id="precisionCoordsControl" class="control is-hidden">
+          <span>Start Coordinates</span>
+          <input id="precisionCoords" type="text" value="0,0" inputmode="decimal" spellcheck="false">
+          <strong>Format: x,y</strong>
+        </label>
+
+        <label id="precisionAngleControl" class="control is-hidden">
+          <span>Release Angle</span>
+          <input id="precisionAngle" type="range" min="0" max="359" step="1" value="0">
+          <strong id="precisionAngleValue">0deg</strong>
+        </label>
+
+        <label id="precisionOffsetControl" class="control is-hidden">
+          <span>Release Angle Offset</span>
+          <input id="precisionAngleOffset" type="range" min="0" max="180" step="1" value="90">
+          <strong id="precisionAngleOffsetValue">90deg</strong>
+        </label>
+
+        <label class="control">
+          <span>Number of Sides</span>
+          <input id="sides" type="range" min="3" max="10" step="1" value="5">
+          <strong id="sidesValue">5</strong>
+        </label>
+      </div>
+
+      <button id="startButton" class="start-button" type="button">Start</button>
+      <button id="gameModeButton" class="secondary-button secondary-button-accent" type="button">Game Mode</button>
+      <button id="pauseButton" class="secondary-button" type="button">Pause</button>
+      <button id="exitGameButton" class="secondary-button is-hidden" type="button">Exit</button>
+
+      <div id="legend" class="legend">
+        <p><span class="legend-chip wall"></span>Walls pulse on impact.</p>
+        <p><span class="legend-chip ball"></span>Balls adopt the colour of the wall they hit.</p>
+      </div>
+    </aside>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
