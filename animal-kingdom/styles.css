@@ -442,6 +442,14 @@ h1 {
   margin-bottom: 10px;
 }
 
+.population-title,
+.panel-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .panel-title h2 {
   font-size: 1rem;
   text-transform: uppercase;
@@ -460,6 +468,33 @@ h1 {
 
 .icon-button:active {
   border-style: inset;
+}
+
+.audio-toggle {
+  width: 32px;
+  height: 30px;
+  border-width: 2px;
+  font-size: 0.9rem;
+}
+
+.score-milestones {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 22px;
+}
+
+.score-milestone {
+  opacity: 0;
+  filter: grayscale(1);
+  transform: translateY(1px);
+  transition: opacity 160ms ease, filter 160ms ease, transform 160ms ease;
+}
+
+.score-milestone.achieved {
+  opacity: 1;
+  filter: none;
+  transform: translateY(0);
 }
 
 .control-group {
@@ -649,6 +684,8 @@ canvas {
 
 .leaderboard-panel {
   margin: 0 0 18px;
+  max-height: 280px;
+  overflow: auto;
   text-align: left;
 }
 
@@ -671,6 +708,12 @@ canvas {
   padding: 6px 7px;
   border: 2px solid rgba(77, 70, 55, 0.46);
   text-align: left;
+  vertical-align: top;
+}
+
+.leaderboard-panel th:nth-child(2),
+.leaderboard-panel td:nth-child(2) {
+  overflow-wrap: anywhere;
 }
 
 .leaderboard-panel th:first-child,
@@ -680,6 +723,12 @@ canvas {
 .leaderboard-panel th:nth-child(4),
 .leaderboard-panel td:nth-child(4) {
   text-align: right;
+}
+
+.current-player-row {
+  background: #efe19d;
+  box-shadow: inset 4px 0 0 #9f7b2a;
+  font-weight: 700;
 }
 
 .player-name-panel.is-hidden,

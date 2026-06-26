@@ -126,6 +126,14 @@ const SCORE_COMMENTS = [
     ]
   }
 ];
+const RANK_AWARDS = ["🥇", "🥈", "🥉"];
+const SOUNDTRACK_FILES = {
+  grass: "grass.mp3",
+  antelope: "antelope.mp3",
+  tiger: "tiger.mp3"
+};
+const SOUNDTRACK_MAX_VOLUME = 0.36;
+const SOUNDTRACK_MIN_VOLUME = 0.02;
 
 const controls = {
   simSpeed: document.getElementById("simSpeed"),
@@ -153,7 +161,9 @@ const chart = document.getElementById("populationChart");
 const chartCtx = chart.getContext("2d");
 const pauseButton = document.getElementById("pauseButton");
 const resetButton = document.getElementById("resetButton");
+const audioToggle = document.getElementById("audioToggle");
 const simStatus = document.getElementById("simStatus");
+const scoreMilestones = document.getElementById("scoreMilestones");
 const startOverlay = document.getElementById("startOverlay");
 const gameOverTitle = document.getElementById("gameOverTitle");
 const gameOverMessage = document.getElementById("gameOverMessage");
@@ -182,6 +192,20 @@ let biodiversityLossAcknowledged = false;
 let welcomePending = false;
 let playerName = "";
 let scoreSubmitted = false;
+let audioContext = null;
+let soundtrackReadyPromise = null;
+let soundtrackBuffers = null;
+let soundtrackSources = {};
+let soundtrackGains = {};
+let soundtrackMode = "silent";
+let soundtrackStartToken = 0;
+let audioEnabled = localStorage.getItem("animalKingdomAudioEnabled") !== "false";
+let milestoneThresholds = [];
+let soundtrackBaselines = {
+  grass: 1,
+  antelope: 1,
+  tiger: 1
+};
 
 function makeCellKey(x, y) {
   return `${x},${y}`;
@@ -205,6 +229,226 @@ function randomPosition() {
     x: randomInt(WIDTH),
     y: randomInt(HEIGHT)
   };
+}
+
+function makeAudioContext() {
+  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContextCtor) {
+    console.warn("[Animal Kingdom Soundtrack] Web Audio is not supported in this browser");
+    return null;
+  }
+
+  if (!audioContext) {
+    audioContext = new AudioContextCtor();
+  }
+
+  return audioContext;
+}
+
+async function loadSoundtrackBuffers() {
+  const context = makeAudioContext();
+
+  if (!context) {
+    return null;
+  }
+
+  if (soundtrackBuffers) {
+    return soundtrackBuffers;
+  }
+
+  if (!soundtrackReadyPromise) {
+    soundtrackReadyPromise = Promise.all(
+      Object.entries(SOUNDTRACK_FILES).map(async ([species, file]) => {
+        const response = await fetch(file);
+
+        if (!response.ok) {
+          throw new Error(`Could not load ${file}: ${response.status}`);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const decoded = await context.decodeAudioData(buffer);
+        return [species, decoded];
+      })
+    ).then((entries) => Object.fromEntries(entries));
+  }
+
+  soundtrackBuffers = await soundtrackReadyPromise;
+  return soundtrackBuffers;
+}
+
+function stopSoundtrackSources() {
+  Object.values(soundtrackSources).forEach((source) => {
+    try {
+      source.stop();
+    } catch (error) {
+      console.debug("[Animal Kingdom Soundtrack] Source already stopped", error);
+    }
+  });
+  soundtrackSources = {};
+  soundtrackGains = {};
+}
+
+async function startSoundtrack(mode) {
+  const startToken = soundtrackStartToken + 1;
+  soundtrackStartToken = startToken;
+  soundtrackMode = mode;
+
+  try {
+    const context = makeAudioContext();
+    const buffers = await loadSoundtrackBuffers();
+
+    if (!context || !buffers) {
+      return;
+    }
+
+    await context.resume();
+
+    if (startToken !== soundtrackStartToken || mode !== soundtrackMode) {
+      return;
+    }
+
+    stopSoundtrackSources();
+
+    const startAt = context.currentTime + 0.08;
+    Object.entries(buffers).forEach(([species, buffer]) => {
+      const source = context.createBufferSource();
+      const gain = context.createGain();
+      source.buffer = buffer;
+      source.loop = true;
+      gain.gain.value = 0;
+      source.connect(gain).connect(context.destination);
+      source.start(startAt);
+      soundtrackSources[species] = source;
+      soundtrackGains[species] = gain;
+    });
+
+    updateSoundtrackMix(true);
+    console.info("[Animal Kingdom Soundtrack] Started", { mode });
+  } catch (error) {
+    soundtrackMode = "silent";
+    console.warn("[Animal Kingdom Soundtrack] Unable to start", error);
+  }
+}
+
+function startPregameSoundtrack() {
+  soundtrackMode = "pregame";
+  if (!audioEnabled) {
+    updateSoundtrackMix(true);
+    return;
+  }
+
+  startSoundtrack("pregame");
+}
+
+function startGameSoundtrack() {
+  soundtrackMode = "game";
+  if (!audioEnabled) {
+    updateSoundtrackMix(true);
+    return;
+  }
+
+  startSoundtrack("game");
+}
+
+function setSoundtrackBaselines(settings) {
+  soundtrackBaselines = {
+    grass: Math.max(1, settings.startGrass),
+    antelope: Math.max(1, settings.startAntelope),
+    tiger: Math.max(1, settings.startTigers)
+  };
+}
+
+function targetSoundtrackVolumes() {
+  if (!audioEnabled) {
+    return {
+      grass: 0,
+      antelope: 0,
+      tiger: 0
+    };
+  }
+
+  if (soundtrackMode === "pregame") {
+    return {
+      grass: SOUNDTRACK_MAX_VOLUME,
+      antelope: 0,
+      tiger: 0
+    };
+  }
+
+  if (soundtrackMode !== "game") {
+    return {
+      grass: 0,
+      antelope: 0,
+      tiger: 0
+    };
+  }
+
+  const counts = populationCounts();
+  const ratios = {
+    grass: counts.grass / soundtrackBaselines.grass,
+    antelope: counts.antelope / soundtrackBaselines.antelope,
+    tiger: counts.tiger / soundtrackBaselines.tiger
+  };
+  const strongestRatio = Math.max(0.01, ratios.grass, ratios.antelope, ratios.tiger);
+
+  return Object.fromEntries(
+    Object.entries(ratios).map(([species, ratio]) => {
+      if (ratio <= 0) {
+        return [species, 0];
+      }
+
+      const presence = clamp(ratio / strongestRatio, 0, 1);
+      return [species, SOUNDTRACK_MIN_VOLUME + presence * (SOUNDTRACK_MAX_VOLUME - SOUNDTRACK_MIN_VOLUME)];
+    })
+  );
+}
+
+function updateAudioToggle() {
+  audioToggle.textContent = audioEnabled ? "🔈" : "🔇";
+  audioToggle.setAttribute("aria-pressed", String(!audioEnabled));
+  audioToggle.title = audioEnabled ? "Turn soundtrack off" : "Turn soundtrack on";
+}
+
+function setAudioEnabled(enabled) {
+  audioEnabled = enabled;
+  localStorage.setItem("animalKingdomAudioEnabled", String(audioEnabled));
+  updateAudioToggle();
+
+  if (audioEnabled && !Object.keys(soundtrackSources).length) {
+    if (welcomePending || soundtrackMode === "pregame") {
+      startPregameSoundtrack();
+    } else if (!gameOver) {
+      startGameSoundtrack();
+    }
+  }
+
+  updateSoundtrackMix(true);
+}
+
+function updateSoundtrackMix(immediate = false) {
+  if (!audioContext || !Object.keys(soundtrackGains).length) {
+    return;
+  }
+
+  const targets = targetSoundtrackVolumes();
+  const now = audioContext.currentTime;
+
+  Object.entries(targets).forEach(([species, volume]) => {
+    const gain = soundtrackGains[species];
+
+    if (!gain) {
+      return;
+    }
+
+    gain.gain.cancelScheduledValues(now);
+
+    if (immediate) {
+      gain.gain.setValueAtTime(volume, now);
+    } else {
+      gain.gain.setTargetAtTime(volume, now, 0.75);
+    }
+  });
 }
 
 function readSettings() {
@@ -352,8 +596,9 @@ function addAnimal(species, x, y, age = 0) {
   return animal;
 }
 
-function resetSimulation() {
+function resetSimulation({ playSoundtrack = true } = {}) {
   const settings = readSettings();
+  setSoundtrackBaselines(settings);
 
   animals = [];
   grass = new Map();
@@ -394,6 +639,11 @@ function resetSimulation() {
 
   recordHistory();
   render();
+  updateScoreMilestones();
+
+  if (playSoundtrack) {
+    startGameSoundtrack();
+  }
 }
 
 function markDeath(animal) {
@@ -829,6 +1079,7 @@ function checkGameOver() {
 
 function renderFinalFrameBeforeGameOver() {
   render();
+  updateSoundtrackMix(true);
   renderAccumulator = 0;
 }
 
@@ -837,6 +1088,76 @@ function currentScore() {
     daysLasted: Math.floor(day),
     animalsEverLived: deathStats.antelope.born + deathStats.tiger.born
   };
+}
+
+function normalizePlayerName(name) {
+  return (name || "Anonymous").trim().toLowerCase() || "anonymous";
+}
+
+function compareLeaderboardEntries(a, b) {
+  return (
+    b.daysLasted - a.daysLasted ||
+    b.animalsEverLived - a.animalsEverLived ||
+    b.submittedAt - a.submittedAt
+  );
+}
+
+function isBetterScore(candidate, currentBest) {
+  return !currentBest || compareLeaderboardEntries(candidate, currentBest) < 0;
+}
+
+function firestoreTimeToMillis(value) {
+  if (!value) {
+    return 0;
+  }
+
+  if (typeof value.toMillis === "function") {
+    return value.toMillis();
+  }
+
+  if (typeof value.seconds === "number") {
+    return value.seconds * 1000;
+  }
+
+  return 0;
+}
+
+function bestUniqueLeaderboardEntries(entries) {
+  const bestByName = new Map();
+
+  entries.forEach((entry) => {
+    if (isBetterScore(entry, bestByName.get(entry.normalizedName))) {
+      bestByName.set(entry.normalizedName, entry);
+    }
+  });
+
+  return Array.from(bestByName.values()).sort(compareLeaderboardEntries);
+}
+
+function docToLeaderboardEntry(docSnapshot) {
+  const data = docSnapshot.data();
+  const name = data.name || "Anonymous";
+
+  return {
+    id: docSnapshot.id,
+    name,
+    normalizedName: normalizePlayerName(name),
+    daysLasted: Number(data.daysLasted) || 0,
+    animalsEverLived: Number(data.animalsEverLived) || 0,
+    submittedAt: firestoreTimeToMillis(data.endedAt) || Date.parse(data.date || "") || 0
+  };
+}
+
+async function fetchLeaderboardEntries() {
+  const q = query(collection(db, SCORES_COLLECTION));
+  const querySnapshot = await getDocs(q);
+  const entries = [];
+
+  querySnapshot.forEach((docSnapshot) => {
+    entries.push(docToLeaderboardEntry(docSnapshot));
+  });
+
+  return entries;
 }
 
 function randomFrom(items) {
@@ -900,29 +1221,13 @@ async function loadLeaderboard() {
   });
 
   try {
-    const q = query(collection(db, SCORES_COLLECTION));
-    const querySnapshot = await getDocs(q);
-    const entries = [];
-
-    querySnapshot.forEach((docSnapshot) => {
-      const data = docSnapshot.data();
-      entries.push({
-        name: data.name || "Anonymous",
-        daysLasted: Number(data.daysLasted) || 0,
-        animalsEverLived: Number(data.animalsEverLived) || 0
-      });
-    });
-
-    entries.sort(
-      (a, b) =>
-        b.daysLasted - a.daysLasted ||
-        b.animalsEverLived - a.animalsEverLived
-    );
+    const entries = await fetchLeaderboardEntries();
+    const rankedEntries = buildLeaderboardEntries(entries);
     console.info("[Animal Kingdom Firebase] Leaderboard loaded", {
       totalDocs: entries.length,
-      displayedDocs: Math.min(entries.length, 10)
+      displayedDocs: rankedEntries.length
     });
-    displayLeaderboard(entries.slice(0, 10));
+    displayLeaderboard(rankedEntries);
   } catch (error) {
     console.error("[Animal Kingdom Firebase] Unable to load leaderboard", {
       code: error.code,
@@ -931,6 +1236,91 @@ async function loadLeaderboard() {
     });
     leaderboardBody.innerHTML = `<tr><td colspan="4">Leaderboard unavailable</td></tr>`;
   }
+}
+
+async function loadInitialLeaderboardMilestones() {
+  console.info("[Animal Kingdom Firebase] Loading initial milestone thresholds");
+
+  try {
+    const entries = await fetchLeaderboardEntries();
+    const topScores = bestUniqueLeaderboardEntries(entries).slice(0, 3);
+    milestoneThresholds = [
+      { medal: "🥇", rank: 1, score: topScores[0] },
+      { medal: "🥈", rank: 2, score: topScores[1] },
+      { medal: "🥉", rank: 3, score: topScores[2] }
+    ].filter((threshold) => threshold.score);
+    console.info("[Animal Kingdom Firebase] Initial milestone thresholds loaded", {
+      thresholds: milestoneThresholds.map((threshold) => ({
+        medal: threshold.medal,
+        daysLasted: threshold.score.daysLasted,
+        animalsEverLived: threshold.score.animalsEverLived,
+        name: threshold.score.name
+      }))
+    });
+    updateScoreMilestones();
+  } catch (error) {
+    console.error("[Animal Kingdom Firebase] Unable to load initial milestone thresholds", {
+      code: error.code,
+      message: error.message,
+      error
+    });
+  }
+}
+
+function buildLeaderboardEntries(entries) {
+  const activeName = normalizePlayerName(playerName || "Anonymous");
+  const bestByOtherName = new Map();
+  const activeEntries = [];
+
+  if (!entries.length) {
+    return [];
+  }
+
+  entries.forEach((entry) => {
+    if (entry.normalizedName === activeName) {
+      activeEntries.push(entry);
+      return;
+    }
+
+    if (isBetterScore(entry, bestByOtherName.get(entry.normalizedName))) {
+      bestByOtherName.set(entry.normalizedName, entry);
+    }
+  });
+
+  const leaderboardEntries = Array.from(bestByOtherName.values());
+  const latestActiveEntry = activeEntries.reduce(
+    (latest, entry) => (!latest || entry.submittedAt > latest.submittedAt ? entry : latest),
+    null
+  );
+  const bestActiveEntry = activeEntries.reduce(
+    (best, entry) => (isBetterScore(entry, best) ? entry : best),
+    null
+  );
+
+  if (latestActiveEntry) {
+    latestActiveEntry.isCurrentPlayer = true;
+    latestActiveEntry.currentLabel = "latest";
+    leaderboardEntries.push(latestActiveEntry);
+  }
+
+  if (
+    bestActiveEntry &&
+    latestActiveEntry &&
+    bestActiveEntry.id !== latestActiveEntry.id &&
+    compareLeaderboardEntries(bestActiveEntry, latestActiveEntry) < 0
+  ) {
+    bestActiveEntry.isCurrentPlayer = true;
+    bestActiveEntry.currentLabel = "best";
+    leaderboardEntries.push(bestActiveEntry);
+  }
+
+  return leaderboardEntries.sort(compareLeaderboardEntries);
+}
+
+function rankLabel(rank, isLowestRank) {
+  const award = RANK_AWARDS[rank - 1];
+  const potato = isLowestRank ? " 🥔" : "";
+  return `${rank}${award ? ` ${award}` : ""}${potato}`;
 }
 
 function displayLeaderboard(entries) {
@@ -942,18 +1332,37 @@ function displayLeaderboard(entries) {
   }
 
   entries.forEach((entry, index) => {
+    const rankNumber = index + 1;
     const row = document.createElement("tr");
     const rank = document.createElement("td");
     const name = document.createElement("td");
     const days = document.createElement("td");
     const animalsEverLived = document.createElement("td");
 
-    rank.textContent = String(index + 1);
-    name.textContent = entry.name;
+    if (entry.isCurrentPlayer) {
+      row.classList.add("current-player-row");
+    }
+
+    rank.textContent = rankLabel(rankNumber, rankNumber === entries.length);
+    name.textContent = entry.currentLabel ? `${entry.name} (${entry.currentLabel})` : entry.name;
     days.textContent = String(entry.daysLasted);
     animalsEverLived.textContent = String(entry.animalsEverLived);
     row.append(rank, name, days, animalsEverLived);
     leaderboardBody.appendChild(row);
+  });
+}
+
+function updateScoreMilestones() {
+  const currentDays = Math.floor(day);
+  scoreMilestones.innerHTML = "";
+
+  milestoneThresholds.forEach((threshold) => {
+    const badge = document.createElement("span");
+    const achieved = currentDays >= threshold.score.daysLasted;
+    badge.className = `score-milestone ${achieved ? "achieved" : ""}`;
+    badge.textContent = threshold.medal;
+    badge.title = `${threshold.medal} ${threshold.score.daysLasted} days by ${threshold.score.name}`;
+    scoreMilestones.appendChild(badge);
   });
 }
 
@@ -1276,6 +1685,8 @@ function tick(now) {
 
   if (!paused) {
     advanceSimulation(deltaMs * readSettings().simSpeed);
+    updateSoundtrackMix();
+    updateScoreMilestones();
     renderAccumulator += deltaMs;
 
     if (renderAccumulator > 110) {
@@ -1334,6 +1745,16 @@ function bindEvents() {
     simStatus.textContent = paused ? "Paused" : "Running";
     lastFrame = performance.now();
   });
+
+  audioToggle.addEventListener("click", () => {
+    setAudioEnabled(!audioEnabled);
+  });
+
+  document.addEventListener("pointerdown", () => {
+    if (welcomePending && !Object.keys(soundtrackSources).length) {
+      startPregameSoundtrack();
+    }
+  }, { once: true });
 }
 
 function showWelcomeOverlay() {
@@ -1350,12 +1771,15 @@ function showWelcomeOverlay() {
   playerNamePanel.classList.remove("is-hidden");
   leaderboardPanel.classList.add("is-hidden");
   startOverlay.classList.remove("is-hidden");
+  startPregameSoundtrack();
 }
 
 createGrid();
 preloadIcons();
 bindEvents();
 updateControlOutputs();
-resetSimulation();
+updateAudioToggle();
+resetSimulation({ playSoundtrack: false });
 showWelcomeOverlay();
+loadInitialLeaderboardMilestones();
 requestAnimationFrame(tick);

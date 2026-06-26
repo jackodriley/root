@@ -111,8 +111,14 @@
       <aside class="dashboard-pane" aria-label="Simulation controls and population chart">
         <section class="panel chart-panel">
           <div class="panel-title">
-            <h2>Population Log</h2>
-            <span id="simStatus">Running</span>
+            <div class="population-title">
+              <h2>Population Log</h2>
+              <span id="scoreMilestones" class="score-milestones" aria-label="Leaderboard milestones"></span>
+            </div>
+            <div class="panel-actions">
+              <button id="audioToggle" class="icon-button audio-toggle" type="button" title="Toggle soundtrack" aria-pressed="false">🔈</button>
+              <span id="simStatus">Running</span>
+            </div>
           </div>
           <div class="chart-legend" aria-label="Population chart series toggles">
             <button class="chart-toggle active" type="button" data-series="grass">
