@@ -77,54 +77,52 @@ const SCORE_COMMENTS = [
     minDays: 200,
     comments: [
       "David Attenborough would be proud.",
-      "A national treasure would narrate this in a hushed voice.",
-      "Quite heroic, in an unusually damp documentary sort of way.",
+      "Big apex predator energy",
+      "Look on these works, ye mighty, and despair.",
       "The ecosystem has lasted longer than most British governments."
     ]
   },
   {
     minDays: 100,
     comments: [
-      "Respectable. The parish council has approved a small plaque.",
-      "A proper little kingdom. Try not to let it go to your head.",
-      "Strong work. Somewhere, a clipboard has been marked 'adequate plus'.",
-      "The animals appear to tolerate your leadership."
+      "Solid",
+      "Decent",
+      "Acceptable",
+      "Middle of the food chain"
     ]
   },
   {
     minDays: 50,
     comments: [
-      "Not bad. Nobody is writing a commemorative tea towel, but still.",
-      "A decent innings, followed by the traditional ecological embarrassment.",
+      "Perhaps you're one of the lesser gods?",
+      "Don't worry, I'll prey for you",
       "You may retain the clipboard, provisionally.",
-      "Change some settings and see if you can do better next time."
+      "Impressive. The ecosystem almost lasted longer than the last 4 PMs."
     ]
   },
   {
     minDays: 25,
     comments: [
-      "A brave attempt, in the way a paper umbrella is brave.",
-      "There were moments of competence. Brief, but observable.",
+      "A national embarassment",
+      "Destroying ecosystems like a South American dictator with CIA backing",
       "The animals have submitted feedback. It is not glowing.",
-      "Change some settings and see if you can do better next time."
     ]
   },
   {
     minDays: 10,
     comments: [
-      "Marginally less disastrous than expected.",
-      "Technically a kingdom, if one is being extremely generous.",
-      "A modest spell of order before the wheels came off.",
-      "Change some settings and see if you can do better next time."
+      "Maybe try growing potatoes instead?",
+      "Technically a kingdom, if you were being extremely generous.",
+      "Stick to Sea Monkeys",
     ]
   },
   {
     minDays: 0,
     comments: [
-      "Pitiful. Call yourself a God?",
-      "A theological incident, frankly.",
-      "The animals deserved a manager, not whatever that was.",
-      "Barely long enough to print the headed paper."
+      "The Liz Truss of ecosystem management",
+      "Sam Allardyce would be proud.",
+      "Even Richard Attenborough in a safari suit did better than that",
+      "Maybe try mayflys next time?"
     ]
   }
 ];
