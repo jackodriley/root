@@ -7,13 +7,22 @@
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="styles.css" />
   </head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5WZEF7TFB5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-5WZEF7TFB5');
+  </script>
   <body>
     <main class="app-shell">
       <section class="world-pane" aria-label="Savanna simulation">
         <header class="top-bar">
           <div>
             <h1>Animal Kingdom</h1>
-            <p>Closed food-chain simulation</p>
+            <p>© Potatocorp 2026</p>
           </div>
           <div class="top-metrics">
             <div class="day-counter" aria-live="polite">
@@ -24,23 +33,41 @@
               <span id="everLivedCount">0</span>
               <span>animals ever lived</span>
             </div>
-            <label class="speed-control">
+            <div class="speed-control">
               <span>Speed</span>
               <input id="simSpeed" type="range" min="0.5" max="5" step="0.5" value="1" />
               <output for="simSpeed"></output>
-            </label>
+              <div class="speed-actions" aria-label="Simulation controls">
+                <button id="pauseButton" class="icon-button" type="button" title="Pause or resume simulation">⏸</button>
+                <button id="resetButton" class="icon-button" type="button" title="Reset simulation">↺</button>
+              </div>
+            </div>
           </div>
         </header>
 
         <div class="stats-strip" aria-label="Current populations">
-          <div><span class="legend grass"></span> Grass <strong id="grassCount">0</strong></div>
-          <div class="stat-item">
-            <span><span class="legend antelope"></span> Antelope <span id="antelopeAgeMix" class="advanced-stat"></span> <strong id="antelopeCount">0</strong></span>
-            <small id="antelopeDeaths" class="advanced-stat"></small>
+          <div class="summary-item">
+            <img class="summary-icon" src="assets/icons/grass-maturity-3.png" alt="" />
+            <span>Grass</span>
+            <strong id="grassCount">0</strong>
           </div>
           <div class="stat-item">
-            <span><span class="legend tiger"></span> Tigers <span id="tigerAgeMix" class="advanced-stat"></span> <strong id="tigerCount">0</strong></span>
-            <small id="tigerDeaths" class="advanced-stat"></small>
+            <span>
+              <img class="summary-icon" src="assets/icons/antelope-adult-neutral.png" alt="" />
+              <span>Antelope</span>
+              <strong id="antelopeCount">0</strong>
+              <span id="antelopeAgeMix"></span>
+            </span>
+            <small id="antelopeDeaths"></small>
+          </div>
+          <div class="stat-item">
+            <span>
+              <img class="summary-icon tiger-summary-icon" src="assets/icons/tiger-adult-dark.png" alt="" />
+              <span>Tigers</span>
+              <strong id="tigerCount">0</strong>
+              <span id="tigerAgeMix"></span>
+            </span>
+            <small id="tigerDeaths"></small>
           </div>
         </div>
 
@@ -60,124 +87,6 @@
       </section>
 
       <aside class="dashboard-pane" aria-label="Simulation controls and population chart">
-        <section class="panel control-panel">
-          <div class="panel-title">
-            <h2>Control Panel</h2>
-            <button id="pauseButton" class="icon-button" type="button" title="Pause or resume simulation">⏸</button>
-            <button id="resetButton" class="icon-button" type="button" title="Reset simulation">↺</button>
-          </div>
-
-          <div class="control-group">
-            <h3>Display</h3>
-            <label class="toggle-label">
-              <span>Simple Mode</span>
-              <input id="simpleMode" type="checkbox" checked />
-              <output>On</output>
-            </label>
-          </div>
-
-          <div class="control-group">
-            <h3>Starting Populations</h3>
-            <label>
-              <span>Grass</span>
-              <input id="startGrass" type="range" min="20" max="220" step="5" value="95" />
-              <output for="startGrass"></output>
-            </label>
-            <label>
-              <span>Antelope</span>
-              <input id="startAntelope" type="range" min="2" max="80" step="1" value="24" />
-              <output for="startAntelope"></output>
-            </label>
-            <label>
-              <span>Tigers</span>
-              <input id="startTigers" type="range" min="1" max="30" step="1" value="5" />
-              <output for="startTigers"></output>
-            </label>
-          </div>
-
-          <div class="control-group">
-            <h3>Tigers 🐆</h3>
-            <label>
-              <span>Move Speed</span>
-              <input id="tigerSpeed" type="range" min="1" max="10" step="1" value="6" />
-              <output for="tigerSpeed"></output>
-            </label>
-            <label>
-              <span>Offspring</span>
-              <input id="tigerOffspring" type="range" min="1" max="4" step="1" value="1" />
-              <output for="tigerOffspring"></output>
-            </label>
-            <label>
-              <span>Breeding Age</span>
-              <input id="tigerBreedingAge" type="range" min="5" max="80" step="1" value="24" />
-              <output for="tigerBreedingAge"></output>
-            </label>
-            <label>
-              <span>Tummy Size</span>
-              <input id="tigerTummy" type="range" min="25" max="160" step="5" value="85" />
-              <output for="tigerTummy"></output>
-            </label>
-            <label>
-              <span>Old Age</span>
-              <input id="tigerOldAge" type="range" min="40" max="240" step="5" value="125" />
-              <output for="tigerOldAge"></output>
-            </label>
-            <label>
-              <span>Sleep Duration</span>
-              <input id="tigerSleep" type="range" min="0.25" max="4" step="0.25" value="1" />
-              <output for="tigerSleep"></output>
-            </label>
-          </div>
-
-          <div class="control-group">
-            <h3>Antelope 🦌</h3>
-            <label>
-              <span>Move Speed</span>
-              <input id="antelopeSpeed" type="range" min="1" max="10" step="1" value="7" />
-              <output for="antelopeSpeed"></output>
-            </label>
-            <label>
-              <span>Offspring</span>
-              <input id="antelopeOffspring" type="range" min="1" max="5" step="1" value="2" />
-              <output for="antelopeOffspring"></output>
-            </label>
-            <label>
-              <span>Breeding Age</span>
-              <input id="antelopeBreedingAge" type="range" min="3" max="60" step="1" value="12" />
-              <output for="antelopeBreedingAge"></output>
-            </label>
-            <label>
-              <span>Tummy Size</span>
-              <input id="antelopeTummy" type="range" min="15" max="120" step="5" value="55" />
-              <output for="antelopeTummy"></output>
-            </label>
-            <label>
-              <span>Old Age</span>
-              <input id="antelopeOldAge" type="range" min="20" max="180" step="5" value="90" />
-              <output for="antelopeOldAge"></output>
-            </label>
-            <label>
-              <span>Sleep Duration</span>
-              <input id="antelopeSleep" type="range" min="0.25" max="4" step="0.25" value="0.75" />
-              <output for="antelopeSleep"></output>
-            </label>
-          </div>
-
-          <div class="control-group">
-            <h3>Savanna Grass 🌳</h3>
-            <label>
-              <span>Growth Accel</span>
-              <input id="grassGrowth" type="range" min="1" max="10" step="1" value="4" />
-              <output for="grassGrowth"></output>
-            </label>
-            <label>
-              <span>Daily Spawn</span>
-              <input id="grassSpawn" type="range" min="1" max="60" step="1" value="14" />
-              <output for="grassSpawn"></output>
-            </label>
-          </div>
-        </section>
-
         <section class="panel chart-panel">
           <div class="panel-title">
             <h2>Population Log</h2>
@@ -195,6 +104,113 @@
             </button>
           </div>
           <canvas id="populationChart" width="520" height="260" aria-label="Line chart of population by day"></canvas>
+        </section>
+
+        <section class="panel control-panel">
+          <div class="panel-title">
+            <h2>God Cockpit</h2>
+          </div>
+
+          <div class="control-group">
+            <h3>Starting Populations</h3>
+            <label>
+              <span><img class="control-label-icon" src="assets/icons/grass-maturity-3.png" alt="" />Grass</span>
+              <input id="startGrass" type="range" min="20" max="220" step="5" value="95" />
+              <output for="startGrass"></output>
+            </label>
+            <label>
+              <span><img class="control-label-icon" src="assets/icons/antelope-adult-neutral.png" alt="" />Antelope</span>
+              <input id="startAntelope" type="range" min="2" max="80" step="1" value="24" />
+              <output for="startAntelope"></output>
+            </label>
+            <label>
+              <span><img class="control-label-icon tiger-label-icon" src="assets/icons/tiger-adult-dark.png" alt="" />Tigers</span>
+              <input id="startTigers" type="range" min="1" max="30" step="1" value="5" />
+              <output for="startTigers"></output>
+            </label>
+          </div>
+
+          <div class="control-group">
+            <h3>Tigers 🐆</h3>
+            <label>
+              <span>⏩ Speed</span>
+              <input id="tigerSpeed" type="range" min="1" max="10" step="1" value="6" />
+              <output for="tigerSpeed"></output>
+            </label>
+            <label>
+              <span>🐣 Babies</span>
+              <input id="tigerOffspring" type="range" min="1" max="4" step="1" value="1" />
+              <output for="tigerOffspring"></output>
+            </label>
+            <label>
+              <span>🧑‍🧑‍🧒 Maturity</span>
+              <input id="tigerBreedingAge" type="range" min="3" max="20" step="1" value="8" />
+              <output for="tigerBreedingAge"></output>
+            </label>
+            <label>
+              <span>🍽️ Appetite</span>
+              <input id="tigerTummy" type="range" min="25" max="160" step="5" value="85" />
+              <output for="tigerTummy"></output>
+            </label>
+            <label>
+              <span>👴🏻 Old Age</span>
+              <input id="tigerOldAge" type="range" min="5" max="20" step="1" value="20" />
+              <output for="tigerOldAge"></output>
+            </label>
+            <label>
+              <span>💤 Sleep</span>
+              <input id="tigerSleep" type="range" min="0.25" max="4" step="0.25" value="1" />
+              <output for="tigerSleep"></output>
+            </label>
+          </div>
+
+          <div class="control-group">
+            <h3>Antelope 🦌</h3>
+            <label>
+              <span>⏩ Speed</span>
+              <input id="antelopeSpeed" type="range" min="1" max="10" step="1" value="7" />
+              <output for="antelopeSpeed"></output>
+            </label>
+            <label>
+              <span>🐣 Babies</span>
+              <input id="antelopeOffspring" type="range" min="1" max="5" step="1" value="2" />
+              <output for="antelopeOffspring"></output>
+            </label>
+            <label>
+              <span>🧑‍🧑‍🧒 Maturity</span>
+              <input id="antelopeBreedingAge" type="range" min="2" max="20" step="1" value="5" />
+              <output for="antelopeBreedingAge"></output>
+            </label>
+            <label>
+              <span>🍽️ Appetite</span>
+              <input id="antelopeTummy" type="range" min="15" max="120" step="5" value="55" />
+              <output for="antelopeTummy"></output>
+            </label>
+            <label>
+              <span>👴🏻 Old Age</span>
+              <input id="antelopeOldAge" type="range" min="5" max="20" step="1" value="18" />
+              <output for="antelopeOldAge"></output>
+            </label>
+            <label>
+              <span>💤 Sleep</span>
+              <input id="antelopeSleep" type="range" min="0.25" max="4" step="0.25" value="0.75" />
+              <output for="antelopeSleep"></output>
+            </label>
+          </div>
+
+          <div class="control-group">
+            <h3>Savanna Grass 🌳</h3>
+            <label>
+              <span>Growth Accel</span>
+              <input id="grassGrowth" type="range" min="1" max="10" step="1" value="4" />
+              <output for="grassGrowth"></output>
+            </label>
+            <label>
+              <span>Daily Spawn</span>
+              <input id="grassSpawn" type="range" min="1" max="100" step="1" value="14" />
+              <output for="grassSpawn"></output>
+            </label>
+          </div>
         </section>
       </aside>
     </main>

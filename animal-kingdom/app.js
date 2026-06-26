@@ -63,7 +63,6 @@ const gameOverTitle = document.getElementById("gameOverTitle");
 const gameOverMessage = document.getElementById("gameOverMessage");
 const startButton = document.getElementById("startButton");
 const continueButton = document.getElementById("continueButton");
-const simpleModeToggle = document.getElementById("simpleMode");
 
 const cells = [];
 let animals = [];
@@ -80,6 +79,7 @@ let renderAccumulator = 0;
 let paused = false;
 let gameOver = false;
 let biodiversityLossAcknowledged = false;
+let welcomePending = false;
 
 function makeCellKey(x, y) {
   return `${x},${y}`;
@@ -336,9 +336,6 @@ function updateControlOutputs() {
     }
     output.value = `${input.value}${suffix}`;
   });
-
-  simpleModeToggle.nextElementSibling.value = simpleModeToggle.checked ? "On" : "Off";
-  document.body.classList.toggle("simple-mode", simpleModeToggle.checked);
 }
 
 function distance(a, b) {
@@ -420,6 +417,36 @@ function randomMove(animal) {
   animal.y = clamp(animal.y + step.y, 0, HEIGHT - 1);
 }
 
+function moveAwayFrom(animal, threat) {
+  if (!threat) {
+    randomMove(animal);
+    return;
+  }
+
+  const dx = animal.x - threat.x;
+  const dy = animal.y - threat.y;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    animal.x += Math.sign(dx || (Math.random() < 0.5 ? -1 : 1));
+  } else if (dy !== 0) {
+    animal.y += Math.sign(dy);
+  } else {
+    animal.x += Math.sign(dx || (Math.random() < 0.5 ? -1 : 1));
+  }
+
+  animal.x = clamp(animal.x, 0, WIDTH - 1);
+  animal.y = clamp(animal.y, 0, HEIGHT - 1);
+}
+
+function localPreyCount(animal, radius) {
+  return animals.filter(
+    (candidate) =>
+      candidate.alive &&
+      candidate.species === "antelope" &&
+      distance(animal, candidate) <= radius
+  ).length;
+}
+
 function adjacentOpenCell(parent) {
   const offsets = [
     { x: 0, y: 0 },
@@ -471,12 +498,22 @@ function tryEat(animal, settings) {
 }
 
 function canBreed(animal, settings) {
-  return (
+  const isMatureAndReady =
     animal.age >= settings.breedingAge &&
     animal.energy >= settings.tummy * 0.62 &&
     day >= animal.breedReadyDay &&
-    day >= animal.sleepUntilDay
-  );
+    day >= animal.sleepUntilDay;
+
+  if (!isMatureAndReady) {
+    return false;
+  }
+
+  // Tiger reproduction is blocked when local prey is scarce, giving antelope herds room to recover.
+  if (animal.species === "tiger" && localPreyCount(animal, 8) < 3) {
+    return false;
+  }
+
+  return true;
 }
 
 function tryBreed(animal, settings) {
@@ -518,6 +555,8 @@ function maybeSleep(animal, settings) {
 
   if (Math.random() < sleepChance) {
     animal.sleepUntilDay = day + settings.sleep;
+    // Sleeping animals resume on wake-up day instead of catching up every action they missed.
+    animal.nextActionDay = animal.sleepUntilDay;
     animal.napReadyDay = animal.sleepUntilDay + 1.5 + Math.random() * 4;
     return true;
   }
@@ -537,6 +576,14 @@ function stepAnimal(animal) {
     animal.energy -= animal.species === "tiger" ? 1.1 : 0.82;
     animal.nextActionDay += 1 / (settings.speed * ACTIONS_PER_SPEED_UNIT);
 
+    const nearbyTiger =
+      animal.species === "antelope" ? findNearestAnimal(animal, "tiger", () => true, 4) : null;
+    if (nearbyTiger) {
+      // Antelope flee nearby tigers before foraging or seeking mates, trading food and breeding for survival.
+      moveAwayFrom(animal, nearbyTiger);
+      continue;
+    }
+
     if (tryEat(animal, settings)) {
       continue;
     }
@@ -546,7 +593,8 @@ function stepAnimal(animal) {
 
     if (hungry) {
       if (animal.species === "tiger") {
-        const prey = findNearestAnimal(animal, "antelope", () => true, 12);
+        // Hungry tigers only detect prey nearby, preventing long-range predator lock-on.
+        const prey = findNearestAnimal(animal, "antelope", () => true, 5);
         moveToward(animal, prey);
       } else {
         moveToward(animal, findNearestGrass(animal));
@@ -576,8 +624,8 @@ function stepAnimal(animal) {
     }
 
     if (animal.species === "tiger") {
-      const nearbyPrey = findNearestAnimal(animal, "antelope", () => true, 6);
-      moveToward(animal, nearbyPrey);
+      // Fed tigers wander instead of actively hunting, then eat only if they stumble onto prey.
+      randomMove(animal);
       tryEat(animal, settings);
     } else {
       const grassTarget = findNearestGrass(animal);
@@ -744,6 +792,26 @@ function populationCounts() {
   };
 }
 
+function setAgeMix(elementId, babyIcon, adultIcon, babyCount, adultCount, babyLabel, adultLabel) {
+  const container = document.getElementById(elementId);
+  container.replaceChildren();
+  container.className = "age-mix";
+
+  const open = document.createTextNode("(");
+  const baby = document.createElement("img");
+  baby.className = "age-mix-icon";
+  baby.src = babyIcon;
+  baby.alt = babyLabel;
+  const babyText = document.createTextNode(` ${babyCount} / `);
+  const adult = document.createElement("img");
+  adult.className = "age-mix-icon";
+  adult.src = adultIcon;
+  adult.alt = adultLabel;
+  const adultText = document.createTextNode(` ${adultCount})`);
+
+  container.append(open, baby, babyText, adult, adultText);
+}
+
 function render() {
   for (let i = 0; i < cells.length; i += 1) {
     cells[i].cell.className = "cell";
@@ -822,8 +890,24 @@ function render() {
   document.getElementById("grassCount").textContent = String(counts.grass);
   document.getElementById("antelopeCount").textContent = String(counts.antelope);
   document.getElementById("tigerCount").textContent = String(counts.tiger);
-  document.getElementById("antelopeAgeMix").textContent = `(🐈 ${counts.antelopeBabies} / 🦌 ${counts.antelopeAdults})`;
-  document.getElementById("tigerAgeMix").textContent = `(🐅 ${counts.tigerBabies} / 🐆 ${counts.tigerAdults})`;
+  setAgeMix(
+    "antelopeAgeMix",
+    ICONS.antelopeBaby,
+    ICONS.antelopeAdult,
+    counts.antelopeBabies,
+    counts.antelopeAdults,
+    "baby antelope",
+    "adult antelope"
+  );
+  setAgeMix(
+    "tigerAgeMix",
+    ICONS.tigerBaby,
+    ICONS.tigerAdult,
+    counts.tigerBabies,
+    counts.tigerAdults,
+    "baby tiger",
+    "adult tiger"
+  );
   document.getElementById("antelopeDeaths").textContent =
     `born ${deathStats.antelope.born} | eaten ${deathStats.antelope.eaten} | old ${deathStats.antelope.oldAge} | starved ${deathStats.antelope.starvation}`;
   document.getElementById("tigerDeaths").textContent =
@@ -949,13 +1033,13 @@ function bindEvents() {
     input.addEventListener("input", updateControlOutputs);
   });
 
-  simpleModeToggle.addEventListener("change", updateControlOutputs);
-
   resetButton.addEventListener("click", () => {
+    welcomePending = false;
     resetSimulation();
   });
 
   startButton.addEventListener("click", () => {
+    welcomePending = false;
     resetSimulation();
   });
 
@@ -991,9 +1075,23 @@ function bindEvents() {
   });
 }
 
+function showWelcomeOverlay() {
+  welcomePending = true;
+  paused = true;
+  pauseButton.disabled = true;
+  pauseButton.textContent = "▶";
+  simStatus.textContent = "Ready";
+  gameOverTitle.textContent = "Begin your animal kingdom";
+  gameOverMessage.textContent = "Start the ecosystem when you are ready.";
+  continueButton.classList.add("is-hidden");
+  startButton.textContent = "Start";
+  startOverlay.classList.remove("is-hidden");
+}
+
 createGrid();
 preloadIcons();
 bindEvents();
 updateControlOutputs();
 resetSimulation();
+showWelcomeOverlay();
 requestAnimationFrame(tick);
