@@ -1,5 +1,29 @@
 "use strict";
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  getDocs,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "pocketwang-a2d56.firebaseapp.com",
+  projectId: "pocketwang-a2d56",
+  storageBucket: "pocketwang-a2d56.appspot.com",
+  messagingSenderId: "321549602257",
+  appId: "YOUR_APP_ID",
+  measurementId: "G-R6J2X0JHJW"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const SCORES_COLLECTION = "animalKingdomScores";
+
 const WIDTH = 26;
 const HEIGHT = 18;
 const DAY_MS = 5000;
@@ -63,6 +87,10 @@ const gameOverTitle = document.getElementById("gameOverTitle");
 const gameOverMessage = document.getElementById("gameOverMessage");
 const startButton = document.getElementById("startButton");
 const continueButton = document.getElementById("continueButton");
+const playerNamePanel = document.getElementById("playerNamePanel");
+const playerNameInput = document.getElementById("playerNameInput");
+const leaderboardPanel = document.getElementById("leaderboardPanel");
+const leaderboardBody = document.getElementById("leaderboardBody");
 
 const cells = [];
 let animals = [];
@@ -80,6 +108,8 @@ let paused = false;
 let gameOver = false;
 let biodiversityLossAcknowledged = false;
 let welcomePending = false;
+let playerName = "";
+let scoreSubmitted = false;
 
 function makeCellKey(x, y) {
   return `${x},${y}`;
@@ -267,11 +297,14 @@ function resetSimulation() {
   paused = false;
   gameOver = false;
   biodiversityLossAcknowledged = false;
+  scoreSubmitted = false;
   pauseButton.disabled = false;
   pauseButton.textContent = "⏸";
   simStatus.textContent = "Running";
   startOverlay.classList.add("is-hidden");
   continueButton.classList.remove("is-hidden");
+  playerNamePanel.classList.add("is-hidden");
+  leaderboardPanel.classList.add("is-hidden");
 
   spawnGrass(settings.startGrass);
 
@@ -722,7 +755,101 @@ function checkGameOver() {
   showTerminalGameOver();
 }
 
+function renderFinalFrameBeforeGameOver() {
+  render();
+  renderAccumulator = 0;
+}
+
+function currentScore() {
+  return {
+    daysLasted: Math.floor(day),
+    animalsEverLived: deathStats.antelope.born + deathStats.tiger.born
+  };
+}
+
+async function submitScoreOnce() {
+  if (scoreSubmitted) {
+    return;
+  }
+
+  scoreSubmitted = true;
+  const score = currentScore();
+  const today = new Date();
+
+  try {
+    await addDoc(collection(db, SCORES_COLLECTION), {
+      name: playerName || "Anonymous",
+      daysLasted: score.daysLasted,
+      animalsEverLived: score.animalsEverLived,
+      date: today.toISOString().split("T")[0],
+      endedAt: serverTimestamp(),
+      settings: readSettings()
+    });
+  } catch (error) {
+    console.error("Unable to submit Animal Kingdom score", error);
+  }
+}
+
+async function loadLeaderboard() {
+  try {
+    const q = query(collection(db, SCORES_COLLECTION));
+    const querySnapshot = await getDocs(q);
+    const entries = [];
+
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
+      entries.push({
+        name: data.name || "Anonymous",
+        daysLasted: Number(data.daysLasted) || 0,
+        animalsEverLived: Number(data.animalsEverLived) || 0
+      });
+    });
+
+    entries.sort(
+      (a, b) =>
+        b.daysLasted - a.daysLasted ||
+        b.animalsEverLived - a.animalsEverLived
+    );
+    displayLeaderboard(entries.slice(0, 10));
+  } catch (error) {
+    console.error("Unable to load Animal Kingdom leaderboard", error);
+    leaderboardBody.innerHTML = `<tr><td colspan="4">Leaderboard unavailable</td></tr>`;
+  }
+}
+
+function displayLeaderboard(entries) {
+  leaderboardBody.innerHTML = "";
+
+  if (!entries.length) {
+    leaderboardBody.innerHTML = `<tr><td colspan="4">No scores yet</td></tr>`;
+    return;
+  }
+
+  entries.forEach((entry, index) => {
+    const row = document.createElement("tr");
+    const rank = document.createElement("td");
+    const name = document.createElement("td");
+    const days = document.createElement("td");
+    const animalsEverLived = document.createElement("td");
+
+    rank.textContent = String(index + 1);
+    name.textContent = entry.name;
+    days.textContent = String(entry.daysLasted);
+    animalsEverLived.textContent = String(entry.animalsEverLived);
+    row.append(rank, name, days, animalsEverLived);
+    leaderboardBody.appendChild(row);
+  });
+}
+
+function showLeaderboardPanel() {
+  playerNamePanel.classList.add("is-hidden");
+  leaderboardPanel.classList.remove("is-hidden");
+  leaderboardBody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+  loadLeaderboard();
+}
+
 function pauseForBiodiversityLoss() {
+  renderFinalFrameBeforeGameOver();
   gameOver = true;
   paused = true;
   pauseButton.disabled = true;
@@ -732,9 +859,11 @@ function pauseForBiodiversityLoss() {
   gameOverMessage.textContent = `Your kingdom lasted ${Math.floor(day)} days.`;
   continueButton.classList.remove("is-hidden");
   startOverlay.classList.remove("is-hidden");
+  submitScoreOnce().finally(showLeaderboardPanel);
 }
 
 function showTerminalGameOver() {
+  renderFinalFrameBeforeGameOver();
   gameOver = true;
   paused = true;
   pauseButton.disabled = true;
@@ -744,6 +873,7 @@ function showTerminalGameOver() {
   gameOverMessage.textContent = `Your kingdom lasted ${Math.floor(day)} days.`;
   continueButton.classList.add("is-hidden");
   startOverlay.classList.remove("is-hidden");
+  submitScoreOnce().finally(showLeaderboardPanel);
 }
 
 function recordHistory(snapshotDay = Math.floor(day)) {
@@ -1048,6 +1178,8 @@ function bindEvents() {
 
   startButton.addEventListener("click", () => {
     welcomePending = false;
+    playerName = playerNameInput.value.trim() || "Anonymous";
+    localStorage.setItem("animalKingdomPlayerName", playerName);
     resetSimulation();
   });
 
@@ -1093,6 +1225,9 @@ function showWelcomeOverlay() {
   gameOverMessage.textContent = "Start the ecosystem when you are ready.";
   continueButton.classList.add("is-hidden");
   startButton.textContent = "Start";
+  playerNameInput.value = localStorage.getItem("animalKingdomPlayerName") || "";
+  playerNamePanel.classList.remove("is-hidden");
+  leaderboardPanel.classList.add("is-hidden");
   startOverlay.classList.remove("is-hidden");
 }
 
