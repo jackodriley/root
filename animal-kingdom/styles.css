@@ -199,7 +199,6 @@ h1 {
 
 .tiger-summary-icon {
   width: 32px;
-  filter: brightness(0.82) contrast(1.18) saturate(1.15);
 }
 
 .age-mix {
@@ -217,7 +216,6 @@ h1 {
 
 .age-mix-icon[src*="tiger"] {
   width: 22px;
-  filter: brightness(0.82) contrast(1.18) saturate(1.15);
 }
 
 .stats-strip .stat-item {
@@ -359,11 +357,12 @@ h1 {
 }
 
 .critter.antelope .critter-icon {
-  filter: var(--critter-filter);
+  filter: var(--critter-filter) contrast(0.82);
+  opacity: 0.88;
 }
 
 .critter.tiger {
-  filter: brightness(0.82) contrast(1.18) saturate(1.15);
+  filter: none;
 }
 
 .critter-icon {
@@ -537,7 +536,6 @@ label > span {
 
 .tiger-label-icon {
   width: 27px;
-  filter: brightness(0.82) contrast(1.18) saturate(1.15);
 }
 
 .toggle-label input {

@@ -52,20 +52,20 @@ const ACTIONS_PER_SPEED_UNIT = 1.45;
 const ICONS = {
   antelopeAdult: "assets/icons/antelope-adult-neutral.png",
   antelopeBaby: "assets/icons/antelope-baby-neutral.png",
-  tigerAdult: "assets/icons/tiger-adult-dark.png",
-  tigerBaby: "assets/icons/tiger-baby-dark.png"
+  tigerAdult: "assets/icons/tiger-adult-neon.png",
+  tigerBaby: "assets/icons/tiger-baby-neon.png"
 };
 const ANTELOPE_TINTS = [
-  { hue: 0, saturation: 1.7, brightness: 1.08 },
-  { hue: 28, saturation: 1.8, brightness: 1.1 },
-  { hue: 58, saturation: 1.55, brightness: 1.12 },
-  { hue: 88, saturation: 1.45, brightness: 1.1 },
-  { hue: 132, saturation: 1.38, brightness: 1.12 },
-  { hue: 172, saturation: 1.42, brightness: 1.1 },
-  { hue: 205, saturation: 1.5, brightness: 1.12 },
-  { hue: 248, saturation: 1.55, brightness: 1.12 },
-  { hue: 292, saturation: 1.55, brightness: 1.1 },
-  { hue: 326, saturation: 1.6, brightness: 1.1 }
+  { hue: 0, saturation: 0.82, brightness: 1.32 },
+  { hue: 28, saturation: 0.86, brightness: 1.34 },
+  { hue: 58, saturation: 0.78, brightness: 1.36 },
+  { hue: 88, saturation: 0.74, brightness: 1.34 },
+  { hue: 132, saturation: 0.7, brightness: 1.36 },
+  { hue: 172, saturation: 0.72, brightness: 1.34 },
+  { hue: 205, saturation: 0.76, brightness: 1.36 },
+  { hue: 248, saturation: 0.78, brightness: 1.36 },
+  { hue: 292, saturation: 0.78, brightness: 1.34 },
+  { hue: 326, saturation: 0.8, brightness: 1.34 }
 ];
 const CHART_SERIES = {
   grass: { color: "#67a857", visible: true },
@@ -277,6 +277,23 @@ async function loadSoundtrackBuffers() {
   return soundtrackBuffers;
 }
 
+async function resumeAudioContextForGesture() {
+  const context = makeAudioContext();
+
+  if (!context) {
+    return null;
+  }
+
+  if (context.state === "suspended") {
+    await context.resume();
+  }
+
+  console.info("[Animal Kingdom Soundtrack] AudioContext state", {
+    state: context.state
+  });
+  return context;
+}
+
 function stopSoundtrackSources() {
   Object.values(soundtrackSources).forEach((source) => {
     try {
@@ -295,14 +312,12 @@ async function startSoundtrack(mode) {
   soundtrackMode = mode;
 
   try {
-    const context = makeAudioContext();
+    const context = await resumeAudioContextForGesture();
     const buffers = await loadSoundtrackBuffers();
 
     if (!context || !buffers) {
       return;
     }
-
-    await context.resume();
 
     if (startToken !== soundtrackStartToken || mode !== soundtrackMode) {
       return;
@@ -416,9 +431,9 @@ function setAudioEnabled(enabled) {
   updateAudioToggle();
 
   if (audioEnabled && !Object.keys(soundtrackSources).length) {
-    if (welcomePending || soundtrackMode === "pregame") {
+    if (welcomePending) {
       startPregameSoundtrack();
-    } else if (!gameOver) {
+    } else if (soundtrackMode === "game" || !gameOver) {
       startGameSoundtrack();
     }
   }
@@ -1530,7 +1545,7 @@ function render() {
       if (animal.species === "antelope") {
         critter.style.setProperty(
           "--critter-filter",
-          `sepia(0.85) saturate(${animal.tint.saturation}) hue-rotate(${animal.tint.hue}deg) brightness(${animal.tint.brightness})`
+          `sepia(0.45) saturate(${animal.tint.saturation}) hue-rotate(${animal.tint.hue}deg) brightness(${animal.tint.brightness})`
         );
       }
 
@@ -1750,11 +1765,13 @@ function bindEvents() {
     setAudioEnabled(!audioEnabled);
   });
 
-  document.addEventListener("pointerdown", () => {
-    if (welcomePending && !Object.keys(soundtrackSources).length) {
+  const unlockSoundtrack = () => {
+    if (welcomePending && audioEnabled && !Object.keys(soundtrackSources).length) {
       startPregameSoundtrack();
     }
-  }, { once: true });
+  };
+  document.addEventListener("pointerdown", unlockSoundtrack);
+  document.addEventListener("keydown", unlockSoundtrack);
 }
 
 function showWelcomeOverlay() {
@@ -1771,7 +1788,6 @@ function showWelcomeOverlay() {
   playerNamePanel.classList.remove("is-hidden");
   leaderboardPanel.classList.add("is-hidden");
   startOverlay.classList.remove("is-hidden");
-  startPregameSoundtrack();
 }
 
 createGrid();
