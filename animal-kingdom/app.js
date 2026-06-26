@@ -497,19 +497,22 @@ function tryEat(animal, settings) {
   return false;
 }
 
-function canBreed(animal, settings) {
-  const isMatureAndReady =
+function isPhysicallyReadyToBreed(animal, settings) {
+  return (
     animal.age >= settings.breedingAge &&
     animal.energy >= settings.tummy * 0.62 &&
     day >= animal.breedReadyDay &&
-    day >= animal.sleepUntilDay;
+    day >= animal.sleepUntilDay
+  );
+}
 
-  if (!isMatureAndReady) {
+function canBreed(animal, settings) {
+  if (!isPhysicallyReadyToBreed(animal, settings)) {
     return false;
   }
 
   // Tiger reproduction is blocked when local prey is scarce, giving antelope herds room to recover.
-  if (animal.species === "tiger" && localPreyCount(animal, 8) < 3) {
+  if (animal.species === "tiger" && localPreyCount(animal, 10) < 2) {
     return false;
   }
 
@@ -524,7 +527,7 @@ function tryBreed(animal, settings) {
   const mate = findNearestAnimal(
     animal,
     animal.species,
-    (candidate) => canBreed(candidate, settings),
+    (candidate) => isPhysicallyReadyToBreed(candidate, settings),
     1
   );
 
@@ -577,7 +580,7 @@ function stepAnimal(animal) {
     animal.nextActionDay += 1 / (settings.speed * ACTIONS_PER_SPEED_UNIT);
 
     const nearbyTiger =
-      animal.species === "antelope" ? findNearestAnimal(animal, "tiger", () => true, 4) : null;
+      animal.species === "antelope" ? findNearestAnimal(animal, "tiger", () => true, 3) : null;
     if (nearbyTiger) {
       // Antelope flee nearby tigers before foraging or seeking mates, trading food and breeding for survival.
       moveAwayFrom(animal, nearbyTiger);
@@ -589,6 +592,7 @@ function stepAnimal(animal) {
     }
 
     const hungry = animal.energy < settings.hungerLine;
+    const physicallyReadyToBreed = isPhysicallyReadyToBreed(animal, settings);
     const readyToBreed = canBreed(animal, settings);
 
     if (hungry) {
@@ -603,20 +607,24 @@ function stepAnimal(animal) {
       continue;
     }
 
-    if (readyToBreed) {
+    if (physicallyReadyToBreed) {
+      const mateSearchRange = animal.species === "tiger" ? 16 : 9;
       const mate = findNearestAnimal(
         animal,
         animal.species,
-        (candidate) => canBreed(candidate, settings),
-        9
+        (candidate) => isPhysicallyReadyToBreed(candidate, settings),
+        mateSearchRange
       );
 
-      if (mate && distance(animal, mate) <= 1 && tryBreed(animal, settings)) {
+      if (mate && distance(animal, mate) <= 1 && readyToBreed && tryBreed(animal, settings)) {
         continue;
       }
 
-      moveToward(animal, mate);
-      continue;
+      if (mate) {
+        // Physically ready animals seek mates; tiger births still require the local prey check.
+        moveToward(animal, mate);
+        continue;
+      }
     }
 
     if (maybeSleep(animal, settings)) {
