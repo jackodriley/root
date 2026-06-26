@@ -7,7 +7,8 @@ import {
   addDoc,
   query,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  setLogLevel
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -23,6 +24,23 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const SCORES_COLLECTION = "animalKingdomScores";
+
+setLogLevel("debug");
+console.info("[Animal Kingdom Firebase] Initialized", {
+  projectId: firebaseConfig.projectId,
+  collection: SCORES_COLLECTION
+});
+
+if (firebaseConfig.apiKey.includes("YOUR_") || firebaseConfig.appId.includes("YOUR_")) {
+  console.warn("[Animal Kingdom Firebase] Firebase config still contains placeholder values", {
+    apiKey: firebaseConfig.apiKey,
+    appId: firebaseConfig.appId
+  });
+}
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("[Animal Kingdom Firebase] Unhandled promise rejection", event.reason);
+});
 
 const WIDTH = 26;
 const HEIGHT = 18;
@@ -769,28 +787,50 @@ function currentScore() {
 
 async function submitScoreOnce() {
   if (scoreSubmitted) {
+    console.info("[Animal Kingdom Firebase] Score submit skipped: already submitted");
     return;
   }
 
   scoreSubmitted = true;
   const score = currentScore();
   const today = new Date();
+  const scoreDoc = {
+    name: playerName || "Anonymous",
+    daysLasted: score.daysLasted,
+    animalsEverLived: score.animalsEverLived,
+    date: today.toISOString().split("T")[0],
+    endedAt: serverTimestamp(),
+    settings: readSettings()
+  };
+
+  console.info("[Animal Kingdom Firebase] Submitting score", {
+    collection: SCORES_COLLECTION,
+    score: {
+      ...scoreDoc,
+      endedAt: "serverTimestamp()"
+    }
+  });
 
   try {
-    await addDoc(collection(db, SCORES_COLLECTION), {
-      name: playerName || "Anonymous",
-      daysLasted: score.daysLasted,
-      animalsEverLived: score.animalsEverLived,
-      date: today.toISOString().split("T")[0],
-      endedAt: serverTimestamp(),
-      settings: readSettings()
+    const docRef = await addDoc(collection(db, SCORES_COLLECTION), scoreDoc);
+    console.info("[Animal Kingdom Firebase] Score submitted", {
+      collection: SCORES_COLLECTION,
+      documentId: docRef.id
     });
   } catch (error) {
-    console.error("Unable to submit Animal Kingdom score", error);
+    console.error("[Animal Kingdom Firebase] Unable to submit score", {
+      code: error.code,
+      message: error.message,
+      error
+    });
   }
 }
 
 async function loadLeaderboard() {
+  console.info("[Animal Kingdom Firebase] Loading leaderboard", {
+    collection: SCORES_COLLECTION
+  });
+
   try {
     const q = query(collection(db, SCORES_COLLECTION));
     const querySnapshot = await getDocs(q);
@@ -810,9 +850,17 @@ async function loadLeaderboard() {
         b.daysLasted - a.daysLasted ||
         b.animalsEverLived - a.animalsEverLived
     );
+    console.info("[Animal Kingdom Firebase] Leaderboard loaded", {
+      totalDocs: entries.length,
+      displayedDocs: Math.min(entries.length, 10)
+    });
     displayLeaderboard(entries.slice(0, 10));
   } catch (error) {
-    console.error("Unable to load Animal Kingdom leaderboard", error);
+    console.error("[Animal Kingdom Firebase] Unable to load leaderboard", {
+      code: error.code,
+      message: error.message,
+      error
+    });
     leaderboardBody.innerHTML = `<tr><td colspan="4">Leaderboard unavailable</td></tr>`;
   }
 }
@@ -842,6 +890,7 @@ function displayLeaderboard(entries) {
 }
 
 function showLeaderboardPanel() {
+  console.info("[Animal Kingdom Firebase] Showing leaderboard panel");
   playerNamePanel.classList.add("is-hidden");
   leaderboardPanel.classList.remove("is-hidden");
   leaderboardBody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
@@ -850,6 +899,7 @@ function showLeaderboardPanel() {
 
 function pauseForBiodiversityLoss() {
   renderFinalFrameBeforeGameOver();
+  console.info("[Animal Kingdom Firebase] Biodiversity-loss game end reached", currentScore());
   gameOver = true;
   paused = true;
   pauseButton.disabled = true;
@@ -864,6 +914,7 @@ function pauseForBiodiversityLoss() {
 
 function showTerminalGameOver() {
   renderFinalFrameBeforeGameOver();
+  console.info("[Animal Kingdom Firebase] Terminal game end reached", currentScore());
   gameOver = true;
   paused = true;
   pauseButton.disabled = true;
