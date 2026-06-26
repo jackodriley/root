@@ -12,12 +12,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyDQ5SEDfrvmAaGBjZTtHQ2L89jprhJ5QHk",
   authDomain: "pocketwang-a2d56.firebaseapp.com",
   projectId: "pocketwang-a2d56",
   storageBucket: "pocketwang-a2d56.appspot.com",
   messagingSenderId: "321549602257",
-  appId: "YOUR_APP_ID",
+  appId: "1:321549602257:web:36c42c88de80a58eb4a4f0",
   measurementId: "G-R6J2X0JHJW"
 };
 
