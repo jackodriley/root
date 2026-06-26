@@ -6,7 +6,7 @@
   --line: #4d4637;
   --grass: #67a857;
   --antelope: #c58b43;
-  --tiger: #d14d35;
+  --tiger: #ff7a00;
   --sky: #8db8c9;
   --water: #7aa5c3;
   --cell-a: #d7c689;
@@ -604,7 +604,7 @@ output {
 }
 
 .tiger-line {
-  color: #d14d35;
+  color: #ff7a00;
 }
 
 #simStatus {

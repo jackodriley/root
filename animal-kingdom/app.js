@@ -70,7 +70,7 @@ const ANTELOPE_TINTS = [
 const CHART_SERIES = {
   grass: { color: "#67a857", visible: true },
   antelope: { color: "#c58b43", visible: true },
-  tiger: { color: "#d14d35", visible: true }
+  tiger: { color: "#ff7a00", visible: true }
 };
 const SCORE_COMMENTS = [
   {
