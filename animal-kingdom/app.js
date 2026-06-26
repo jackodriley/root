@@ -72,6 +72,62 @@ const CHART_SERIES = {
   antelope: { color: "#c58b43", visible: true },
   tiger: { color: "#d14d35", visible: true }
 };
+const SCORE_COMMENTS = [
+  {
+    minDays: 200,
+    comments: [
+      "David Attenborough would be proud.",
+      "A national treasure would narrate this in a hushed voice.",
+      "Quite heroic, in an unusually damp documentary sort of way.",
+      "The ecosystem has lasted longer than most British governments."
+    ]
+  },
+  {
+    minDays: 100,
+    comments: [
+      "Respectable. The parish council has approved a small plaque.",
+      "A proper little kingdom. Try not to let it go to your head.",
+      "Strong work. Somewhere, a clipboard has been marked 'adequate plus'.",
+      "The animals appear to tolerate your leadership."
+    ]
+  },
+  {
+    minDays: 50,
+    comments: [
+      "Not bad. Nobody is writing a commemorative tea towel, but still.",
+      "A decent innings, followed by the traditional ecological embarrassment.",
+      "You may retain the clipboard, provisionally.",
+      "Change some settings and see if you can do better next time."
+    ]
+  },
+  {
+    minDays: 25,
+    comments: [
+      "A brave attempt, in the way a paper umbrella is brave.",
+      "There were moments of competence. Brief, but observable.",
+      "The animals have submitted feedback. It is not glowing.",
+      "Change some settings and see if you can do better next time."
+    ]
+  },
+  {
+    minDays: 10,
+    comments: [
+      "Marginally less disastrous than expected.",
+      "Technically a kingdom, if one is being extremely generous.",
+      "A modest spell of order before the wheels came off.",
+      "Change some settings and see if you can do better next time."
+    ]
+  },
+  {
+    minDays: 0,
+    comments: [
+      "Pitiful. Call yourself a God?",
+      "A theological incident, frankly.",
+      "The animals deserved a manager, not whatever that was.",
+      "Barely long enough to print the headed paper."
+    ]
+  }
+];
 
 const controls = {
   simSpeed: document.getElementById("simSpeed"),
@@ -785,13 +841,26 @@ function currentScore() {
   };
 }
 
+function randomFrom(items) {
+  return items[randomInt(items.length)];
+}
+
+function scoreComment(daysLasted) {
+  const band = SCORE_COMMENTS.find((entry) => daysLasted >= entry.minDays);
+  return randomFrom(band.comments);
+}
+
+function gameOverMessageText() {
+  const score = currentScore();
+  return `Your kingdom lasted ${score.daysLasted} days. ${scoreComment(score.daysLasted)}`;
+}
+
 async function submitScoreOnce() {
   if (scoreSubmitted) {
     console.info("[Animal Kingdom Firebase] Score submit skipped: already submitted");
     return;
   }
 
-  scoreSubmitted = true;
   const score = currentScore();
   const today = new Date();
   const scoreDoc = {
@@ -813,6 +882,7 @@ async function submitScoreOnce() {
 
   try {
     const docRef = await addDoc(collection(db, SCORES_COLLECTION), scoreDoc);
+    scoreSubmitted = true;
     console.info("[Animal Kingdom Firebase] Score submitted", {
       collection: SCORES_COLLECTION,
       documentId: docRef.id
@@ -906,8 +976,9 @@ function pauseForBiodiversityLoss() {
   pauseButton.textContent = "■";
   simStatus.textContent = "Biodiversity Lost";
   gameOverTitle.textContent = "Kingdom fallen - biodiversity lost";
-  gameOverMessage.textContent = `Your kingdom lasted ${Math.floor(day)} days.`;
+  gameOverMessage.textContent = gameOverMessageText();
   continueButton.classList.remove("is-hidden");
+  startButton.textContent = "Begin Again";
   startOverlay.classList.remove("is-hidden");
   submitScoreOnce().finally(showLeaderboardPanel);
 }
@@ -921,8 +992,9 @@ function showTerminalGameOver() {
   pauseButton.textContent = "■";
   simStatus.textContent = "Ended";
   gameOverTitle.textContent = "Kingdom fallen - biodiversity lost";
-  gameOverMessage.textContent = `Your kingdom lasted ${Math.floor(day)} days.`;
+  gameOverMessage.textContent = gameOverMessageText();
   continueButton.classList.add("is-hidden");
+  startButton.textContent = "Begin Again";
   startOverlay.classList.remove("is-hidden");
   submitScoreOnce().finally(showLeaderboardPanel);
 }
@@ -1098,9 +1170,9 @@ function render() {
     "adult tiger"
   );
   document.getElementById("antelopeDeaths").textContent =
-    `born ${deathStats.antelope.born} | eaten ${deathStats.antelope.eaten} | old ${deathStats.antelope.oldAge} | starved ${deathStats.antelope.starvation}`;
+    `born ${deathStats.antelope.born} · eaten ${deathStats.antelope.eaten} · old ${deathStats.antelope.oldAge} · starved ${deathStats.antelope.starvation}`;
   document.getElementById("tigerDeaths").textContent =
-    `born ${deathStats.tiger.born} | old ${deathStats.tiger.oldAge} | starved ${deathStats.tiger.starvation}`;
+    `born ${deathStats.tiger.born} · old ${deathStats.tiger.oldAge} · starved ${deathStats.tiger.starvation}`;
   drawChart();
 }
 
