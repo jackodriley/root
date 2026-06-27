@@ -97,9 +97,10 @@
               <h2 id="gameOverTitle">Kingdom fallen - biodiversity lost</h2>
               <p id="gameOverMessage">Your kingdom lasted 0 days.</p>
               <label id="playerNamePanel" class="player-name-panel">
-                <span>Name <small>(Shows up on the leaderboard)</small></span>
+                <span>Name</span>
                 <input id="playerNameInput" type="text" maxlength="24" autocomplete="nickname" placeholder="Anonymous" />
               </label>
+              <p class="leaderboard-helper player-name-helper">(Shows up on the leaderboard)</p>
               <div id="leaderboardPanel" class="leaderboard-panel is-hidden">
                 <h3>Leaderboard</h3>
                 <table>
@@ -166,7 +167,7 @@
               <output for="grassGrowth"></output>
             </label>
             <label>
-              <span>🌱 New plants</span>
+              <span>🌱 New plants daily</span>
               <input id="grassSpawn" type="range" min="1" max="200" step="1" value="14" />
               <output for="grassSpawn"></output>
             </label>

@@ -42,7 +42,11 @@ window.addEventListener("unhandledrejection", (event) => {
   console.error("[Animal Kingdom Firebase] Unhandled promise rejection", event.reason);
 });
 
-const PORTRAIT_GRID = window.matchMedia("(max-width: 680px)").matches;
+const INITIAL_VIEWPORT_WIDTH = Math.min(
+  ...[window.innerWidth, window.visualViewport?.width, document.documentElement.clientWidth]
+    .filter((width) => Number.isFinite(width) && width > 0)
+);
+const PORTRAIT_GRID = INITIAL_VIEWPORT_WIDTH <= 680;
 const WIDTH = PORTRAIT_GRID ? 18 : 26;
 const HEIGHT = PORTRAIT_GRID ? 26 : 18;
 const DAY_MS = 5000;
@@ -158,6 +162,7 @@ const controls = {
 };
 
 const gridEl = document.getElementById("ecosystemGrid");
+const gridFrame = document.querySelector(".grid-frame");
 const chart = document.getElementById("populationChart");
 const chartCtx = chart.getContext("2d");
 const pauseButton = document.getElementById("pauseButton");
@@ -546,6 +551,10 @@ function preloadIcons() {
 function createGrid() {
   gridEl.innerHTML = "";
   cells.length = 0;
+  gridEl.style.setProperty("--grid-columns", WIDTH);
+  gridEl.style.setProperty("--grid-rows", HEIGHT);
+  gridEl.style.setProperty("--grid-aspect", `${WIDTH} / ${HEIGHT}`);
+  fitGridToFrame();
 
   for (let index = 0; index < WIDTH * HEIGHT; index += 1) {
     const cell = document.createElement("div");
@@ -555,6 +564,46 @@ function createGrid() {
     cell.appendChild(occupants);
     gridEl.appendChild(cell);
     cells.push({ cell, occupants });
+  }
+}
+
+function fitGridToFrame() {
+  if (!gridFrame) {
+    return;
+  }
+
+  const frameRect = gridFrame.getBoundingClientRect();
+  const frameStyle = getComputedStyle(gridFrame);
+  const availableWidth = frameRect.width - parseFloat(frameStyle.paddingLeft) - parseFloat(frameStyle.paddingRight);
+  const availableHeight = frameRect.height - parseFloat(frameStyle.paddingTop) - parseFloat(frameStyle.paddingBottom);
+  const gridAspect = WIDTH / HEIGHT;
+
+  if (availableWidth <= 0) {
+    return;
+  }
+
+  let gridWidth = availableWidth;
+  let gridHeight = gridWidth / gridAspect;
+
+  if (availableHeight > 0 && gridHeight > availableHeight) {
+    gridHeight = availableHeight;
+    gridWidth = gridHeight * gridAspect;
+  }
+
+  gridEl.style.width = `${Math.floor(gridWidth)}px`;
+  gridEl.style.height = `${Math.floor(gridHeight)}px`;
+}
+
+function watchGridFrameSize() {
+  if (!gridFrame) {
+    return;
+  }
+
+  if ("ResizeObserver" in window) {
+    const observer = new ResizeObserver(fitGridToFrame);
+    observer.observe(gridFrame);
+  } else {
+    window.addEventListener("resize", fitGridToFrame);
   }
 }
 
@@ -1782,8 +1831,12 @@ function bindEvents() {
   });
 
   resetButton.addEventListener("click", () => {
-    welcomePending = false;
-    resetSimulation();
+    if (welcomePending) {
+      showWelcomeOverlay();
+      return;
+    }
+
+    showResetSetupOverlay();
   });
 
   startButton.addEventListener("click", () => {
@@ -1850,11 +1903,31 @@ function showWelcomeOverlay() {
   pauseButton.textContent = "▶";
   simStatus.textContent = "Ready";
   gameOverTitle.textContent = "Begin your animal kingdom";
-  gameOverMessage.textContent = "Start the ecosystem when you are ready.";
+  gameOverMessage.textContent = "Set up your kingdom with the sliders. Start the ecosystem when you are ready.";
   continueButton.classList.add("is-hidden");
   startButton.textContent = "Start";
   playerNameInput.value = localStorage.getItem("animalKingdomPlayerName") || "";
   playerNamePanel.classList.remove("is-hidden");
+  leaderboardPanel.classList.add("is-hidden");
+  startOverlay.classList.remove("is-hidden");
+}
+
+function showResetSetupOverlay() {
+  welcomePending = true;
+  paused = true;
+  gameOver = false;
+  document.body.classList.remove("simulation-running");
+  pauseButton.disabled = true;
+  pauseButton.textContent = "▶";
+  simStatus.textContent = "Ready";
+  soundtrackMode = "pregame";
+  updateSoundtrackMix(false);
+  gameOverTitle.textContent = "Reset your animal kingdom";
+  gameOverMessage.textContent = "Change the settings, then begin again when you are ready.";
+  continueButton.classList.add("is-hidden");
+  startButton.textContent = "Begin Again";
+  playerNameInput.value = playerName || localStorage.getItem("animalKingdomPlayerName") || "";
+  playerNamePanel.classList.add("is-hidden");
   leaderboardPanel.classList.add("is-hidden");
   startOverlay.classList.remove("is-hidden");
 }
@@ -1865,6 +1938,7 @@ function dismissIntroOverlay() {
 }
 
 createGrid();
+watchGridFrameSize();
 preloadIcons();
 bindEvents();
 updateControlOutputs();
