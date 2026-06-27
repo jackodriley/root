@@ -198,6 +198,7 @@ let paused = false;
 let gameOver = false;
 let biodiversityLossAcknowledged = false;
 let welcomePending = false;
+let resetPending = false;
 let playerName = "";
 let scoreSubmitted = false;
 let gameEndTracked = false;
@@ -1830,17 +1831,22 @@ function bindEvents() {
     input.addEventListener("input", updateControlOutputs);
   });
 
-  resetButton.addEventListener("click", () => {
-    if (welcomePending) {
+  resetButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (welcomePending && !resetPending) {
       showWelcomeOverlay();
       return;
     }
 
+    console.info("[Animal Kingdom] Reset requested from toolbar");
     showResetSetupOverlay();
   });
 
   startButton.addEventListener("click", () => {
     welcomePending = false;
+    resetPending = false;
     playerName = playerNameInput.value.trim() || "Anonymous";
     localStorage.setItem("animalKingdomPlayerName", playerName);
     resetSimulation();
@@ -1897,6 +1903,7 @@ function bindEvents() {
 
 function showWelcomeOverlay() {
   welcomePending = true;
+  resetPending = false;
   paused = true;
   document.body.classList.remove("simulation-running");
   pauseButton.disabled = true;
@@ -1914,6 +1921,7 @@ function showWelcomeOverlay() {
 
 function showResetSetupOverlay() {
   welcomePending = true;
+  resetPending = true;
   paused = true;
   gameOver = false;
   document.body.classList.remove("simulation-running");
