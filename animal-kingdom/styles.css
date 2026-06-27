@@ -752,6 +752,7 @@ canvas {
   border: 3px inset #a29669;
   background: #f8f2d6;
   color: var(--ink);
+  font-size: 16px;
 }
 
 .leaderboard-helper {
