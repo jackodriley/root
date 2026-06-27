@@ -1346,7 +1346,12 @@ async function loadIntroStats() {
       "Intro stats request timed out"
     );
     const animalsExpired = entries.reduce((total, entry) => total + entry.animalsEverLived, 0);
-    introStats.textContent = `Kingdoms created: ${entries.length.toLocaleString()} - Animals expired: ${animalsExpired.toLocaleString()}`;
+    const totalDaysLasted = entries.reduce((total, entry) => total + entry.daysLasted, 0);
+    const averageDaysLasted = entries.length ? totalDaysLasted / entries.length : 0;
+    const formattedAverageDays = Number.isInteger(averageDaysLasted)
+      ? averageDaysLasted.toLocaleString()
+      : averageDaysLasted.toLocaleString(undefined, { maximumFractionDigits: 1 });
+    introStats.textContent = `Kingdoms created: ${entries.length.toLocaleString()} - Animals expired: ${animalsExpired.toLocaleString()} - Average Kingdom lifespan: ${formattedAverageDays} days`;
   } catch (error) {
     console.warn("[Animal Kingdom Firebase] Intro stats unavailable", {
       message: error.message,
