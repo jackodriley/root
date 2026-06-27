@@ -50,6 +50,7 @@ const PORTRAIT_GRID = INITIAL_VIEWPORT_WIDTH <= 680;
 const WIDTH = PORTRAIT_GRID ? 18 : 26;
 const HEIGHT = PORTRAIT_GRID ? 26 : 18;
 const DAY_MS = 5000;
+const INTRO_STATS_TIMEOUT_MS = 2800;
 const MAX_ANIMALS = 420;
 const MAX_GRASS = WIDTH * HEIGHT;
 const CHART_LIMIT = 160;
@@ -167,6 +168,7 @@ const chart = document.getElementById("populationChart");
 const chartCtx = chart.getContext("2d");
 const pauseButton = document.getElementById("pauseButton");
 const resetButton = document.getElementById("resetButton");
+const leaderboardToggle = document.getElementById("leaderboardToggle");
 const audioToggle = document.getElementById("audioToggle");
 const simStatus = document.getElementById("simStatus");
 const scoreMilestones = document.getElementById("scoreMilestones");
@@ -181,6 +183,10 @@ const leaderboardPanel = document.getElementById("leaderboardPanel");
 const leaderboardBody = document.getElementById("leaderboardBody");
 const introOverlay = document.getElementById("introOverlay");
 const introCloseButton = document.getElementById("introCloseButton");
+const introStats = document.getElementById("introStats");
+const leaderboardOverlay = document.getElementById("leaderboardOverlay");
+const leaderboardCloseButton = document.getElementById("leaderboardCloseButton");
+const leaderboardViewerBody = document.getElementById("leaderboardViewerBody");
 
 const cells = [];
 let animals = [];
@@ -202,6 +208,7 @@ let resetPending = false;
 let playerName = "";
 let scoreSubmitted = false;
 let gameEndTracked = false;
+let leaderboardViewerWasRunning = false;
 let audioContext = null;
 let soundtrackReadyPromise = null;
 let soundtrackBuffers = null;
@@ -1277,6 +1284,41 @@ async function fetchLeaderboardEntries() {
   return entries;
 }
 
+function withTimeout(promise, timeoutMs, timeoutMessage) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+}
+
+async function loadIntroStats() {
+  if (!introStats) {
+    return;
+  }
+
+  introStats.textContent = "Kingdom records loading...";
+
+  try {
+    const entries = await withTimeout(
+      fetchLeaderboardEntries(),
+      INTRO_STATS_TIMEOUT_MS,
+      "Intro stats request timed out"
+    );
+    const animalsExpired = entries.reduce((total, entry) => total + entry.animalsEverLived, 0);
+    introStats.textContent = `Kingdoms created: ${entries.length.toLocaleString()} - Animals expired: ${animalsExpired.toLocaleString()}`;
+  } catch (error) {
+    console.warn("[Animal Kingdom Firebase] Intro stats unavailable", {
+      message: error.message,
+      error
+    });
+    introStats.textContent = "Kingdom records unavailable";
+  }
+}
+
 function randomFrom(items) {
   return items[randomInt(items.length)];
 }
@@ -1332,7 +1374,7 @@ async function submitScoreOnce() {
   }
 }
 
-async function loadLeaderboard() {
+async function loadLeaderboard(targetBody = leaderboardBody) {
   console.info("[Animal Kingdom Firebase] Loading leaderboard", {
     collection: SCORES_COLLECTION
   });
@@ -1344,14 +1386,14 @@ async function loadLeaderboard() {
       totalDocs: entries.length,
       displayedDocs: rankedEntries.length
     });
-    displayLeaderboard(rankedEntries);
+    displayLeaderboard(rankedEntries, targetBody);
   } catch (error) {
     console.error("[Animal Kingdom Firebase] Unable to load leaderboard", {
       code: error.code,
       message: error.message,
       error
     });
-    leaderboardBody.innerHTML = `<tr><td colspan="4">Leaderboard unavailable</td></tr>`;
+    targetBody.innerHTML = `<tr><td colspan="4">Leaderboard unavailable</td></tr>`;
   }
 }
 
@@ -1439,11 +1481,11 @@ function rankLabel(rank, isLowestRank) {
   return `${rank}${award ? ` ${award}` : ""}${potato}`;
 }
 
-function displayLeaderboard(entries) {
-  leaderboardBody.innerHTML = "";
+function displayLeaderboard(entries, targetBody = leaderboardBody) {
+  targetBody.innerHTML = "";
 
   if (!entries.length) {
-    leaderboardBody.innerHTML = `<tr><td colspan="4">No scores yet</td></tr>`;
+    targetBody.innerHTML = `<tr><td colspan="4">No scores yet</td></tr>`;
     return;
   }
 
@@ -1464,7 +1506,7 @@ function displayLeaderboard(entries) {
     days.textContent = String(entry.daysLasted);
     animalsEverLived.textContent = String(entry.animalsEverLived);
     row.append(rank, name, days, animalsEverLived);
-    leaderboardBody.appendChild(row);
+    targetBody.appendChild(row);
   });
 }
 
@@ -1488,6 +1530,35 @@ function showLeaderboardPanel() {
   leaderboardPanel.classList.remove("is-hidden");
   leaderboardBody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
   loadLeaderboard();
+}
+
+function showLeaderboardViewer() {
+  console.info("[Animal Kingdom Firebase] Showing persistent leaderboard viewer");
+  leaderboardViewerWasRunning = !paused && !gameOver && !welcomePending;
+
+  if (leaderboardViewerWasRunning) {
+    paused = true;
+    pauseButton.textContent = "▶";
+    simStatus.textContent = "Paused";
+    lastFrame = performance.now();
+  }
+
+  leaderboardOverlay.classList.remove("is-hidden");
+  leaderboardViewerBody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+  loadLeaderboard(leaderboardViewerBody);
+}
+
+function hideLeaderboardViewer() {
+  leaderboardOverlay.classList.add("is-hidden");
+
+  if (leaderboardViewerWasRunning && !gameOver && !welcomePending) {
+    paused = false;
+    pauseButton.textContent = "⏸";
+    simStatus.textContent = "Running";
+    lastFrame = performance.now();
+  }
+
+  leaderboardViewerWasRunning = false;
 }
 
 function pauseForBiodiversityLoss() {
@@ -1890,7 +1961,21 @@ function bindEvents() {
     setAudioEnabled(!audioEnabled);
   });
 
+  leaderboardToggle.addEventListener("click", showLeaderboardViewer);
+  leaderboardCloseButton.addEventListener("click", hideLeaderboardViewer);
+  leaderboardOverlay.addEventListener("click", (event) => {
+    if (event.target === leaderboardOverlay) {
+      hideLeaderboardViewer();
+    }
+  });
+
   introCloseButton.addEventListener("click", dismissIntroOverlay);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !leaderboardOverlay.classList.contains("is-hidden")) {
+      hideLeaderboardViewer();
+    }
+  });
 
   const unlockSoundtrack = () => {
     if (welcomePending && audioEnabled && !Object.keys(soundtrackSources).length) {
@@ -1957,5 +2042,6 @@ pauseButton.disabled = true;
 pauseButton.textContent = "▶";
 simStatus.textContent = "Ready";
 document.body.classList.remove("simulation-running");
+loadIntroStats();
 loadInitialLeaderboardMilestones();
 requestAnimationFrame(tick);

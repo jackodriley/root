@@ -14,7 +14,7 @@
     <meta name="twitter:description" content="a flawed god tries to manage the cruel world of nature" />
     <meta name="twitter:image" content="https://potatocorp.ai/animal-kingdom/assets/icons/preview-image.png" />
     <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🐅</text></svg>' />
-    <link rel="stylesheet" href="styles.css?v=20260627-input-zoom" />
+    <link rel="stylesheet" href="styles.css?v=20260627-leaderboard-viewer" />
   </head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-5WZEF7TFB5"></script>
@@ -33,6 +33,7 @@
         <p>Good news! You are a god, with the power to create a new savannah ecosystem of grass, tigers and antelope, and choose their key attributes to help build a harmonious animal kingdom. Use the sliders to make your choices.</p>
         <p>Bad news! Once you’ve founded the kingdom, you ONLY have the power to control how fast the grass grows.</p>
         <p>How long can your animal kingdom last? Time to find out… longest running ecosystem wins.</p>
+        <p id="introStats" class="intro-stats">Kingdom records loading...</p>
       </section>
     </div>
 
@@ -136,6 +137,7 @@
               <span id="scoreMilestones" class="score-milestones" aria-label="Leaderboard milestones"></span>
             </div>
             <div class="panel-actions">
+              <button id="leaderboardToggle" class="icon-button leaderboard-toggle" type="button" title="View leaderboard">🏆</button>
               <button id="audioToggle" class="icon-button audio-toggle" type="button" title="Toggle soundtrack" aria-pressed="false">🔈</button>
               <span id="simStatus">Running</span>
             </div>
@@ -254,6 +256,30 @@
       </aside>
     </main>
 
-    <script type="module" src="app.js?v=20260627-reset-overlay"></script>
+    <div id="leaderboardOverlay" class="leaderboard-viewer-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="leaderboardViewerTitle">
+      <section class="leaderboard-viewer-dialog">
+        <button id="leaderboardCloseButton" class="intro-close" type="button" aria-label="Close leaderboard">×</button>
+        <h2 id="leaderboardViewerTitle">Leaderboard</h2>
+        <div class="leaderboard-panel leaderboard-viewer-panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Name</th>
+                <th>Days</th>
+                <th>Animals</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardViewerBody">
+              <tr>
+                <td colspan="4">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="app.js?v=20260627-leaderboard-viewer"></script>
   </body>
 </html>
