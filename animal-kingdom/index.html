@@ -3,8 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Animal Kingdom Ecosystem Simulation</title>
-    <link rel="icon" href="data:," />
+    <title>🦌Animal Kingdom 🐅</title>
+    <meta name="description" content="a flawed god tries to manage the cruel world of nature" />
+    <meta property="og:title" content="🦌Animal Kingdom 🐅" />
+    <meta property="og:description" content="a flawed god tries to manage the cruel world of nature" />
+    <meta property="og:image" content="https://potatocorp.ai/animal-kingdom/assets/icons/preview-image.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="🦌Animal Kingdom 🐅" />
+    <meta name="twitter:description" content="a flawed god tries to manage the cruel world of nature" />
+    <meta name="twitter:image" content="https://potatocorp.ai/animal-kingdom/assets/icons/preview-image.png" />
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🐅</text></svg>' />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <!-- Google tag (gtag.js) -->
@@ -17,6 +26,16 @@
     gtag('config', 'G-5WZEF7TFB5');
   </script>
   <body>
+    <div id="introOverlay" class="intro-overlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+      <section class="intro-dialog">
+        <button id="introCloseButton" class="intro-close" type="button" aria-label="Close introduction">×</button>
+        <h2 id="introTitle">WELCOME TO ANIMAL KINGDOM</h2>
+        <p>Good news! You are a god, with the power to create a new savannah ecosystem of grass, tigers and antelope, and choose their key attributes to help build a harmonious animal kingdom. Use the sliders to make your choices.</p>
+        <p>Bad news! Once you’ve founded the kingdom, you ONLY have the power to control how fast the grass grows.</p>
+        <p>How long can your animal kingdom last? Time to find out… longest running ecosystem wins.</p>
+      </section>
+    </div>
+
     <main class="app-shell">
       <section class="world-pane" aria-label="Savanna simulation">
         <header class="top-bar">
@@ -78,7 +97,7 @@
               <h2 id="gameOverTitle">Kingdom fallen - biodiversity lost</h2>
               <p id="gameOverMessage">Your kingdom lasted 0 days.</p>
               <label id="playerNamePanel" class="player-name-panel">
-                <span>Name</span>
+                <span>Name <small>(Shows up on the leaderboard)</small></span>
                 <input id="playerNameInput" type="text" maxlength="24" autocomplete="nickname" placeholder="Anonymous" />
               </label>
               <div id="leaderboardPanel" class="leaderboard-panel is-hidden">
@@ -136,10 +155,24 @@
 
         <section class="panel control-panel">
           <div class="panel-title">
-            <h2>God's Cockpit</h2>
+            <h2>Godly Powers</h2>
           </div>
 
-          <div class="control-group">
+          <div class="control-group live-control-group">
+            <h3>Savanna Grass 🌳</h3>
+            <label>
+              <span>⬆️ Growth speed</span>
+              <input id="grassGrowth" type="range" min="1" max="10" step="1" value="4" />
+              <output for="grassGrowth"></output>
+            </label>
+            <label>
+              <span>🌱 New plants</span>
+              <input id="grassSpawn" type="range" min="1" max="200" step="1" value="14" />
+              <output for="grassSpawn"></output>
+            </label>
+          </div>
+
+          <div class="control-group setup-control-group">
             <h3>Starter Populations</h3>
             <label>
               <span><img class="control-label-icon" src="assets/icons/grass-maturity-3.png" alt="" />Grass</span>
@@ -158,7 +191,7 @@
             </label>
           </div>
 
-          <div class="control-group">
+          <div class="control-group setup-control-group">
             <h3>Tigers 🐆</h3>
             <label>
               <span>⏩ Speed</span>
@@ -176,12 +209,7 @@
               <output for="tigerBreedingAge"></output>
             </label>
             <label>
-              <span>🍽️ Appetite</span>
-              <input id="tigerTummy" type="range" min="25" max="160" step="5" value="85" />
-              <output for="tigerTummy"></output>
-            </label>
-            <label>
-              <span>👴🏻 Old Age</span>
+              <span>👴🏻 Lifespan</span>
               <input id="tigerOldAge" type="range" min="5" max="20" step="1" value="20" />
               <output for="tigerOldAge"></output>
             </label>
@@ -192,7 +220,7 @@
             </label>
           </div>
 
-          <div class="control-group">
+          <div class="control-group setup-control-group">
             <h3>Antelope 🦌</h3>
             <label>
               <span>⏩ Speed</span>
@@ -210,12 +238,7 @@
               <output for="antelopeBreedingAge"></output>
             </label>
             <label>
-              <span>🍽️ Appetite</span>
-              <input id="antelopeTummy" type="range" min="15" max="120" step="5" value="55" />
-              <output for="antelopeTummy"></output>
-            </label>
-            <label>
-              <span>👴🏻 Old Age</span>
+              <span>👴🏻 Lifespan</span>
               <input id="antelopeOldAge" type="range" min="5" max="20" step="1" value="18" />
               <output for="antelopeOldAge"></output>
             </label>
@@ -226,19 +249,6 @@
             </label>
           </div>
 
-          <div class="control-group">
-            <h3>Savanna Grass 🌳</h3>
-            <label>
-              <span>⬆️ Growth speed</span>
-              <input id="grassGrowth" type="range" min="1" max="10" step="1" value="4" />
-              <output for="grassGrowth"></output>
-            </label>
-            <label>
-              <span>🌱 New plants</span>
-              <input id="grassSpawn" type="range" min="1" max="100" step="1" value="14" />
-              <output for="grassSpawn"></output>
-            </label>
-          </div>
         </section>
       </aside>
     </main>

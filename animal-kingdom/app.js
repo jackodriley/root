@@ -42,8 +42,9 @@ window.addEventListener("unhandledrejection", (event) => {
   console.error("[Animal Kingdom Firebase] Unhandled promise rejection", event.reason);
 });
 
-const WIDTH = 26;
-const HEIGHT = 18;
+const PORTRAIT_GRID = window.matchMedia("(max-width: 680px)").matches;
+const WIDTH = PORTRAIT_GRID ? 18 : 26;
+const HEIGHT = PORTRAIT_GRID ? 26 : 18;
 const DAY_MS = 5000;
 const MAX_ANIMALS = 420;
 const MAX_GRASS = WIDTH * HEIGHT;
@@ -134,6 +135,8 @@ const SOUNDTRACK_FILES = {
 };
 const SOUNDTRACK_MAX_VOLUME = 0.36;
 const SOUNDTRACK_MIN_VOLUME = 0.02;
+const TIGER_TUMMY = 40;
+const ANTELOPE_TUMMY = 90;
 
 const controls = {
   simSpeed: document.getElementById("simSpeed"),
@@ -143,13 +146,11 @@ const controls = {
   tigerSpeed: document.getElementById("tigerSpeed"),
   tigerOffspring: document.getElementById("tigerOffspring"),
   tigerBreedingAge: document.getElementById("tigerBreedingAge"),
-  tigerTummy: document.getElementById("tigerTummy"),
   tigerOldAge: document.getElementById("tigerOldAge"),
   tigerSleep: document.getElementById("tigerSleep"),
   antelopeSpeed: document.getElementById("antelopeSpeed"),
   antelopeOffspring: document.getElementById("antelopeOffspring"),
   antelopeBreedingAge: document.getElementById("antelopeBreedingAge"),
-  antelopeTummy: document.getElementById("antelopeTummy"),
   antelopeOldAge: document.getElementById("antelopeOldAge"),
   antelopeSleep: document.getElementById("antelopeSleep"),
   grassGrowth: document.getElementById("grassGrowth"),
@@ -173,6 +174,8 @@ const playerNamePanel = document.getElementById("playerNamePanel");
 const playerNameInput = document.getElementById("playerNameInput");
 const leaderboardPanel = document.getElementById("leaderboardPanel");
 const leaderboardBody = document.getElementById("leaderboardBody");
+const introOverlay = document.getElementById("introOverlay");
+const introCloseButton = document.getElementById("introCloseButton");
 
 const cells = [];
 let animals = [];
@@ -192,6 +195,7 @@ let biodiversityLossAcknowledged = false;
 let welcomePending = false;
 let playerName = "";
 let scoreSubmitted = false;
+let gameEndTracked = false;
 let audioContext = null;
 let soundtrackReadyPromise = null;
 let soundtrackBuffers = null;
@@ -391,6 +395,14 @@ function targetSoundtrackVolumes() {
     };
   }
 
+  if (soundtrackMode === "ended") {
+    return {
+      grass: 0.08,
+      antelope: 0,
+      tiger: 0
+    };
+  }
+
   if (soundtrackMode !== "game") {
     return {
       grass: 0,
@@ -496,11 +508,11 @@ function speciesSettings(species) {
       speed: settings.tigerSpeed,
       offspring: settings.tigerOffspring,
       breedingAge: settings.tigerBreedingAge,
-      tummy: settings.tigerTummy,
+      tummy: TIGER_TUMMY,
       oldAge: settings.tigerOldAge,
       sleep: settings.tigerSleep,
-      eatGain: settings.tigerTummy * 0.86,
-      hungerLine: settings.tigerTummy * 0.44,
+      eatGain: TIGER_TUMMY * 0.86,
+      hungerLine: TIGER_TUMMY * 0.44,
       symbolAdult: "🐆",
       symbolBaby: "🐅",
       assetAdult: ICONS.tigerAdult,
@@ -512,11 +524,11 @@ function speciesSettings(species) {
     speed: settings.antelopeSpeed,
     offspring: settings.antelopeOffspring,
     breedingAge: settings.antelopeBreedingAge,
-    tummy: settings.antelopeTummy,
+    tummy: ANTELOPE_TUMMY,
     oldAge: settings.antelopeOldAge,
     sleep: settings.antelopeSleep,
-    eatGain: settings.antelopeTummy * 0.5,
-    hungerLine: settings.antelopeTummy * 0.42,
+    eatGain: ANTELOPE_TUMMY * 0.5,
+    hungerLine: ANTELOPE_TUMMY * 0.42,
     symbolAdult: "🦌",
     symbolBaby: "🐈",
     assetAdult: ICONS.antelopeAdult,
@@ -630,6 +642,7 @@ function resetSimulation({ playSoundtrack = true } = {}) {
   gameOver = false;
   biodiversityLossAcknowledged = false;
   scoreSubmitted = false;
+  gameEndTracked = false;
   pauseButton.disabled = false;
   pauseButton.textContent = "⏸";
   simStatus.textContent = "Running";
@@ -637,6 +650,7 @@ function resetSimulation({ playSoundtrack = true } = {}) {
   continueButton.classList.remove("is-hidden");
   playerNamePanel.classList.add("is-hidden");
   leaderboardPanel.classList.add("is-hidden");
+  document.body.classList.toggle("simulation-running", playSoundtrack);
 
   spawnGrass(settings.startGrass);
 
@@ -657,6 +671,7 @@ function resetSimulation({ playSoundtrack = true } = {}) {
   updateScoreMilestones();
 
   if (playSoundtrack) {
+    trackGameStarted();
     startGameSoundtrack();
   }
 }
@@ -1105,6 +1120,36 @@ function currentScore() {
   };
 }
 
+function trackAnalyticsEvent(name, params = {}) {
+  if (typeof window.gtag !== "function") {
+    return;
+  }
+
+  window.gtag("event", name, params);
+}
+
+function trackGameStarted() {
+  trackAnalyticsEvent("animal_kingdom_game_started", {
+    player_name: playerName || "Anonymous",
+    settings: JSON.stringify(readSettings())
+  });
+}
+
+function trackGameEnded(reason) {
+  if (gameEndTracked) {
+    return;
+  }
+
+  gameEndTracked = true;
+  const score = currentScore();
+  trackAnalyticsEvent("animal_kingdom_game_ended", {
+    reason,
+    days_lasted: score.daysLasted,
+    animals_ever_lived: score.animalsEverLived,
+    player_name: playerName || "Anonymous"
+  });
+}
+
 function normalizePlayerName(name) {
   return (name || "Anonymous").trim().toLowerCase() || "anonymous";
 }
@@ -1115,6 +1160,10 @@ function compareLeaderboardEntries(a, b) {
     b.animalsEverLived - a.animalsEverLived ||
     b.submittedAt - a.submittedAt
   );
+}
+
+function compareMilestoneEntries(a, b) {
+  return b.daysLasted - a.daysLasted;
 }
 
 function isBetterScore(candidate, currentBest) {
@@ -1258,7 +1307,7 @@ async function loadInitialLeaderboardMilestones() {
 
   try {
     const entries = await fetchLeaderboardEntries();
-    const topScores = bestUniqueLeaderboardEntries(entries).slice(0, 3);
+    const topScores = bestUniqueLeaderboardEntries(entries).sort(compareMilestoneEntries).slice(0, 3);
     milestoneThresholds = [
       { medal: "🥇", rank: 1, score: topScores[0] },
       { medal: "🥈", rank: 2, score: topScores[1] },
@@ -1268,7 +1317,6 @@ async function loadInitialLeaderboardMilestones() {
       thresholds: milestoneThresholds.map((threshold) => ({
         medal: threshold.medal,
         daysLasted: threshold.score.daysLasted,
-        animalsEverLived: threshold.score.animalsEverLived,
         name: threshold.score.name
       }))
     });
@@ -1373,7 +1421,7 @@ function updateScoreMilestones() {
 
   milestoneThresholds.forEach((threshold) => {
     const badge = document.createElement("span");
-    const achieved = currentDays >= threshold.score.daysLasted;
+    const achieved = currentDays > threshold.score.daysLasted;
     badge.className = `score-milestone ${achieved ? "achieved" : ""}`;
     badge.textContent = threshold.medal;
     badge.title = `${threshold.medal} ${threshold.score.daysLasted} days by ${threshold.score.name}`;
@@ -1392,8 +1440,12 @@ function showLeaderboardPanel() {
 function pauseForBiodiversityLoss() {
   renderFinalFrameBeforeGameOver();
   console.info("[Animal Kingdom Firebase] Biodiversity-loss game end reached", currentScore());
+  trackGameEnded("biodiversity_lost");
   gameOver = true;
   paused = true;
+  document.body.classList.remove("simulation-running");
+  soundtrackMode = "ended";
+  updateSoundtrackMix(false);
   pauseButton.disabled = true;
   pauseButton.textContent = "■";
   simStatus.textContent = "Biodiversity Lost";
@@ -1408,8 +1460,12 @@ function pauseForBiodiversityLoss() {
 function showTerminalGameOver() {
   renderFinalFrameBeforeGameOver();
   console.info("[Animal Kingdom Firebase] Terminal game end reached", currentScore());
+  trackGameEnded("terminal_extinction");
   gameOver = true;
   paused = true;
+  document.body.classList.remove("simulation-running");
+  soundtrackMode = "ended";
+  updateSoundtrackMix(false);
   pauseButton.disabled = true;
   pauseButton.textContent = "■";
   simStatus.textContent = "Ended";
@@ -1734,6 +1790,9 @@ function bindEvents() {
     biodiversityLossAcknowledged = true;
     gameOver = false;
     paused = false;
+    document.body.classList.add("simulation-running");
+    soundtrackMode = "game";
+    updateSoundtrackMix(false);
     pauseButton.disabled = false;
     pauseButton.textContent = "⏸";
     simStatus.textContent = "Running";
@@ -1765,6 +1824,10 @@ function bindEvents() {
     setAudioEnabled(!audioEnabled);
   });
 
+  introCloseButton.addEventListener("click", () => {
+    introOverlay.classList.add("is-hidden");
+  });
+
   const unlockSoundtrack = () => {
     if (welcomePending && audioEnabled && !Object.keys(soundtrackSources).length) {
       startPregameSoundtrack();
@@ -1777,6 +1840,7 @@ function bindEvents() {
 function showWelcomeOverlay() {
   welcomePending = true;
   paused = true;
+  document.body.classList.remove("simulation-running");
   pauseButton.disabled = true;
   pauseButton.textContent = "▶";
   simStatus.textContent = "Ready";
