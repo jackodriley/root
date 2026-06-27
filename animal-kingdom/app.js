@@ -708,6 +708,9 @@ function killAnimal(animal, reason) {
 
 function updateControlOutputs() {
   Object.values(controls).forEach((input) => {
+    if (!input) {
+      return;
+    }
     const output = document.querySelector(`output[for="${input.id}"]`);
     if (!output) {
       return;
@@ -1770,7 +1773,11 @@ function tick(now) {
 }
 
 function bindEvents() {
-  Object.values(controls).forEach((input) => {
+  Object.entries(controls).forEach(([key, input]) => {
+    if (!input) {
+      console.warn(`[Animal Kingdom] Missing control input: ${key}`);
+      return;
+    }
     input.addEventListener("input", updateControlOutputs);
   });
 
@@ -1824,9 +1831,7 @@ function bindEvents() {
     setAudioEnabled(!audioEnabled);
   });
 
-  introCloseButton.addEventListener("click", () => {
-    introOverlay.classList.add("is-hidden");
-  });
+  introCloseButton.addEventListener("click", dismissIntroOverlay);
 
   const unlockSoundtrack = () => {
     if (welcomePending && audioEnabled && !Object.keys(soundtrackSources).length) {
@@ -1854,12 +1859,21 @@ function showWelcomeOverlay() {
   startOverlay.classList.remove("is-hidden");
 }
 
+function dismissIntroOverlay() {
+  introOverlay.classList.add("is-hidden");
+  showWelcomeOverlay();
+}
+
 createGrid();
 preloadIcons();
 bindEvents();
 updateControlOutputs();
 updateAudioToggle();
 resetSimulation({ playSoundtrack: false });
-showWelcomeOverlay();
+paused = true;
+pauseButton.disabled = true;
+pauseButton.textContent = "▶";
+simStatus.textContent = "Ready";
+document.body.classList.remove("simulation-running");
 loadInitialLeaderboardMilestones();
 requestAnimationFrame(tick);
