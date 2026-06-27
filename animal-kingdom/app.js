@@ -142,6 +142,7 @@ const SOUNDTRACK_MAX_VOLUME = 0.36;
 const SOUNDTRACK_MIN_VOLUME = 0.02;
 const TIGER_TUMMY = 40;
 const ANTELOPE_TUMMY = 90;
+const CHALLENGE_SHARE_URL = "https://potatocorp.ai/animal-kingdom/?utm=challenge-your-friends";
 
 const controls = {
   simSpeed: document.getElementById("simSpeed"),
@@ -177,6 +178,7 @@ const gameOverTitle = document.getElementById("gameOverTitle");
 const gameOverMessage = document.getElementById("gameOverMessage");
 const startButton = document.getElementById("startButton");
 const continueButton = document.getElementById("continueButton");
+const challengeButton = document.getElementById("challengeButton");
 const playerNamePanel = document.getElementById("playerNamePanel");
 const playerNameInput = document.getElementById("playerNameInput");
 const leaderboardPanel = document.getElementById("leaderboardPanel");
@@ -705,6 +707,7 @@ function resetSimulation({ playSoundtrack = true } = {}) {
   simStatus.textContent = "Running";
   startOverlay.classList.add("is-hidden");
   continueButton.classList.remove("is-hidden");
+  challengeButton.classList.add("is-hidden");
   playerNamePanel.classList.add("is-hidden");
   leaderboardPanel.classList.add("is-hidden");
   document.body.classList.toggle("simulation-running", playSoundtrack);
@@ -1180,6 +1183,40 @@ function currentScore() {
   };
 }
 
+async function shareChallenge() {
+  const score = currentScore();
+  const text = `My kingdom lasted ${score.daysLasted} days. Can you do better?`;
+  const shareData = {
+    title: "Animal Kingdom",
+    text,
+    url: CHALLENGE_SHARE_URL
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return;
+      }
+
+      console.warn("[Animal Kingdom Share] Native share failed", error);
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(`${text} ${CHALLENGE_SHARE_URL}`);
+    const originalText = challengeButton.textContent;
+    challengeButton.textContent = "Challenge copied";
+    window.setTimeout(() => {
+      challengeButton.textContent = originalText;
+    }, 1800);
+  } catch (error) {
+    console.warn("[Animal Kingdom Share] Unable to share or copy challenge", error);
+  }
+}
+
 function trackAnalyticsEvent(name, params = {}) {
   if (typeof window.gtag !== "function") {
     return;
@@ -1576,6 +1613,7 @@ function pauseForBiodiversityLoss() {
   gameOverTitle.textContent = "Kingdom fallen - biodiversity lost";
   gameOverMessage.textContent = gameOverMessageText();
   continueButton.classList.remove("is-hidden");
+  challengeButton.classList.remove("is-hidden");
   startButton.textContent = "Begin Again";
   startOverlay.classList.remove("is-hidden");
   submitScoreOnce().finally(showLeaderboardPanel);
@@ -1596,6 +1634,7 @@ function showTerminalGameOver() {
   gameOverTitle.textContent = "Kingdom fallen - biodiversity lost";
   gameOverMessage.textContent = gameOverMessageText();
   continueButton.classList.add("is-hidden");
+  challengeButton.classList.remove("is-hidden");
   startButton.textContent = "Begin Again";
   startOverlay.classList.remove("is-hidden");
   submitScoreOnce().finally(showLeaderboardPanel);
@@ -1937,6 +1976,8 @@ function bindEvents() {
     lastFrame = performance.now();
   });
 
+  challengeButton.addEventListener("click", shareChallenge);
+
   document.querySelectorAll(".chart-toggle").forEach((button) => {
     button.addEventListener("click", () => {
       const series = button.dataset.series;
@@ -1997,6 +2038,7 @@ function showWelcomeOverlay() {
   gameOverTitle.textContent = "Begin your animal kingdom";
   gameOverMessage.textContent = "Set up your kingdom with the sliders. Start the ecosystem when you are ready.";
   continueButton.classList.add("is-hidden");
+  challengeButton.classList.add("is-hidden");
   startButton.textContent = "Start";
   playerNameInput.value = localStorage.getItem("animalKingdomPlayerName") || "";
   playerNamePanel.classList.remove("is-hidden");
@@ -2018,6 +2060,7 @@ function showResetSetupOverlay() {
   gameOverTitle.textContent = "Reset your animal kingdom";
   gameOverMessage.textContent = "Change the settings, then begin again when you are ready.";
   continueButton.classList.add("is-hidden");
+  challengeButton.classList.add("is-hidden");
   startButton.textContent = "Begin Again";
   playerNameInput.value = playerName || localStorage.getItem("animalKingdomPlayerName") || "";
   playerNamePanel.classList.add("is-hidden");
