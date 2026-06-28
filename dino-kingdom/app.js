@@ -55,6 +55,7 @@ const MAX_ANIMALS = 420;
 const MAX_GRASS = WIDTH * HEIGHT;
 const CHART_LIMIT = 160;
 const ACTIONS_PER_SPEED_UNIT = 1.45;
+const BIRTHDAY_CAKE_FERN_CHANCE = 1 / 75;
 const ICONS = {
   antelopeAdult: "assets/icons/brontosaurus-adult-neutral.png",
   antelopeBaby: "assets/icons/brontosaurus-baby-neutral.png",
@@ -624,7 +625,8 @@ function cellIndex(x, y) {
 function addGrassAt(x, y, maturity = 1) {
   grass.set(makeCellKey(x, y), {
     maturity: clamp(maturity, 1, 3),
-    born: day
+    born: day,
+    isBirthdayCake: Math.random() < BIRTHDAY_CAKE_FERN_CHANCE
   });
 }
 
@@ -1733,7 +1735,9 @@ function render() {
 
   for (const [key, plant] of grass.entries()) {
     const position = fromCellKey(key);
-    cells[cellIndex(position.x, position.y)].cell.classList.add(`grass-${plant.maturity}`);
+    cells[cellIndex(position.x, position.y)].cell.classList.add(
+      plant.isBirthdayCake ? "birthday-cake" : `grass-${plant.maturity}`
+    );
   }
 
   for (const flash of killFlashes) {
