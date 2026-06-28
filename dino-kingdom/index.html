@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🦕Dino Kingdom 🦖</title>
+    <meta name="description" content="a flawed god tries to manage the cruel world of nature" />
+    <meta property="og:title" content="🦕Dino Kingdom 🦖" />
+    <meta property="og:description" content="a flawed god tries to manage the cruel world of nature" />
+    <meta property="og:image" content="https://potatocorp.ai/dino-kingdom/assets/icons/preview-image.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="🦕Dino Kingdom 🦖" />
+    <meta name="twitter:description" content="a flawed god tries to manage the cruel world of nature" />
+    <meta name="twitter:image" content="https://potatocorp.ai/dino-kingdom/assets/icons/preview-image.png" />
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🦖</text></svg>' />
+    <link rel="stylesheet" href="styles.css?v=20260628-dino-kingdom" />
+  </head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5WZEF7TFB5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-5WZEF7TFB5');
+  </script>
+  <body>
+    <div id="introOverlay" class="intro-overlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+      <section class="intro-dialog">
+        <button id="introCloseButton" class="intro-close" type="button" aria-label="Close introduction">×</button>
+        <h2 id="introTitle">WELCOME TO DINO KINGDOM</h2>
+        <p>Good news! You are a god, with the power to create a new savannah ecosystem of grass, tigers and antelope, and choose their key attributes to help build a harmonious animal kingdom. Use the sliders to make your choices.</p>
+        <p>Bad news! Once you’ve founded the kingdom, you ONLY have the power to control how fast the grass grows.</p>
+        <p>How long can your animal kingdom last? Time to find out… longest running ecosystem wins.</p>
+        <p id="introStats" class="intro-stats">Kingdom records loading...</p>
+      </section>
+    </div>
+
+    <main class="app-shell">
+      <section class="world-pane" aria-label="Jurassic simulation">
+        <header class="top-bar">
+          <div>
+            <h1>Dino Kingdom</h1>
+            <p>© Potatocorp 2026</p>
+          </div>
+          <div class="top-metrics">
+            <div class="day-counter" aria-live="polite">
+              <span id="dayDisplay">0</span>
+              <span>days</span>
+            </div>
+            <div class="lifetime-counter">
+              <span id="everLivedCount">0</span>
+              <span>dinos ever lived</span>
+            </div>
+            <div class="speed-control">
+              <span>Speed</span>
+              <input id="simSpeed" type="range" min="0.5" max="5" step="0.5" value="1" />
+              <output for="simSpeed"></output>
+              <div class="speed-actions" aria-label="Simulation controls">
+                <button id="pauseButton" class="icon-button" type="button" title="Pause or resume simulation">⏸</button>
+                <button id="resetButton" class="icon-button" type="button" title="Reset simulation">↺</button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="stats-strip" aria-label="Current populations">
+          <div class="summary-item">
+            <img class="summary-icon" src="assets/icons/fern-maturity-3.png" alt="" />
+            <span>Ferns</span>
+            <strong id="grassCount">0</strong>
+          </div>
+          <div class="stat-item">
+            <span>
+              <img class="summary-icon" src="assets/icons/brontosaurus-adult-neutral.png" alt="" />
+              <span>Brontosaurus</span>
+              <strong id="antelopeCount">0</strong>
+              <span id="antelopeAgeMix"></span>
+            </span>
+            <small id="antelopeDeaths"></small>
+          </div>
+          <div class="stat-item">
+            <span>
+              <img class="summary-icon tiger-summary-icon" src="assets/icons/velociraptor-adult-neon.png" alt="" />
+              <span>Velociraptors</span>
+              <strong id="tigerCount">0</strong>
+              <span id="tigerAgeMix"></span>
+            </span>
+            <small id="tigerDeaths"></small>
+          </div>
+        </div>
+
+        <div class="grid-frame">
+          <div id="ecosystemGrid" class="ecosystem-grid" role="img" aria-label="Animated ecosystem grid"></div>
+          <div id="startOverlay" class="grid-overlay is-hidden" aria-live="polite">
+            <div class="grid-overlay-panel">
+              <h2 id="gameOverTitle">Kingdom fallen - dinos extinct</h2>
+              <p id="gameOverMessage">Your kingdom lasted 0 days.</p>
+              <label id="playerNamePanel" class="player-name-panel">
+                <span>Name</span>
+                <input id="playerNameInput" type="text" maxlength="24" autocomplete="nickname" placeholder="Anonymous" />
+              </label>
+              <p class="leaderboard-helper player-name-helper">(Shows up on the leaderboard)</p>
+              <div id="leaderboardPanel" class="leaderboard-panel is-hidden">
+                <h3>Leaderboard</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Name</th>
+                      <th>Days</th>
+                      <th>Dinos</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leaderboardBody">
+                    <tr>
+                      <td colspan="4">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="overlay-actions">
+                <button id="continueButton" class="dialog-button secondary-action" type="button">Continue Anyway</button>
+                <button id="challengeButton" class="dialog-button secondary-action is-hidden" type="button">Challenge your friends</button>
+                <button id="startButton" class="dialog-button" type="button">Start Kingdom</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="dashboard-pane" aria-label="Simulation controls and population chart">
+        <section class="panel chart-panel">
+          <div class="panel-title">
+            <div class="population-title">
+              <h2>Population Log</h2>
+              <span id="scoreMilestones" class="score-milestones" aria-label="Leaderboard milestones"></span>
+            </div>
+            <div class="panel-actions">
+              <button id="leaderboardToggle" class="icon-button leaderboard-toggle" type="button" title="View leaderboard">🏆</button>
+              <button id="audioToggle" class="icon-button audio-toggle" type="button" title="Toggle soundtrack" aria-pressed="false">🔈</button>
+              <span id="simStatus">Running</span>
+            </div>
+          </div>
+          <div class="chart-legend" aria-label="Population chart series toggles">
+            <button class="chart-toggle active" type="button" data-series="grass">
+              <span>Ferns</span><i class="legend-line grass-line"></i>
+            </button>
+            <button class="chart-toggle active" type="button" data-series="antelope">
+              <span>Brontosaurus</span><i class="legend-line antelope-line"></i>
+            </button>
+            <button class="chart-toggle active" type="button" data-series="tiger">
+              <span>Velociraptors</span><i class="legend-line tiger-line"></i>
+            </button>
+          </div>
+          <canvas id="populationChart" width="520" height="260" aria-label="Line chart of population by day"></canvas>
+        </section>
+
+        <section class="panel control-panel">
+          <div class="panel-title">
+            <h2>Godly Powers</h2>
+          </div>
+
+          <div class="control-group live-control-group">
+            <h3>Jurassic Ferns 🌿</h3>
+            <label>
+              <span>⬆️ Growth speed</span>
+              <input id="grassGrowth" type="range" min="1" max="10" step="1" value="4" />
+              <output for="grassGrowth"></output>
+            </label>
+            <label>
+              <span>🌱 New plants daily</span>
+              <input id="grassSpawn" type="range" min="1" max="200" step="1" value="14" />
+              <output for="grassSpawn"></output>
+            </label>
+          </div>
+
+          <div class="control-group setup-control-group">
+            <h3>Starter Populations</h3>
+            <label>
+              <span><img class="control-label-icon" src="assets/icons/fern-maturity-3.png" alt="" />Ferns</span>
+              <input id="startGrass" type="range" min="20" max="220" step="5" value="95" />
+              <output for="startGrass"></output>
+            </label>
+            <label>
+              <span><img class="control-label-icon" src="assets/icons/brontosaurus-adult-neutral.png" alt="" />Brontosaurus</span>
+              <input id="startAntelope" type="range" min="2" max="80" step="1" value="24" />
+              <output for="startAntelope"></output>
+            </label>
+            <label>
+              <span><img class="control-label-icon tiger-label-icon" src="assets/icons/velociraptor-adult-neon.png" alt="" />Velociraptors</span>
+              <input id="startTigers" type="range" min="1" max="30" step="1" value="5" />
+              <output for="startTigers"></output>
+            </label>
+          </div>
+
+          <div class="control-group setup-control-group">
+            <h3>Velociraptors 🦖</h3>
+            <label>
+              <span>⏩ Speed</span>
+              <input id="tigerSpeed" type="range" min="1" max="10" step="1" value="6" />
+              <output for="tigerSpeed"></output>
+            </label>
+            <label>
+              <span>🐣 Babies</span>
+              <input id="tigerOffspring" type="range" min="1" max="4" step="1" value="1" />
+              <output for="tigerOffspring"></output>
+            </label>
+            <label>
+              <span>🧑‍🧑‍🧒 Maturity</span>
+              <input id="tigerBreedingAge" type="range" min="3" max="20" step="1" value="8" />
+              <output for="tigerBreedingAge"></output>
+            </label>
+            <label>
+              <span>👴🏻 Lifespan</span>
+              <input id="tigerOldAge" type="range" min="5" max="20" step="1" value="20" />
+              <output for="tigerOldAge"></output>
+            </label>
+            <label>
+              <span>💤 Sleep</span>
+              <input id="tigerSleep" type="range" min="0.25" max="4" step="0.25" value="1" />
+              <output for="tigerSleep"></output>
+            </label>
+          </div>
+
+          <div class="control-group setup-control-group">
+            <h3>Brontosaurus 🦕</h3>
+            <label>
+              <span>⏩ Speed</span>
+              <input id="antelopeSpeed" type="range" min="1" max="10" step="1" value="7" />
+              <output for="antelopeSpeed"></output>
+            </label>
+            <label>
+              <span>🐣 Babies</span>
+              <input id="antelopeOffspring" type="range" min="1" max="5" step="1" value="2" />
+              <output for="antelopeOffspring"></output>
+            </label>
+            <label>
+              <span>🧑‍🧑‍🧒 Maturity</span>
+              <input id="antelopeBreedingAge" type="range" min="2" max="20" step="1" value="5" />
+              <output for="antelopeBreedingAge"></output>
+            </label>
+            <label>
+              <span>👴🏻 Lifespan</span>
+              <input id="antelopeOldAge" type="range" min="5" max="20" step="1" value="18" />
+              <output for="antelopeOldAge"></output>
+            </label>
+            <label>
+              <span>💤 Sleep</span>
+              <input id="antelopeSleep" type="range" min="0.25" max="4" step="0.25" value="0.75" />
+              <output for="antelopeSleep"></output>
+            </label>
+          </div>
+
+        </section>
+      </aside>
+    </main>
+
+    <div id="leaderboardOverlay" class="leaderboard-viewer-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="leaderboardViewerTitle">
+      <section class="leaderboard-viewer-dialog">
+        <button id="leaderboardCloseButton" class="intro-close" type="button" aria-label="Close leaderboard">×</button>
+        <h2 id="leaderboardViewerTitle">Leaderboard</h2>
+        <div class="leaderboard-panel leaderboard-viewer-panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Name</th>
+                <th>Days</th>
+                <th>Dinos</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardViewerBody">
+              <tr>
+                <td colspan="4">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="app.js?v=20260628-dino-kingdom"></script>
+  </body>
+</html>
