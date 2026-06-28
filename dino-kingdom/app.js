@@ -55,7 +55,7 @@ const MAX_ANIMALS = 420;
 const MAX_GRASS = WIDTH * HEIGHT;
 const CHART_LIMIT = 160;
 const ACTIONS_PER_SPEED_UNIT = 1.45;
-const BIRTHDAY_CAKE_FERN_CHANCE = 1 / 75;
+const BIRTHDAY_CAKE_FERN_INTERVAL = 75;
 const ICONS = {
   antelopeAdult: "assets/icons/brontosaurus-adult-neutral.png",
   antelopeBaby: "assets/icons/brontosaurus-baby-neutral.png",
@@ -221,6 +221,8 @@ let soundtrackMode = "silent";
 let soundtrackStartToken = 0;
 let audioEnabled = localStorage.getItem("dinoKingdomAudioEnabled") !== "false";
 let milestoneThresholds = [];
+let fernSpawnCount = 0;
+let birthdayCakeFernOffset = randomInt(BIRTHDAY_CAKE_FERN_INTERVAL) + 1;
 let soundtrackBaselines = {
   grass: 1,
   antelope: 1,
@@ -623,10 +625,11 @@ function cellIndex(x, y) {
 }
 
 function addGrassAt(x, y, maturity = 1) {
+  fernSpawnCount += 1;
   grass.set(makeCellKey(x, y), {
     maturity: clamp(maturity, 1, 3),
     born: day,
-    isBirthdayCake: Math.random() < BIRTHDAY_CAKE_FERN_CHANCE
+    isBirthdayCake: (fernSpawnCount - birthdayCakeFernOffset) % BIRTHDAY_CAKE_FERN_INTERVAL === 0
   });
 }
 
@@ -690,6 +693,8 @@ function resetSimulation({ playSoundtrack = true } = {}) {
 
   animals = [];
   grass = new Map();
+  fernSpawnCount = 0;
+  birthdayCakeFernOffset = randomInt(BIRTHDAY_CAKE_FERN_INTERVAL) + 1;
   graves = [];
   killFlashes = [];
   deathStats = makeDeathStats();
