@@ -1010,13 +1010,13 @@
       'sparkly-moon-kitten': { habitat: 'meadow', speed: 5.1, sociability: 0.69, pauseMin: 850, pauseMax: 2500, roam: 17, baseSize: 115, animMs: 720 }
     };
     const ZOO_HABITATS = {
-      meadow: { xMin: 8, xMax: 58, yMin: 54, yMax: 89, anchor: 'feet' },
+      meadow: { xMin: 8, xMax: 58, yMin: 61, yMax: 89, anchor: 'feet' },
       water: { xMin: 57, xMax: 94, yMin: 66, yMax: 89, anchor: 'feet' },
-      amphibious: { xMin: 45, xMax: 94, yMin: 58, yMax: 89, anchor: 'feet' },
+      amphibious: { xMin: 45, xMax: 94, yMin: 61, yMax: 89, anchor: 'feet' },
       sky: { xMin: 8, xMax: 93, yMin: 21, yMax: 44, anchor: 'center' }
     };
-    const ZOO_BACKGROUND_FRAME_MS = 620;
-    const ZOO_BACKGROUND_FADE_MS = 520;
+    const ZOO_BACKGROUND_FRAME_MS = 6500;
+    const ZOO_BACKGROUND_FADE_MS = 3200;
     const ZOO_BACKGROUND_FRAMES = Array.from(
       { length: 9 },
       (_, index) => `assets/tidying-egg/zoo-meadow-water-frame-${String(index).padStart(2, '0')}.png`
@@ -1036,9 +1036,9 @@
       'sparkly-moon-kitten': { hue: [-18, 42], saturate: [0.88, 1.16], brightness: [0.96, 1.12] }
     };
     const SOUNDTRACKS = [
-      { label: 'K Pop Slop', file: 'AdaKPoP.mp3' },
-      { label: 'Rave Slop', file: 'floorbackground.mp3' },
-      { label: 'Dreamscape Reflections', file: 'Dreamscape Reflections ext v1.mp3' }
+      { label: '🎵 K Slop', file: 'AdaKPoP.mp3' },
+      { label: '🎵 Rave Slop', file: 'floorbackground.mp3' },
+      { label: '🎵 Dreamscape Reflections', file: 'Dreamscape Reflections ext v1.mp3' }
     ];
     const SPARKLES = ['✦', '✧', '★', '✹', '◆'];
 
@@ -1451,7 +1451,7 @@
       if (score >= TARGET_SCORE) {
         return {
           id: 'fully-grown',
-          label: 'Fully grown',
+          label: 'Ready to release!',
           hatched: true,
           column: 3,
           scale: 1
@@ -1460,7 +1460,7 @@
       if (score >= GROWING_SCORE) {
         return {
           id: 'growing',
-          label: 'Growing fast',
+          label: 'Growing fast!',
           hatched: true,
           column: 2,
           scale: 0.92
@@ -1469,7 +1469,7 @@
       if (score >= BABY_SCORE) {
         return {
           id: 'baby',
-          label: 'Baby animal',
+          label: 'Sweet baby!',
           hatched: true,
           column: 1,
           scale: 0.82
@@ -1478,7 +1478,7 @@
       if (score >= HATCH_SCORE) {
         return {
           id: 'just-hatched',
-          label: 'Just hatched',
+          label: 'Freshly hatched',
           hatched: true,
           column: 0,
           scale: 0.74
@@ -1487,14 +1487,14 @@
       if (score >= CRACK_SCORE) {
         return {
           id: 'cracked',
-          label: 'Cracks appearing',
+          label: 'Cracks appearing...',
           hatched: false,
           eggClass: 'cracked'
         };
       }
       return {
         id: 'egg',
-        label: 'Rainbow egg',
+        label: 'Tidy to hatch!',
         hatched: false,
         eggClass: ''
       };
