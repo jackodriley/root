@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TidyZoo </title>
+  <meta name="title" content="TidyZoo" />
+  <meta name="description" content="Race to 50 tidying points and hatch surprise anime animals." />
+  <meta property="og:title" content="TidyZoo" />
+  <meta property="og:description" content="Race to 50 tidying points and hatch surprise anime animals." />
+  <meta property="og:image" content="assets/tidying-egg/zoo-meadow-water-frame-00.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TidyZoo" />
+  <meta name="twitter:description" content="Race to 50 tidying points and hatch surprise anime animals." />
+  <meta name="twitter:image" content="assets/tidying-egg/zoo-meadow-water-frame-00.png" />
+  <link rel="image_src" href="assets/tidying-egg/zoo-meadow-water-frame-00.png" />
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --panel: rgba(12, 14, 28, 0.76);
+      --panel-border: rgba(255, 255, 255, 0.18);
+      --ink: #fbfbff;
+      --muted: rgba(251, 251, 255, 0.78);
+      --target: #ffe15a;
+      --ada: #33d6c8;
+      --daddy: #ff6f91;
+      --zoo-bg: url("assets/tidying-egg/zoo-meadow-water-frame-00.png");
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: 'Nunito Sans', sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 14% 12%, rgba(255, 111, 145, 0.52), transparent 28%),
+        radial-gradient(circle at 80% 10%, rgba(51, 214, 200, 0.42), transparent 26%),
+        radial-gradient(circle at 70% 78%, rgba(255, 225, 90, 0.36), transparent 30%),
+        linear-gradient(145deg, #171335 0%, #212c55 42%, #102e32 100%);
+    }
+
+    body {
+      min-height: 100vh;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    body,
+    button,
+    input,
+    select {
+      font-family: 'Nunito Sans', sans-serif;
+    }
+
+    body,
+    h1,
+    h2,
+    h3,
+    p,
+    span,
+    div,
+    button,
+    label {
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.45);
+    }
+
+    button,
+    select {
+      border: 0;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    #appContainer {
+      width: 100%;
+      min-height: 100vh;
+      padding: clamp(10px, 2vw, 22px);
+    }
+
+    .panel {
+      min-height: calc(100vh - clamp(20px, 4vw, 44px));
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: clamp(16px, 3vw, 28px);
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .home-panel {
+      width: 100%;
+      min-height: calc(100vh - clamp(20px, 4vw, 44px));
+      padding: 0;
+      gap: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      justify-content: stretch;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(2rem, 4.6vw, 4rem);
+      line-height: 0.92;
+      font-weight: 900;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.22rem);
+      line-height: 1.35;
+    }
+
+    .hero-copy,
+    .setup-box,
+    .zoo-section,
+    .result-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 8px;
+      padding: clamp(14px, 2vw, 20px);
+    }
+
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      overflow: hidden;
+      min-height: 170px;
+    }
+
+    .setup-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .player-lock {
+      font-size: 1.1rem;
+      font-weight: 900;
+    }
+
+    .key-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      min-height: 40px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #fbfbff;
+      color: #171335;
+      font-weight: 900;
+      text-shadow: none;
+      box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-align: left;
+    }
+
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.55);
+      color: var(--ink);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      font-weight: 800;
+    }
+
+    .play-button,
+    .secondary-button,
+    .score-button {
+      min-height: 48px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1.03rem;
+      font-weight: 900;
+      transition: transform 0.1s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .play-button {
+      width: 100%;
+      padding: 0.9rem 1.2rem;
+      background: linear-gradient(135deg, #ff5c7c, #ffbc42 48%, #2ec4b6);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    }
+
+    .secondary-button {
+      padding: 0.72rem 1rem;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .play-button:hover,
+    .secondary-button:hover,
+    .score-button:hover {
+      transform: translateY(-1px);
+      filter: saturate(1.08);
+    }
+
+    .zoo-section {
+      flex: 1 1 auto;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      min-height: min(62vh, 720px);
+      padding: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .home-zoo-section {
+      min-height: calc(100vh - clamp(20px, 4vw, 44px));
+    }
+
+    .zoo-toolbar {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .zoo-toolbar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .home-zoo-toolbar {
+      align-items: flex-start;
+      padding: 0;
+    }
+
+    .home-zoo-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: min(560px, 100%);
+      padding: clamp(12px, 2vw, 18px);
+      border-radius: 10px;
+      background: rgba(10, 17, 27, 0.56);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(7px);
+    }
+
+    .home-race-line {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(0.95rem, 1.7vw, 1.14rem);
+      font-weight: 900;
+    }
+
+    .home-controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: nowrap;
+      padding: clamp(10px, 1.6vw, 14px);
+      border-radius: 10px;
+      background: rgba(10, 17, 27, 0.56);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(7px);
+    }
+
+    .home-player-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 5px 5px 5px 12px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.28);
+      font-weight: 900;
+    }
+
+    .home-soundtrack {
+      flex: 0 1 220px;
+      min-width: 150px;
+    }
+
+    .home-soundtrack label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .home-soundtrack select {
+      min-height: 42px;
+      padding: 8px 10px;
+    }
+
+    .home-controls .play-button {
+      flex: 0 0 auto;
+      width: auto;
+      min-height: 42px;
+      padding: 0.62rem 1.15rem;
+      white-space: nowrap;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: clamp(1.7rem, 3vw, 2.5rem);
+      line-height: 1.1;
+    }
+
+    .zoo-empty {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .zoo-empty-message {
+      max-width: 420px;
+      padding: 14px 18px;
+      border-radius: 999px;
+      background: rgba(20, 25, 38, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .zoo-field {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: clamp(640px, 82vh, 980px);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #78d9f2;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.16);
+    }
+
+    .zoo-bg-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        linear-gradient(rgba(10, 22, 20, 0.08), rgba(10, 22, 20, 0.12)),
+        var(--zoo-bg) center / cover no-repeat;
+      transition: opacity var(--zoo-bg-fade-ms, 360ms) ease-in-out;
+      will-change: opacity;
+    }
+
+    .zoo-bg-layer.next {
+      opacity: 0;
+    }
+
+    .zoo-critter {
+      position: absolute;
+      left: 50%;
+      top: 58%;
+      width: 120px;
+      z-index: 20;
+      transform: translate(-50%, -50%);
+      will-change: left, top, width, transform;
+      filter: drop-shadow(0 9px 7px rgba(0, 0, 0, 0.22));
+    }
+
+    .zoo-animal {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      transform: scaleX(var(--flip));
+    }
+
+    .zoo-animal-sheet {
+      display: block;
+      width: 400%;
+      height: 100%;
+      max-width: none;
+      object-fit: fill;
+      transform: translateX(0);
+      animation: zooSprite var(--zoo-anim-duration, 920ms) steps(4) infinite;
+      animation-play-state: var(--zoo-play-state, running);
+    }
+
+    @keyframes zooSprite {
+      to { transform: translateX(-100%); }
+    }
+
+    .zoo-editor {
+      position: absolute;
+      top: 88px;
+      left: 18px;
+      right: 18px;
+      z-index: 210;
+      margin-bottom: 0;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(16, 22, 36, 0.84);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(8px);
+    }
+
+    .zoo-editor-grid {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(120px, 0.45fr) auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .zoo-entry-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px;
+      max-height: 180px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .zoo-entry-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 0.86rem;
+    }
+
+    .tiny-button {
+      min-height: 32px;
+      padding: 0.35rem 0.62rem;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .game-panel {
+      width: min(1280px, 100%);
+      min-height: calc(100vh - clamp(20px, 4vw, 44px));
+      height: calc(100vh - clamp(20px, 4vw, 44px));
+      justify-content: flex-start;
+      overflow: hidden;
+    }
+
+    .race-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+    }
+
+    .race-title {
+      margin: 0;
+      text-align: left;
+      font-size: clamp(1.35rem, 3vw, 2.2rem);
+      line-height: 1.05;
+    }
+
+    .target-pill {
+      justify-self: center;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(255, 225, 90, 0.18);
+      border: 1px solid rgba(255, 225, 90, 0.45);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .game-actions {
+      justify-self: end;
+      display: flex;
+      gap: 10px;
+    }
+
+    #gameArea {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(12px, 2vw, 18px);
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .player-card {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+      gap: 12px;
+      min-height: 0;
+      padding: clamp(14px, 2vw, 20px);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.16);
+      box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.32);
+    }
+
+    .player-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.2), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.18));
+      pointer-events: none;
+    }
+
+    .player-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .player-name {
+      margin: 0;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      line-height: 1.05;
+      text-align: left;
+    }
+
+    .score-readout {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .score {
+      margin: 0;
+      font-size: clamp(2.6rem, 7vw, 5rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .stage-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(0.95rem, 1.8vw, 1.16rem);
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 22px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      transition: width 0.18s ease-out;
+    }
+
+    .egg-stage {
+      min-height: 0;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .egg-wrap {
+      height: min(100%, 360px);
+      width: auto;
+      aspect-ratio: 0.78 / 1;
+      position: relative;
+      display: grid;
+      place-items: center;
+      transition: transform 0.2s ease;
+    }
+
+    .player-card.bump .egg-wrap,
+    .player-card.bump .animal-stage {
+      animation: bump 0.32s ease;
+    }
+
+    @keyframes bump {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.06); }
+      70% { transform: scale(0.98); }
+      100% { transform: scale(1); }
+    }
+
+    .egg {
+      width: 100%;
+      height: 100%;
+      border-radius: 51% 49% 45% 45% / 58% 58% 42% 42%;
+      background:
+        radial-gradient(circle at 34% 20%, rgba(255, 255, 255, 0.78), transparent 13%),
+        radial-gradient(circle at 36% 72%, rgba(255, 255, 255, 0.26), transparent 12%),
+        linear-gradient(130deg, #ff4d6d 0 13%, #ffbe0b 13% 27%, #64dfdf 27% 40%, #80ed99 40% 54%, #48bfe3 54% 68%, #9b5de5 68% 83%, #f15bb5 83% 100%);
+      border: 5px solid rgba(255, 255, 255, 0.42);
+      box-shadow:
+        inset -18px -26px 34px rgba(0, 0, 0, 0.2),
+        inset 16px 16px 26px rgba(255, 255, 255, 0.22),
+        0 22px 32px rgba(0, 0, 0, 0.26);
+    }
+
+    .egg::before,
+    .egg::after {
+      content: "";
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .egg::before {
+      width: 58%;
+      height: 38%;
+      top: 32%;
+      left: 21%;
+      background:
+        linear-gradient(130deg, transparent 0 46%, rgba(40, 30, 70, 0.72) 46% 50%, transparent 50%),
+        linear-gradient(35deg, transparent 0 54%, rgba(40, 30, 70, 0.58) 54% 58%, transparent 58%);
+      clip-path: polygon(4% 15%, 31% 39%, 48% 24%, 65% 54%, 86% 37%, 96% 58%, 78% 55%, 62% 78%, 47% 49%, 29% 69%, 12% 48%);
+    }
+
+    .egg::after {
+      width: 74%;
+      height: 30%;
+      left: 13%;
+      bottom: 19%;
+      background: rgba(255, 255, 255, 0.22);
+      clip-path: polygon(0 62%, 13% 34%, 25% 56%, 39% 28%, 51% 62%, 64% 35%, 76% 57%, 88% 31%, 100% 61%, 100% 100%, 0 100%);
+    }
+
+    .egg.cracked::before {
+      opacity: 1;
+    }
+
+    .animal-stage {
+      position: relative;
+      width: min(92%, 520px);
+      height: min(100%, 390px);
+      border-radius: 12px;
+      background: radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.22), transparent 44%);
+      display: none;
+      place-items: center;
+      overflow: visible;
+    }
+
+    .animal-sprite {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.16));
+      transform: scale(var(--animal-stage-scale, 1));
+      transform-origin: center;
+    }
+
+    .animal-name {
+      display: none;
+      margin-top: -4px;
+      font-size: 1.25rem;
+      font-weight: 900;
+    }
+
+    .hatched .egg-wrap {
+      display: none;
+    }
+
+    .hatched .animal-stage {
+      display: grid;
+    }
+
+    .hatched .animal-name {
+      display: block;
+    }
+
+    .score-button {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      background: rgba(0, 0, 0, 0.42);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .sparkle-rain {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .sparkle {
+      position: absolute;
+      top: 42%;
+      animation: fall 2.4s linear forwards;
+      opacity: 0;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      100% { transform: translateY(320px) rotate(180deg); opacity: 0; }
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .result-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .result-card.winner {
+      border-color: rgba(255, 225, 90, 0.68);
+      box-shadow: 0 0 0 2px rgba(255, 225, 90, 0.22), 0 16px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .result-animal {
+      display: block;
+      width: min(250px, 100%);
+      aspect-ratio: 3 / 2;
+      border-radius: 12px;
+      background-color: rgba(255, 255, 255, 0.9);
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .result-egg {
+      width: min(210px, 76%);
+      aspect-ratio: 0.78 / 1;
+      position: relative;
+      margin: 8px auto;
+    }
+
+    .result-title {
+      margin: 0;
+      font-size: clamp(1.5rem, 3.8vw, 2.8rem);
+    }
+
+    .inline-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .confetti span {
+      position: absolute;
+      top: -30px;
+      width: 11px;
+      height: 18px;
+      border-radius: 3px;
+      animation: confettiFall 3.1s linear forwards;
+    }
+
+    @keyframes confettiFall {
+      to {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    @media (max-height: 760px) and (min-width: 761px) {
+      #appContainer {
+        padding: 8px;
+      }
+
+      .panel {
+        min-height: calc(100vh - 16px);
+        padding: 12px;
+        gap: 10px;
+      }
+
+      .game-panel {
+        height: calc(100vh - 16px);
+        min-height: calc(100vh - 16px);
+      }
+
+      .race-header {
+        gap: 8px;
+      }
+
+      .race-title {
+        font-size: clamp(1.45rem, 3.8vw, 2.05rem);
+      }
+
+      .target-pill {
+        padding: 7px 12px;
+        font-size: 0.92rem;
+      }
+
+      .secondary-button,
+      .score-button {
+        min-height: 38px;
+        padding: 0.5rem 0.82rem;
+        font-size: 0.92rem;
+      }
+
+      #gameArea {
+        gap: 10px;
+      }
+
+      .player-card {
+        gap: 7px;
+        padding: 12px;
+      }
+
+      .player-name {
+        font-size: clamp(1.4rem, 3.2vw, 1.8rem);
+      }
+
+      .key-badge {
+        min-width: 42px;
+        min-height: 34px;
+        padding: 4px 9px;
+      }
+
+      .score {
+        font-size: clamp(2.8rem, 8vw, 4.1rem);
+      }
+
+      .stage-label {
+        font-size: clamp(0.88rem, 1.9vw, 1.04rem);
+      }
+
+      .egg-wrap {
+        height: min(100%, 280px);
+      }
+
+      .animal-stage {
+        width: min(86%, 430px);
+        height: min(100%, 290px);
+      }
+
+      .animal-name {
+        font-size: 1rem;
+        margin-top: -2px;
+      }
+
+      .progress-track {
+        height: 15px;
+      }
+    }
+
+    @media (max-width: 1040px) {
+      .home-controls {
+        flex-wrap: wrap;
+      }
+
+      .home-soundtrack {
+        flex-basis: 100%;
+        order: 4;
+      }
+    }
+
+    @media (max-width: 760px) {
+      #appContainer {
+        padding: 8px;
+      }
+
+      .panel {
+        min-height: calc(100vh - 16px);
+      }
+
+      .game-panel {
+        height: auto;
+        overflow: visible;
+      }
+
+      #gameArea,
+      .race-header,
+      .result-grid,
+      .zoo-editor-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .race-title,
+      .stage-label,
+      .score-readout,
+      .game-actions {
+        text-align: center;
+        justify-self: stretch;
+      }
+
+      .score-readout {
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .target-pill {
+        justify-self: stretch;
+      }
+
+      .egg-wrap {
+        height: min(100%, 290px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="appContainer"></div>
+  <audio id="backgroundMusic" loop></audio>
+
+  <script>
+    const appContainer = document.getElementById('appContainer');
+    const TARGET_SCORE = 50;
+    const CRACK_SCORE = 15;
+    const HATCH_SCORE = 30;
+    const BABY_SCORE = 38;
+    const GROWING_SCORE = 45;
+    const ZOO_STORAGE_KEY = 'tidyingEggZoo';
+    const PLAYERS = [
+      { id: 0, name: 'Daddy', key: 'd', theme: '#ff6f91', shade: '#61204a' },
+      { id: 1, name: 'Ada', key: 'a', theme: '#33d6c8', shade: '#133f54' }
+    ];
+    const ANIMALS = [
+      { id: 'purple-pug-puppy', name: 'Purple Pug Puppy', weight: 20, fullAsset: 'assets/tidying-egg/full-grown-transparent/purple-pug-puppy.png' },
+      { id: 'rainbow-unicorn', name: 'Rainbow Unicorn', weight: 6, fullAsset: 'assets/tidying-egg/full-grown-transparent/rainbow-unicorn.png' },
+      { id: 'stinky-cute-squid', name: 'Stinky but Cute Squid', weight: 15, fullAsset: 'assets/tidying-egg/full-grown-transparent/stinky-cute-squid.png' },
+      { id: 'rainbow-pigeon', name: 'Rainbow Pigeon', weight: 19, fullAsset: 'assets/tidying-egg/full-grown-transparent/rainbow-pigeon.png' },
+      { id: 'toxic-blob', name: 'Toxic Blob', weight: 13, fullAsset: 'assets/tidying-egg/full-grown-transparent/toxic-blob.png' },
+      { id: 'red-panda', name: 'Red Panda', weight: 10, fullAsset: 'assets/tidying-egg/full-grown-transparent/red-panda.png' },
+      { id: 'sleepy-blue-koala', name: 'Sleepy Blue Koala', weight: 13, fullAsset: 'assets/tidying-egg/full-grown-transparent/sleepy-blue-koala.png' },
+      { id: 'strawberry-axolotl', name: 'Strawberry Axolotl', weight: 12, fullAsset: 'assets/tidying-egg/full-grown-transparent/strawberry-axolotl.png' },
+      { id: 'golden-hamster-wizard', name: 'Golden Hamster Wizard', weight: 11, fullAsset: 'assets/tidying-egg/full-grown-transparent/golden-hamster-wizard.png' },
+      { id: 'tiny-cloud-dragon', name: 'Tiny Cloud Dragon', weight: 8, fullAsset: 'assets/tidying-egg/full-grown-transparent/tiny-cloud-dragon.png' },
+      { id: 'mint-green-frog-prince', name: 'Mint Green Frog Prince', weight: 13, fullAsset: 'assets/tidying-egg/full-grown-transparent/mint-green-frog-prince.png' },
+      { id: 'sparkly-moon-kitten', name: 'Sparkly Moon Kitten', weight: 10, fullAsset: 'assets/tidying-egg/full-grown-transparent/sparkly-moon-kitten.png' }
+    ];
+    const ZOO_MOVEMENT_TRAITS = {
+      'purple-pug-puppy': { habitat: 'meadow', speed: 4.2, sociability: 0.82, pauseMin: 1400, pauseMax: 3200, roam: 14, baseSize: 122, animMs: 860 },
+      'rainbow-unicorn': { habitat: 'meadow', speed: 5.4, sociability: 0.58, pauseMin: 900, pauseMax: 2300, roam: 18, baseSize: 134, animMs: 760 },
+      'stinky-cute-squid': { habitat: 'water', speed: 2.9, sociability: 0.38, pauseMin: 1800, pauseMax: 4300, roam: 9, baseSize: 126, animMs: 1120 },
+      'rainbow-pigeon': { habitat: 'sky', speed: 8.1, sociability: 0.9, pauseMin: 520, pauseMax: 1500, roam: 24, baseSize: 104, animMs: 520 },
+      'toxic-blob': { habitat: 'water', speed: 2.2, sociability: 0.64, pauseMin: 2000, pauseMax: 5200, roam: 7, baseSize: 118, animMs: 1180 },
+      'red-panda': { habitat: 'meadow', speed: 4.7, sociability: 0.7, pauseMin: 1100, pauseMax: 2800, roam: 16, baseSize: 128, animMs: 820 },
+      'sleepy-blue-koala': { habitat: 'meadow', speed: 2.4, sociability: 0.74, pauseMin: 2600, pauseMax: 6200, roam: 8, baseSize: 116, animMs: 1320 },
+      'strawberry-axolotl': { habitat: 'amphibious', speed: 3.9, sociability: 0.76, pauseMin: 1200, pauseMax: 3100, roam: 16, baseSize: 120, animMs: 940 },
+      'golden-hamster-wizard': { habitat: 'meadow', speed: 4.4, sociability: 0.56, pauseMin: 900, pauseMax: 2400, roam: 15, baseSize: 112, animMs: 780 },
+      'tiny-cloud-dragon': { habitat: 'sky', speed: 7.3, sociability: 0.62, pauseMin: 650, pauseMax: 1900, roam: 25, baseSize: 126, animMs: 620 },
+      'mint-green-frog-prince': { habitat: 'water', speed: 3.3, sociability: 0.83, pauseMin: 1300, pauseMax: 3600, roam: 10, baseSize: 120, animMs: 900 },
+      'sparkly-moon-kitten': { habitat: 'meadow', speed: 5.1, sociability: 0.69, pauseMin: 850, pauseMax: 2500, roam: 17, baseSize: 115, animMs: 720 }
+    };
+    const ZOO_HABITATS = {
+      meadow: { xMin: 8, xMax: 58, yMin: 54, yMax: 89, anchor: 'feet' },
+      water: { xMin: 57, xMax: 94, yMin: 66, yMax: 89, anchor: 'feet' },
+      amphibious: { xMin: 45, xMax: 94, yMin: 58, yMax: 89, anchor: 'feet' },
+      sky: { xMin: 8, xMax: 93, yMin: 21, yMax: 44, anchor: 'center' }
+    };
+    const ZOO_BACKGROUND_FRAME_MS = 620;
+    const ZOO_BACKGROUND_FADE_MS = 520;
+    const ZOO_BACKGROUND_FRAMES = Array.from(
+      { length: 9 },
+      (_, index) => `assets/tidying-egg/zoo-meadow-water-frame-${String(index).padStart(2, '0')}.png`
+    );
+    const ZOO_TINT_PALETTES = {
+      'purple-pug-puppy': { hue: [-145, 165], saturate: [0.9, 1.28], brightness: [0.92, 1.1] },
+      'rainbow-unicorn': { hue: [-16, 16], saturate: [0.94, 1.14], brightness: [0.96, 1.1] },
+      'stinky-cute-squid': { hue: [-28, 78], saturate: [0.96, 1.26], brightness: [0.9, 1.08] },
+      'rainbow-pigeon': { hue: [-22, 22], saturate: [0.95, 1.18], brightness: [0.94, 1.08] },
+      'toxic-blob': { hue: [-42, 38], saturate: [1, 1.34], brightness: [0.9, 1.12] },
+      'red-panda': { hue: [-170, 28], saturate: [0.86, 1.18], brightness: [0.88, 1.08] },
+      'sleepy-blue-koala': { hue: [-20, 44], saturate: [0.88, 1.2], brightness: [0.92, 1.1] },
+      'strawberry-axolotl': { hue: [-34, 58], saturate: [0.92, 1.25], brightness: [0.94, 1.12] },
+      'golden-hamster-wizard': { hue: [-30, 34], saturate: [0.9, 1.2], brightness: [0.92, 1.1] },
+      'tiny-cloud-dragon': { hue: [-40, 52], saturate: [0.9, 1.22], brightness: [0.94, 1.12] },
+      'mint-green-frog-prince': { hue: [-46, 34], saturate: [0.92, 1.24], brightness: [0.92, 1.1] },
+      'sparkly-moon-kitten': { hue: [-18, 42], saturate: [0.88, 1.16], brightness: [0.96, 1.12] }
+    };
+    const SOUNDTRACKS = [
+      { label: 'K Pop Slop', file: 'AdaKPoP.mp3' },
+      { label: 'Rave Slop', file: 'floorbackground.mp3' },
+      { label: 'Dreamscape Reflections', file: 'Dreamscape Reflections ext v1.mp3' }
+    ];
+    const SPARKLES = ['✦', '✧', '★', '✹', '◆'];
+
+    let players = [];
+    let isGameRunning = false;
+    let soundtrack = SOUNDTRACKS[0].file;
+    let audioContext = null;
+    let winnerEntryAdded = false;
+    let isZooEditorOpen = false;
+    let zooAnimationFrame = null;
+    let zooBackgroundTimer = null;
+    let zooBackgroundFadeTimer = null;
+    let zooActors = [];
+    let lastZooFrameTime = 0;
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getZoo() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(ZOO_STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveZoo(zoo) {
+      localStorage.setItem(ZOO_STORAGE_KEY, JSON.stringify(zoo));
+    }
+
+    function addZooEntry(player, animal) {
+      const zoo = getZoo();
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const motion = createZooMotion(`${player.name}-${animal.id}-${Date.now()}`, zoo.length, animal);
+      zoo.unshift({
+        id,
+        playerName: player.name,
+        animalId: animal.id,
+        animalName: animal.name,
+        wonAt: new Date().toISOString(),
+        motion,
+        tint: createZooTint(animal, id)
+      });
+      saveZoo(zoo.slice(0, 60));
+    }
+
+    function addTestZooEntry(playerName, animalId) {
+      const animal = ANIMALS.find(candidate => candidate.id === animalId) || ANIMALS[0];
+      const zoo = getZoo();
+      const id = `test-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      zoo.unshift({
+        id,
+        playerName,
+        animalId: animal.id,
+        animalName: animal.name,
+        wonAt: new Date().toISOString(),
+        motion: createZooMotion(`${playerName}-${animal.id}-${id}`, zoo.length, animal),
+        tint: createZooTint(animal, id)
+      });
+      saveZoo(zoo.slice(0, 60));
+      isZooEditorOpen = true;
+      showStartScreen();
+    }
+
+    function removeZooEntry(index) {
+      const zoo = getZoo();
+      zoo.splice(index, 1);
+      saveZoo(zoo);
+      isZooEditorOpen = true;
+      showStartScreen();
+    }
+
+    function clearZoo() {
+      localStorage.removeItem(ZOO_STORAGE_KEY);
+      showStartScreen();
+    }
+
+    function weightedAnimalPick() {
+      const totalWeight = ANIMALS.reduce((sum, animal) => sum + animal.weight, 0);
+      let roll = Math.random() * totalWeight;
+      for (const animal of ANIMALS) {
+        roll -= animal.weight;
+        if (roll <= 0) return animal;
+      }
+      return ANIMALS[0];
+    }
+
+    function hashText(value) {
+      let hash = 2166136261;
+      const text = String(value);
+      for (let i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function seededRatio(hash, shift) {
+      return ((hash >>> shift) & 0xff) / 255;
+    }
+
+    function tintValue(range, ratio) {
+      return range[0] + (range[1] - range[0]) * ratio;
+    }
+
+    function createZooTint(animal, seed) {
+      const palette = ZOO_TINT_PALETTES[animal.id] || {
+        hue: [-10, 10],
+        saturate: [0.94, 1.08],
+        brightness: [0.96, 1.06]
+      };
+      const hash = hashText(`${animal.id}-${seed}`);
+      return {
+        hue: Math.round(tintValue(palette.hue, seededRatio(hash, 0))),
+        saturate: Number(tintValue(palette.saturate, seededRatio(hash, 8)).toFixed(2)),
+        brightness: Number(tintValue(palette.brightness, seededRatio(hash, 16)).toFixed(2))
+      };
+    }
+
+    function zooTintFilter(entry) {
+      if (!entry.tint) return '';
+      const hue = Number(entry.tint.hue) || 0;
+      const saturate = Number(entry.tint.saturate) || 1;
+      const brightness = Number(entry.tint.brightness) || 1;
+      return `hue-rotate(${hue}deg) saturate(${saturate}) brightness(${brightness})`;
+    }
+
+    function habitatBoundsForAnimal(animal) {
+      const traits = movementTraitsForAnimal(animal);
+      return ZOO_HABITATS[traits.habitat] || ZOO_HABITATS.meadow;
+    }
+
+    function createZooMotion(seed, index, animal = ANIMALS[0]) {
+      const hash = hashText(`${seed}-${index}`);
+      const bounds = habitatBoundsForAnimal(animal);
+      const xRange = bounds.xMax - bounds.xMin;
+      const yRange = bounds.yMax - bounds.yMin;
+      const x = bounds.xMin + ((hash % 1000) / 1000) * xRange;
+      const y = bounds.yMin + ((((hash >>> 8) % 1000) / 1000) * yRange);
+      return {
+        x: clamp(x, bounds.xMin, bounds.xMax),
+        y: clamp(y, bounds.yMin, bounds.yMax),
+        flip: (hash & 1) ? -1 : 1
+      };
+    }
+
+    function motionForZooEntry(entry, index) {
+      const animal = animalForZooEntry(entry);
+      const motion = entry.motion || createZooMotion(entry.id || `${entry.playerName}-${entry.animalName}`, index, animal);
+      const bounds = habitatBoundsForAnimal(animal);
+      return {
+        x: clamp(motion.x, bounds.xMin, bounds.xMax),
+        y: clamp(motion.y, bounds.yMin, bounds.yMax),
+        flip: motion.flip || 1
+      };
+    }
+
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function movementTraitsForAnimal(animal) {
+      return ZOO_MOVEMENT_TRAITS[animal.id] || {
+        speed: 4,
+        sociability: 0.55,
+        pauseMin: 1000,
+        pauseMax: 2800,
+        roam: 14,
+        baseSize: 118,
+        habitat: 'meadow',
+        animMs: 900
+      };
+    }
+
+    function habitatAnchorForAnimal(animal) {
+      return habitatBoundsForAnimal(animal).anchor || 'feet';
+    }
+
+    function depthScaleForY(y, habitat = 'meadow') {
+      if (habitat === 'sky') {
+        const t = (clamp(y, 21, 44) - 21) / 23;
+        return 0.34 + t * 0.34;
+      }
+      if (habitat === 'water') {
+        const t = (clamp(y, 66, 89) - 66) / 23;
+        return 0.42 + Math.pow(t, 1.45) * 0.75;
+      }
+      if (habitat === 'amphibious') {
+        const t = (clamp(y, 58, 89) - 58) / 31;
+        return 0.38 + Math.pow(t, 1.45) * 0.82;
+      }
+      const t = (clamp(y, 54, 89) - 54) / 35;
+      return 0.48 + Math.pow(t, 1.25) * 0.68;
+    }
+
+    function speciesGroupCenters(zoo) {
+      const grouped = new Map();
+      zoo.forEach((entry, index) => {
+        const animal = animalForZooEntry(entry);
+        const traits = movementTraitsForAnimal(animal);
+        if (traits.sociability < 0.65) return;
+        if (!grouped.has(animal.id)) grouped.set(animal.id, []);
+        grouped.get(animal.id).push({ entry, index, animal, traits });
+      });
+
+      const centers = new Map();
+      grouped.forEach((members, animalId) => {
+        if (members.length < 2) return;
+        const hash = hashText(`${animalId}-${members.length}`);
+        const bounds = habitatBoundsForAnimal(members[0].animal);
+        centers.set(animalId, {
+          x: bounds.xMin + (hash % 1000) / 1000 * (bounds.xMax - bounds.xMin),
+          y: bounds.yMin + ((hash >>> 7) % 1000) / 1000 * (bounds.yMax - bounds.yMin)
+        });
+      });
+      return centers;
+    }
+
+    function chooseZooTarget(actor, groupCenters) {
+      const { traits } = actor;
+      const groupCenter = groupCenters.get(actor.animal.id);
+      const shouldGroup = groupCenter && Math.random() < traits.sociability;
+      const anchor = shouldGroup ? groupCenter : actor.home;
+      const radius = shouldGroup ? Math.max(5, traits.roam * 0.52) : traits.roam;
+      const bounds = habitatBoundsForAnimal(actor.animal);
+      return {
+        x: clamp(anchor.x + randomBetween(-radius, radius), bounds.xMin, bounds.xMax),
+        y: clamp(anchor.y + randomBetween(-radius * 0.52, radius * 0.52), bounds.yMin, bounds.yMax)
+      };
+    }
+
+    function setZooLayerFrame(layer, index) {
+      const frame = ZOO_BACKGROUND_FRAMES[index % ZOO_BACKGROUND_FRAMES.length];
+      layer.style.setProperty('--zoo-bg', `url("${frame}")`);
+    }
+
+    function preloadZooBackgroundFrames() {
+      ZOO_BACKGROUND_FRAMES.forEach(src => {
+        const image = new Image();
+        image.src = src;
+      });
+    }
+
+    function stopZooBackgroundAnimation() {
+      if (zooBackgroundTimer) {
+        clearInterval(zooBackgroundTimer);
+        zooBackgroundTimer = null;
+      }
+      if (zooBackgroundFadeTimer) {
+        clearTimeout(zooBackgroundFadeTimer);
+        zooBackgroundFadeTimer = null;
+      }
+    }
+
+    function startZooBackgroundAnimation() {
+      stopZooBackgroundAnimation();
+      const currentLayer = document.getElementById('zooBgCurrent');
+      const nextLayer = document.getElementById('zooBgNext');
+      if (!currentLayer || !nextLayer || !ZOO_BACKGROUND_FRAMES.length) return;
+
+      preloadZooBackgroundFrames();
+      currentLayer.style.setProperty('--zoo-bg-fade-ms', `${ZOO_BACKGROUND_FADE_MS}ms`);
+      nextLayer.style.setProperty('--zoo-bg-fade-ms', `${ZOO_BACKGROUND_FADE_MS}ms`);
+      let frameIndex = 0;
+      setZooLayerFrame(currentLayer, frameIndex);
+      setZooLayerFrame(nextLayer, frameIndex);
+      nextLayer.style.opacity = '0';
+      zooBackgroundTimer = setInterval(() => {
+        const nextFrameIndex = (frameIndex + 1) % ZOO_BACKGROUND_FRAMES.length;
+        setZooLayerFrame(nextLayer, nextFrameIndex);
+        nextLayer.style.opacity = '1';
+        if (zooBackgroundFadeTimer) clearTimeout(zooBackgroundFadeTimer);
+        zooBackgroundFadeTimer = window.setTimeout(() => {
+          frameIndex = nextFrameIndex;
+          setZooLayerFrame(currentLayer, frameIndex);
+          nextLayer.style.transition = 'none';
+          nextLayer.style.opacity = '0';
+          void nextLayer.offsetWidth;
+          nextLayer.style.transition = '';
+          zooBackgroundFadeTimer = null;
+        }, ZOO_BACKGROUND_FADE_MS);
+      }, ZOO_BACKGROUND_FRAME_MS);
+    }
+
+    function stopZooMovement() {
+      if (zooAnimationFrame) {
+        cancelAnimationFrame(zooAnimationFrame);
+        zooAnimationFrame = null;
+      }
+      stopZooBackgroundAnimation();
+      zooActors = [];
+      lastZooFrameTime = 0;
+    }
+
+    function startZooMovement(zoo) {
+      stopZooMovement();
+      const field = document.getElementById('zooField');
+      if (!field || !zoo.length || typeof requestAnimationFrame !== 'function') return;
+
+      const groupCenters = speciesGroupCenters(zoo);
+      zooActors = zoo.map((entry, index) => {
+        const animal = animalForZooEntry(entry);
+        const traits = movementTraitsForAnimal(animal);
+        const motion = motionForZooEntry(entry, index);
+        const element = document.querySelector(`.zoo-critter[data-index="${index}"]`);
+        const actor = {
+          entry,
+          index,
+          animal,
+          traits,
+          element,
+          x: motion.x,
+          y: motion.y,
+          home: { x: motion.x, y: motion.y },
+          target: { x: motion.x, y: motion.y },
+          pauseUntil: performance.now() + randomBetween(300, traits.pauseMax),
+          flip: motion.flip || 1,
+          habitat: traits.habitat || 'meadow',
+          anchor: habitatAnchorForAnimal(animal),
+          bobOffset: (hashText(entry.id || `${entry.playerName}-${entry.animalName}`) % 628) / 100
+        };
+        actor.target = chooseZooTarget(actor, groupCenters);
+        renderZooActor(actor, 0);
+        return actor;
+      }).filter(actor => actor.element);
+
+      function step(now) {
+        const elapsedSeconds = lastZooFrameTime ? Math.min((now - lastZooFrameTime) / 1000, 0.05) : 0;
+        lastZooFrameTime = now;
+        const latestZoo = getZoo();
+        const latestCenters = speciesGroupCenters(latestZoo);
+
+        zooActors.forEach(actor => updateZooActor(actor, elapsedSeconds, now, latestCenters));
+        zooAnimationFrame = requestAnimationFrame(step);
+      }
+
+      zooAnimationFrame = requestAnimationFrame(step);
+    }
+
+    function updateZooActor(actor, elapsedSeconds, now, groupCenters) {
+      if (!actor.element) return;
+      if (now < actor.pauseUntil) {
+        renderZooActor(actor, now);
+        return;
+      }
+
+      const dx = actor.target.x - actor.x;
+      const dy = actor.target.y - actor.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance < 0.35) {
+        actor.x = actor.target.x;
+        actor.y = actor.target.y;
+        actor.pauseUntil = now + randomBetween(actor.traits.pauseMin, actor.traits.pauseMax);
+        actor.target = chooseZooTarget(actor, groupCenters);
+        renderZooActor(actor, now);
+        return;
+      }
+
+      const step = Math.min(distance, actor.traits.speed * elapsedSeconds);
+      actor.x += (dx / distance) * step;
+      actor.y += (dy / distance) * step;
+      actor.flip = dx < -0.05 ? -1 : dx > 0.05 ? 1 : actor.flip;
+      renderZooActor(actor, now);
+    }
+
+    function renderZooActor(actor, now) {
+      const depthScale = depthScaleForY(actor.y, actor.habitat);
+      const bobAmount = actor.habitat === 'sky' ? 6 : actor.habitat === 'water' ? 2.3 : 1.4;
+      const bob = now ? Math.sin(now / 260 + actor.bobOffset) * bobAmount : 0;
+      const width = actor.traits.baseSize * depthScale;
+      actor.element.style.left = `${actor.x}%`;
+      actor.element.style.top = `${actor.y}%`;
+      actor.element.style.width = `${width}px`;
+      actor.element.style.zIndex = String(actor.habitat === 'sky' ? 40 + Math.round(actor.y) : Math.round(actor.y * 10));
+      const yAnchor = actor.anchor === 'center' ? '-50%' : '-100%';
+      actor.element.style.transform = `translate(-50%, calc(${yAnchor} + ${bob}px)) rotate(${bob * 0.36}deg)`;
+      const sprite = actor.element.querySelector('.zoo-animal');
+      if (sprite) {
+        sprite.style.setProperty('--flip', actor.flip);
+        sprite.style.setProperty('--zoo-play-state', now < actor.pauseUntil ? 'paused' : 'running');
+      }
+    }
+
+    function animalForZooEntry(entry) {
+      return ANIMALS.find(animal => animal.id === entry.animalId)
+        || ANIMALS[0];
+    }
+
+    function gameStageAsset(animal, column) {
+      const stageNames = ['hatched', 'baby', 'growing', 'grown'];
+      return `assets/tidying-egg/game-stages/${animal.id}-${stageNames[column] || 'grown'}.png`;
+    }
+
+    function zooAnimationSheetAsset(animal) {
+      return `assets/tidying-egg/zoo-animation-sheets/${animal.id}.png`;
+    }
+
+    function stageForScore(score) {
+      if (score >= TARGET_SCORE) {
+        return {
+          id: 'fully-grown',
+          label: 'Fully grown',
+          hatched: true,
+          column: 3,
+          scale: 1
+        };
+      }
+      if (score >= GROWING_SCORE) {
+        return {
+          id: 'growing',
+          label: 'Growing fast',
+          hatched: true,
+          column: 2,
+          scale: 0.92
+        };
+      }
+      if (score >= BABY_SCORE) {
+        return {
+          id: 'baby',
+          label: 'Baby animal',
+          hatched: true,
+          column: 1,
+          scale: 0.82
+        };
+      }
+      if (score >= HATCH_SCORE) {
+        return {
+          id: 'just-hatched',
+          label: 'Just hatched',
+          hatched: true,
+          column: 0,
+          scale: 0.74
+        };
+      }
+      if (score >= CRACK_SCORE) {
+        return {
+          id: 'cracked',
+          label: 'Cracks appearing',
+          hatched: false,
+          eggClass: 'cracked'
+        };
+      }
+      return {
+        id: 'egg',
+        label: 'Rainbow egg',
+        hatched: false,
+        eggClass: ''
+      };
+    }
+
+    function initAudio() {
+      if (!audioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioContext = new AudioCtx();
+      }
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+    }
+
+    function playTone(frequency, start, duration, type, gainValue) {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(frequency, start);
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      gain.gain.setValueAtTime(gainValue, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+      osc.start(start);
+      osc.stop(start + duration);
+    }
+
+    function playPointSound() {
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+      playTone(620, now, 0.12, 'sine', 0.18);
+    }
+
+    function playHatchSound() {
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+      [523, 659, 784, 1046].forEach((note, i) => {
+        playTone(note, now + i * 0.08, 0.28, 'triangle', 0.23);
+      });
+
+      const noiseLength = Math.floor(audioContext.sampleRate * 0.22);
+      const buffer = audioContext.createBuffer(1, noiseLength, audioContext.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < noiseLength; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / noiseLength);
+      }
+      const noise = audioContext.createBufferSource();
+      const gain = audioContext.createGain();
+      noise.buffer = buffer;
+      noise.connect(gain);
+      gain.connect(audioContext.destination);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      noise.start(now);
+      noise.stop(now + 0.22);
+    }
+
+    function playWinSound() {
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+      [784, 988, 1175, 1568, 1175, 1568].forEach((note, i) => {
+        playTone(note, now + i * 0.09, 0.32, 'sine', 0.24);
+      });
+    }
+
+    function triggerSparkles(playerId, count = 18) {
+      const card = document.getElementById(`player-${playerId}`);
+      if (!card) return;
+
+      const container = document.createElement('div');
+      container.className = 'sparkle-rain';
+      for (let i = 0; i < count; i++) {
+        const sparkle = document.createElement('span');
+        sparkle.className = 'sparkle';
+        sparkle.textContent = SPARKLES[Math.floor(Math.random() * SPARKLES.length)];
+        sparkle.style.left = `${Math.random() * 100}%`;
+        sparkle.style.fontSize = `${Math.random() * 1.5 + 0.8}rem`;
+        sparkle.style.color = ['#ffe15a', '#ff6f91', '#33d6c8', '#b9fbc0', '#ffffff'][i % 5];
+        sparkle.style.animationDelay = `${Math.random() * 0.28}s`;
+        container.appendChild(sparkle);
+      }
+      card.appendChild(container);
+      setTimeout(() => container.remove(), 2800);
+    }
+
+    function triggerConfetti() {
+      const colors = ['#ff6f91', '#ffbe0b', '#33d6c8', '#9b5de5', '#80ed99', '#48bfe3'];
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      for (let i = 0; i < 90; i++) {
+        const piece = document.createElement('span');
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = colors[i % colors.length];
+        piece.style.animationDelay = `${Math.random() * 0.9}s`;
+        piece.style.transform = `rotate(${Math.random() * 180}deg)`;
+        confetti.appendChild(piece);
+      }
+      document.body.appendChild(confetti);
+      setTimeout(() => confetti.remove(), 3600);
+    }
+
+    function renderZoo(homeControls = '') {
+      const zoo = getZoo();
+      const toolbar = `
+        <div class="zoo-toolbar ${homeControls ? 'home-zoo-toolbar' : ''}">
+          ${homeControls || '<h2 class="section-title">Zoo</h2>'}
+          <div class="zoo-toolbar-actions">
+            <button class="secondary-button" id="editZooBtn" type="button">${isZooEditorOpen ? 'Close Editor' : 'Edit Zoo'}</button>
+            ${zoo.length ? '<button class="secondary-button" id="clearZooBtn" type="button">Clear Zoo</button>' : ''}
+          </div>
+        </div>
+      `;
+
+      const emptyMessage = `
+        <div class="zoo-empty">
+          <div class="zoo-empty-message">The zoo is empty. Win a race to hatch the first animal.</div>
+        </div>
+      `;
+
+      return `
+        <div class="zoo-field" id="zooField" aria-label="Collected animal zoo">
+          <div class="zoo-bg-layer current" id="zooBgCurrent"></div>
+          <div class="zoo-bg-layer next" id="zooBgNext"></div>
+          ${toolbar}
+          ${isZooEditorOpen ? renderZooEditor(zoo) : ''}
+          ${zoo.length ? zoo.map((entry, index) => {
+            const animal = animalForZooEntry(entry);
+            const motion = motionForZooEntry(entry, index);
+            const tintFilter = zooTintFilter(entry);
+            return `
+              <div
+                class="zoo-critter"
+                data-index="${index}"
+                data-animal-id="${escapeHtml(animal.id)}"
+                aria-label="${escapeHtml(entry.animalName)} hatched by ${escapeHtml(entry.playerName)}"
+                style="left:${motion.x}%; top:${motion.y}%; --flip:${motion.flip};"
+              >
+                <div
+                  class="zoo-animal"
+                  style="--zoo-anim-duration:${movementTraitsForAnimal(animal).animMs}ms;"
+                >
+                  <img class="zoo-animal-sheet" src="${escapeHtml(zooAnimationSheetAsset(animal))}" alt="" ${tintFilter ? `style="filter:${escapeHtml(tintFilter)};"` : ''} />
+                </div>
+              </div>
+            `;
+          }).join('') : emptyMessage}
+        </div>
+      `;
+    }
+
+    function renderZooEditor(zoo) {
+      const animalOptions = ANIMALS.map(animal =>
+        `<option value="${escapeHtml(animal.id)}">${escapeHtml(animal.name)}</option>`
+      ).join('');
+      const playerOptions = PLAYERS.map(player =>
+        `<option value="${escapeHtml(player.name)}">${escapeHtml(player.name)}</option>`
+      ).join('');
+      const entryRows = zoo.length
+        ? zoo.map((entry, index) => `
+            <div class="zoo-entry-row">
+              <span><strong>${escapeHtml(entry.animalName)}</strong> by ${escapeHtml(entry.playerName)}</span>
+              <button class="tiny-button remove-zoo-entry" type="button" data-index="${index}">Remove</button>
+            </div>
+          `).join('')
+        : '<div class="zoo-entry-row"><span>No saved animals yet.</span></div>';
+
+      return `
+        <div class="zoo-editor" id="zooEditor">
+          <div class="zoo-editor-grid">
+            <div>
+              <label for="testAnimalSelect">Animal</label>
+              <select id="testAnimalSelect">${animalOptions}</select>
+            </div>
+            <div>
+              <label for="testPlayerSelect">Hatched by</label>
+              <select id="testPlayerSelect">${playerOptions}</select>
+            </div>
+            <button class="secondary-button" id="addTestAnimal" type="button">Add Animal</button>
+          </div>
+          <div class="zoo-entry-list">${entryRows}</div>
+        </div>
+      `;
+    }
+
+    function showStartScreen() {
+      isGameRunning = false;
+      winnerEntryAdded = false;
+      window.removeEventListener('keydown', handleKeyDown);
+
+      const soundtrackOptions = SOUNDTRACKS.map(opt =>
+        `<option value="${escapeHtml(opt.file)}" ${opt.file === soundtrack ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`
+      ).join('');
+      const zoo = getZoo();
+      const homeControls = `
+        <div class="home-zoo-brand">
+          <h1 class="title">TidyZoo</h1>
+          <p class="home-race-line">Collect ${TARGET_SCORE} tidy points to hatch a new creature</p>
+        </div>
+        <div class="home-controls">
+          <span class="home-player-chip">Daddy <span class="key-badge">D</span></span>
+          <span class="home-player-chip">Ada <span class="key-badge">A</span></span>
+          <div class="home-soundtrack">
+            <label for="soundtrackSelect">Soundtrack</label>
+            <select id="soundtrackSelect" aria-label="Soundtrack">${soundtrackOptions}</select>
+          </div>
+          <button class="play-button" id="startBtn">Start Race</button>
+        </div>
+      `;
+
+      appContainer.innerHTML = `
+        <div class="panel home-panel">
+          <section class="zoo-section home-zoo-section">
+            ${renderZoo(homeControls)}
+          </section>
+        </div>
+      `;
+
+      document.getElementById('soundtrackSelect').addEventListener('change', (event) => {
+        soundtrack = event.target.value;
+      });
+      document.getElementById('startBtn').addEventListener('click', startGame);
+      document.getElementById('editZooBtn').addEventListener('click', () => {
+        isZooEditorOpen = !isZooEditorOpen;
+        showStartScreen();
+      });
+      const clearButton = document.getElementById('clearZooBtn');
+      if (clearButton) clearButton.addEventListener('click', clearZoo);
+      const addButton = document.getElementById('addTestAnimal');
+      if (addButton) {
+        addButton.addEventListener('click', () => {
+          addTestZooEntry(
+            document.getElementById('testPlayerSelect').value,
+            document.getElementById('testAnimalSelect').value
+          );
+        });
+      }
+      document.querySelectorAll('.remove-zoo-entry').forEach(button => {
+        button.addEventListener('click', () => {
+          removeZooEntry(Number(button.dataset.index));
+        });
+      });
+      startZooMovement(zoo);
+      startZooBackgroundAnimation();
+    }
+
+    function configurePlayers() {
+      players = PLAYERS.map(player => ({
+        ...player,
+        score: 0,
+        animal: weightedAnimalPick(),
+        lastStageId: 'egg'
+      }));
+    }
+
+    function renderGameScreen() {
+      const playerCards = players.map(player => `
+        <div
+          class="player-card"
+          id="player-${player.id}"
+          style="background:linear-gradient(155deg, ${player.theme}55, ${player.shade}dd); border-color:${player.theme}77;"
+        >
+          <div class="card-header">
+            <h2 class="player-name">${escapeHtml(player.name)}</h2>
+            <span class="key-badge">${player.key.toUpperCase()}</span>
+          </div>
+          <div class="score-readout">
+            <p class="score" id="score-${player.id}">0</p>
+            <p class="stage-label" id="stage-${player.id}">Rainbow egg</p>
+          </div>
+          <div class="egg-stage" id="egg-stage-${player.id}">
+            <div class="egg-wrap">
+              <div class="egg" id="egg-${player.id}"></div>
+            </div>
+            <div class="animal-stage">
+              <img class="animal-sprite" id="animal-${player.id}" alt="" />
+            </div>
+          </div>
+          <div class="animal-name" id="animal-name-${player.id}"></div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-${player.id}" style="background:linear-gradient(90deg, ${player.theme}, #ffe15a, #33d6c8);"></div>
+          </div>
+          <button class="score-button" data-key="${player.key}" type="button">Add point for ${escapeHtml(player.name)}</button>
+        </div>
+      `).join('');
+
+      appContainer.innerHTML = `
+        <div class="panel game-panel">
+          <div class="race-header">
+            <h1 class="race-title">Race to 50</h1>
+            <div class="target-pill">First to ${TARGET_SCORE} tidying points wins</div>
+            <div class="game-actions">
+              <button class="secondary-button" id="giveUp" type="button">Back Home</button>
+            </div>
+          </div>
+          <div id="gameArea">${playerCards}</div>
+        </div>
+      `;
+
+      document.querySelectorAll('.score-button').forEach(button => {
+        button.addEventListener('click', () => simulateKeyPress(button.dataset.key));
+      });
+      document.getElementById('giveUp').addEventListener('click', showStartScreen);
+    }
+
+    function updateScores() {
+      players.forEach(player => {
+        const stage = stageForScore(player.score);
+        const card = document.getElementById(`player-${player.id}`);
+        const scoreEl = document.getElementById(`score-${player.id}`);
+        const stageEl = document.getElementById(`stage-${player.id}`);
+        const progressEl = document.getElementById(`progress-${player.id}`);
+        const eggEl = document.getElementById(`egg-${player.id}`);
+        const eggStageEl = document.getElementById(`egg-stage-${player.id}`);
+        const animalEl = document.getElementById(`animal-${player.id}`);
+        const animalNameEl = document.getElementById(`animal-name-${player.id}`);
+
+        if (scoreEl) scoreEl.textContent = player.score;
+        if (stageEl) stageEl.textContent = stage.hatched ? stage.label : stage.label;
+        if (progressEl) progressEl.style.width = `${(player.score / TARGET_SCORE) * 100}%`;
+        if (eggEl) eggEl.className = `egg ${stage.eggClass || ''}`.trim();
+        if (eggStageEl) eggStageEl.classList.toggle('hatched', stage.hatched);
+        if (animalEl && stage.hatched) {
+          animalEl.src = gameStageAsset(player.animal, stage.column);
+          animalEl.alt = player.animal.name;
+          animalEl.style.setProperty('--animal-stage-scale', String(stage.scale));
+        } else if (animalEl) {
+          animalEl.removeAttribute('src');
+          animalEl.alt = '';
+          animalEl.style.removeProperty('--animal-stage-scale');
+        }
+        if (animalNameEl) {
+          animalNameEl.textContent = stage.hatched ? player.animal.name : 'Mystery animal';
+        }
+
+        if (stage.id !== player.lastStageId) {
+          const previousScore = typeof player.previousScoreForStage === 'number'
+            ? player.previousScoreForStage
+            : player.score - 1;
+          if (stage.hatched && !stageForScore(previousScore).hatched) {
+            playHatchSound();
+            triggerSparkles(player.id, 34);
+          } else if (stage.hatched || stage.id === 'cracked') {
+            triggerSparkles(player.id, 20);
+          }
+          player.lastStageId = stage.id;
+          player.previousScoreForStage = null;
+        }
+
+        if (card) {
+          card.classList.remove('bump');
+          void card.offsetWidth;
+          card.classList.add('bump');
+        }
+      });
+    }
+
+    function handleKeyDown(event) {
+      if (!isGameRunning) return;
+      const key = event.key.toLowerCase();
+      if (key === '[') {
+        const ada = players.find(candidate => candidate.key === 'a');
+        if (ada) {
+          event.preventDefault?.();
+          scorePoint(ada, 10);
+        }
+        return;
+      }
+      if (key === ']') {
+        const daddy = players.find(candidate => candidate.key === 'd');
+        if (daddy) {
+          event.preventDefault?.();
+          scorePoint(daddy, 10);
+        }
+        return;
+      }
+      const player = players.find(candidate => candidate.key === key);
+      if (!player) return;
+      event.preventDefault?.();
+      scorePoint(player);
+    }
+
+    function simulateKeyPress(key) {
+      handleKeyDown({ key });
+    }
+
+    function scorePoint(player, amount = 1) {
+      if (!isGameRunning || player.score >= TARGET_SCORE) return;
+      initAudio();
+      player.previousScoreForStage = player.score;
+      player.score = Math.min(TARGET_SCORE, player.score + amount);
+      playPointSound();
+      updateScores();
+      if (player.score >= TARGET_SCORE) {
+        finishRace(player);
+      }
+    }
+
+    function startGame() {
+      initAudio();
+      stopZooMovement();
+      configurePlayers();
+      isZooEditorOpen = false;
+      winnerEntryAdded = false;
+      isGameRunning = true;
+      renderGameScreen();
+      updateScores();
+
+      const bgm = document.getElementById('backgroundMusic');
+      bgm.src = soundtrack;
+      bgm.volume = 0.52;
+      bgm.currentTime = 0;
+      bgm.play().catch(() => {});
+
+      window.removeEventListener('keydown', handleKeyDown);
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    function finishRace(winner) {
+      isGameRunning = false;
+      window.removeEventListener('keydown', handleKeyDown);
+
+      const bgm = document.getElementById('backgroundMusic');
+      if (bgm) bgm.pause();
+
+      if (!winnerEntryAdded) {
+        addZooEntry(winner, winner.animal);
+        winnerEntryAdded = true;
+      }
+
+      playWinSound();
+      triggerConfetti();
+      setTimeout(() => showGameOverScreen(winner), 700);
+    }
+
+    function showGameOverScreen(winner) {
+      const sorted = [...players].sort((a, b) => b.score - a.score);
+      const resultCards = sorted.map(player => {
+        const isWinner = player.id === winner.id;
+        const loserEggClass = player.score >= CRACK_SCORE ? 'cracked' : '';
+        return `
+          <div class="result-card ${isWinner ? 'winner' : ''}">
+            <h2 class="result-title">${escapeHtml(player.name)} ${isWinner ? 'wins!' : ''}</h2>
+            ${isWinner
+              ? `<img class="result-animal" src="${escapeHtml(player.animal.fullAsset)}" alt="${escapeHtml(player.animal.name)}" />`
+              : `<div class="result-egg"><div class="egg ${loserEggClass}"></div></div>`
+            }
+            <p class="subtitle">${isWinner
+              ? `${escapeHtml(player.animal.name)} joins the zoo with ${player.score} points.`
+              : `Mystery egg finished on ${player.score} points.`
+            }</p>
+          </div>
+        `;
+      }).join('');
+
+      appContainer.innerHTML = `
+        <div class="panel">
+          <h1 class="title">Zoo Updated</h1>
+          <p class="subtitle">${escapeHtml(winner.name)} added a ${escapeHtml(winner.animal.name)} to the zoo.</p>
+          <div class="result-grid">${resultCards}</div>
+          <div class="inline-buttons">
+            <button class="play-button" id="restartSameEnd" type="button">Race Again</button>
+            <button class="secondary-button" id="homeEnd" type="button">Home and Zoo</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('restartSameEnd').addEventListener('click', startGame);
+      document.getElementById('homeEnd').addEventListener('click', showStartScreen);
+    }
+
+    showStartScreen();
+  </script>
+</body>
+</html>
