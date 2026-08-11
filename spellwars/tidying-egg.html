@@ -263,12 +263,6 @@
       flex-wrap: wrap;
     }
 
-    .zoo-toolbar-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
     .home-zoo-toolbar {
       align-items: flex-start;
       padding: 0;
@@ -383,7 +377,8 @@
       padding: 8px 10px;
     }
 
-    .home-controls .play-button {
+    .home-controls .play-button,
+    .home-controls .secondary-button {
       flex: 0 0 auto;
       width: auto;
       min-height: 42px;
@@ -490,6 +485,28 @@
       background: rgba(16, 22, 36, 0.84);
       border: 1px solid rgba(255, 255, 255, 0.16);
       backdrop-filter: blur(8px);
+    }
+
+    .zoo-editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .zoo-editor-title {
+      margin: 0;
+      font-size: 1.08rem;
+      line-height: 1.1;
+    }
+
+    .zoo-editor-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .zoo-editor-grid {
@@ -1213,6 +1230,7 @@
 
     function clearZoo() {
       localStorage.removeItem(ZOO_STORAGE_KEY);
+      isZooEditorOpen = true;
       showStartScreen();
     }
 
@@ -1696,10 +1714,6 @@
       const toolbar = `
         <div class="zoo-toolbar ${homeControls ? 'home-zoo-toolbar' : ''}">
           ${homeControls || '<h2 class="section-title">Zoo</h2>'}
-          <div class="zoo-toolbar-actions">
-            <button class="secondary-button" id="editZooBtn" type="button">${isZooEditorOpen ? 'Close Editor' : 'Edit Zoo'}</button>
-            ${zoo.length ? '<button class="secondary-button" id="clearZooBtn" type="button">Clear Zoo</button>' : ''}
-          </div>
         </div>
       `;
 
@@ -1758,6 +1772,13 @@
 
       return `
         <div class="zoo-editor" id="zooEditor">
+          <div class="zoo-editor-header">
+            <h2 class="zoo-editor-title">Manage Zoo</h2>
+            <div class="zoo-editor-actions">
+              ${zoo.length ? '<button class="secondary-button" id="clearZooBtn" type="button">Remove all creatures</button>' : ''}
+              <button class="secondary-button" id="doneZooBtn" type="button">Done</button>
+            </div>
+          </div>
           <div class="zoo-editor-grid">
             <div>
               <label for="testAnimalSelect">Animal</label>
@@ -1851,6 +1872,7 @@
             <label for="soundtrackSelect">Soundtrack</label>
             <select id="soundtrackSelect" aria-label="Soundtrack">${soundtrackOptions}</select>
           </div>
+          <button class="secondary-button" id="manageZooBtn" type="button">Manage</button>
           <button class="play-button" id="startBtn">Start Race</button>
         </div>
       `;
@@ -1868,10 +1890,17 @@
       });
       bindPlayerNameEditors();
       document.getElementById('startBtn').addEventListener('click', startGame);
-      document.getElementById('editZooBtn').addEventListener('click', () => {
-        isZooEditorOpen = !isZooEditorOpen;
+      document.getElementById('manageZooBtn').addEventListener('click', () => {
+        isZooEditorOpen = true;
         showStartScreen();
       });
+      const doneButton = document.getElementById('doneZooBtn');
+      if (doneButton) {
+        doneButton.addEventListener('click', () => {
+          isZooEditorOpen = false;
+          showStartScreen();
+        });
+      }
       const clearButton = document.getElementById('clearZooBtn');
       if (clearButton) clearButton.addEventListener('click', clearZoo);
       const addButton = document.getElementById('addTestAnimal');
