@@ -707,7 +707,7 @@
       height: 100%;
       object-fit: contain;
       object-position: center;
-      filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.16));
+      filter: var(--animal-tint-filter, ) drop-shadow(0 10px 8px rgba(0, 0, 0, 0.16));
       transform: scale(var(--animal-stage-scale, 1));
       transform-origin: center;
     }
@@ -786,6 +786,7 @@
       background-color: rgba(255, 255, 255, 0.9);
       object-fit: contain;
       object-position: center;
+      filter: var(--animal-tint-filter, none);
     }
 
     .result-egg {
@@ -1084,6 +1085,7 @@
       const zoo = getZoo();
       const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const motion = createZooMotion(`${player.name}-${animal.id}-${Date.now()}`, zoo.length, animal);
+      const tint = player.tint || createZooTint(animal, id);
       zoo.unshift({
         id,
         playerName: player.name,
@@ -1091,7 +1093,7 @@
         animalName: animal.name,
         wonAt: new Date().toISOString(),
         motion,
-        tint: createZooTint(animal, id)
+        tint
       });
       saveZoo(zoo.slice(0, 60));
     }
@@ -1747,12 +1749,17 @@
     }
 
     function configurePlayers() {
-      players = PLAYERS.map(player => ({
-        ...player,
-        score: 0,
-        animal: weightedAnimalPick(),
-        lastStageId: 'egg'
-      }));
+      const raceSeed = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      players = PLAYERS.map(player => {
+        const animal = weightedAnimalPick();
+        return {
+          ...player,
+          score: 0,
+          animal,
+          tint: createZooTint(animal, `${raceSeed}-${player.id}`),
+          lastStageId: 'egg'
+        };
+      });
     }
 
     function renderGameScreen() {
@@ -1823,13 +1830,20 @@
         if (eggEl) eggEl.className = `egg ${stage.eggClass || ''}`.trim();
         if (eggStageEl) eggStageEl.classList.toggle('hatched', stage.hatched);
         if (animalEl && stage.hatched) {
+          const tintFilter = zooTintFilter(player);
           animalEl.src = gameStageAsset(player.animal, stage.column);
           animalEl.alt = player.animal.name;
           animalEl.style.setProperty('--animal-stage-scale', String(stage.scale));
+          if (tintFilter) {
+            animalEl.style.setProperty('--animal-tint-filter', tintFilter);
+          } else {
+            animalEl.style.removeProperty('--animal-tint-filter');
+          }
         } else if (animalEl) {
           animalEl.removeAttribute('src');
           animalEl.alt = '';
           animalEl.style.removeProperty('--animal-stage-scale');
+          animalEl.style.removeProperty('--animal-tint-filter');
         }
         if (animalNameEl) {
           animalNameEl.textContent = stage.hatched ? player.animal.name : 'Mystery animal';
@@ -1940,11 +1954,13 @@
       const resultCards = sorted.map(player => {
         const isWinner = player.id === winner.id;
         const loserEggClass = player.score >= CRACK_SCORE ? 'cracked' : '';
+        const winnerTintFilter = isWinner ? zooTintFilter(player) : '';
+        const winnerTintStyle = winnerTintFilter ? ` style="--animal-tint-filter:${escapeHtml(winnerTintFilter)};"` : '';
         return `
           <div class="result-card ${isWinner ? 'winner' : ''}">
             <h2 class="result-title">${escapeHtml(player.name)} ${isWinner ? 'wins!' : ''}</h2>
             ${isWinner
-              ? `<img class="result-animal" src="${escapeHtml(player.animal.fullAsset)}" alt="${escapeHtml(player.animal.name)}" />`
+              ? `<img class="result-animal" src="${escapeHtml(player.animal.fullAsset)}" alt="${escapeHtml(player.animal.name)}"${winnerTintStyle} />`
               : `<div class="result-egg"><div class="egg ${loserEggClass}"></div></div>`
             }
             <p class="subtitle">${isWinner
