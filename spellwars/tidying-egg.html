@@ -317,6 +317,53 @@
       font-weight: 900;
     }
 
+    .home-player-name {
+      min-width: 44px;
+    }
+
+    .home-player-edit-input {
+      display: none;
+      width: clamp(74px, 13vw, 130px);
+      min-height: 32px;
+      padding: 4px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #171335;
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 900;
+    }
+
+    .home-player-chip.editing .home-player-name {
+      display: none;
+    }
+
+    .home-player-chip.editing .home-player-edit-input {
+      display: inline-block;
+    }
+
+    .edit-player-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+      cursor: pointer;
+      text-shadow: 0 2px 3px rgba(0, 0, 0, 0.28);
+    }
+
+    .edit-player-button:hover,
+    .edit-player-button:focus-visible {
+      background: rgba(255, 255, 255, 0.28);
+      outline: 2px solid rgba(255, 255, 255, 0.55);
+      outline-offset: 2px;
+    }
+
     .home-soundtrack {
       flex: 0 1 220px;
       min-width: 150px;
@@ -982,6 +1029,7 @@
     const BABY_SCORE = 38;
     const GROWING_SCORE = 45;
     const ZOO_STORAGE_KEY = 'tidyingEggZoo';
+    const PLAYER_STORAGE_KEY = 'tidyingEggPlayers';
     const PLAYERS = [
       { id: 0, name: 'Daddy', key: 'd', theme: '#ff6f91', shade: '#61204a' },
       { id: 1, name: 'Ada', key: 'a', theme: '#33d6c8', shade: '#133f54' }
@@ -1079,6 +1127,45 @@
 
     function saveZoo(zoo) {
       localStorage.setItem(ZOO_STORAGE_KEY, JSON.stringify(zoo));
+    }
+
+    function cleanPlayerName(name, fallback) {
+      const cleaned = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 18);
+      return cleaned || fallback;
+    }
+
+    function getSavedPlayerNames() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(PLAYER_STORAGE_KEY) || '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function savePlayerName(playerId, name) {
+      const player = PLAYERS.find(candidate => candidate.id === playerId);
+      if (!player) return;
+      const savedNames = getSavedPlayerNames();
+      savedNames[playerId] = cleanPlayerName(name, player.name);
+      localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(savedNames));
+    }
+
+    function keyForPlayerName(name, usedKeys, fallbackKey) {
+      const preferred = cleanPlayerName(name, '').toLowerCase().replace(/[^a-z]/g, '').split('');
+      const candidates = [...new Set([...preferred, fallbackKey, ...'abcdefghijklmnopqrstuvwxyz'])];
+      return candidates.find(candidate => candidate && !usedKeys.has(candidate)) || fallbackKey;
+    }
+
+    function getPlayerConfigs() {
+      const savedNames = getSavedPlayerNames();
+      const usedKeys = new Set();
+      return PLAYERS.map(player => {
+        const name = cleanPlayerName(savedNames[player.id], player.name);
+        const key = keyForPlayerName(name, usedKeys, player.key);
+        usedKeys.add(key);
+        return { ...player, name, key };
+      });
     }
 
     function addZooEntry(player, animal) {
@@ -1657,7 +1744,7 @@
       const animalOptions = ANIMALS.map(animal =>
         `<option value="${escapeHtml(animal.id)}">${escapeHtml(animal.name)}</option>`
       ).join('');
-      const playerOptions = PLAYERS.map(player =>
+      const playerOptions = getPlayerConfigs().map(player =>
         `<option value="${escapeHtml(player.name)}">${escapeHtml(player.name)}</option>`
       ).join('');
       const entryRows = zoo.length
@@ -1687,11 +1774,68 @@
       `;
     }
 
+    function bindPlayerNameEditors() {
+      document.querySelectorAll('.home-player-chip').forEach(chip => {
+        const playerId = Number(chip.dataset.playerId);
+        const input = chip.querySelector('.home-player-edit-input');
+        const editButton = chip.querySelector('.edit-player-button');
+        const currentName = chip.querySelector('.home-player-name')?.textContent || '';
+
+        function finishEdit(shouldSave) {
+          chip.classList.remove('editing');
+          if (!shouldSave) {
+            input.value = currentName;
+            return;
+          }
+          const nextName = cleanPlayerName(input.value, currentName);
+          if (nextName !== currentName) {
+            savePlayerName(playerId, nextName);
+            showStartScreen();
+          } else {
+            input.value = currentName;
+          }
+        }
+
+        editButton.addEventListener('click', () => {
+          chip.classList.add('editing');
+          input.focus();
+          input.select();
+        });
+        input.addEventListener('blur', () => finishEdit(true));
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            finishEdit(true);
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            finishEdit(false);
+            editButton.focus();
+          }
+        });
+      });
+    }
+
     function showStartScreen() {
       isGameRunning = false;
       winnerEntryAdded = false;
       window.removeEventListener('keydown', handleKeyDown);
 
+      const playerConfigs = getPlayerConfigs();
+      const playerChips = playerConfigs.map(player => `
+        <span class="home-player-chip" data-player-id="${player.id}">
+          <span class="home-player-name">${escapeHtml(player.name)}</span>
+          <input
+            class="home-player-edit-input"
+            type="text"
+            value="${escapeHtml(player.name)}"
+            maxlength="18"
+            aria-label="Player name for ${escapeHtml(player.name)}"
+          />
+          <span class="key-badge">${escapeHtml(player.key.toUpperCase())}</span>
+          <button class="edit-player-button" type="button" aria-label="Edit ${escapeHtml(player.name)} name" title="Edit name">✎</button>
+        </span>
+      `).join('');
       const soundtrackOptions = SOUNDTRACKS.map(opt =>
         `<option value="${escapeHtml(opt.file)}" ${opt.file === soundtrack ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`
       ).join('');
@@ -1702,8 +1846,7 @@
           <p class="home-race-line">Collect ${TARGET_SCORE} tidy points to hatch a new creature</p>
         </div>
         <div class="home-controls">
-          <span class="home-player-chip">Daddy <span class="key-badge">D</span></span>
-          <span class="home-player-chip">Ada <span class="key-badge">A</span></span>
+          ${playerChips}
           <div class="home-soundtrack">
             <label for="soundtrackSelect">Soundtrack</label>
             <select id="soundtrackSelect" aria-label="Soundtrack">${soundtrackOptions}</select>
@@ -1723,6 +1866,7 @@
       document.getElementById('soundtrackSelect').addEventListener('change', (event) => {
         soundtrack = event.target.value;
       });
+      bindPlayerNameEditors();
       document.getElementById('startBtn').addEventListener('click', startGame);
       document.getElementById('editZooBtn').addEventListener('click', () => {
         isZooEditorOpen = !isZooEditorOpen;
@@ -1750,7 +1894,7 @@
 
     function configurePlayers() {
       const raceSeed = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      players = PLAYERS.map(player => {
+      players = getPlayerConfigs().map(player => {
         const animal = weightedAnimalPick();
         return {
           ...player,
@@ -1875,18 +2019,18 @@
       if (!isGameRunning) return;
       const key = event.key.toLowerCase();
       if (key === '[') {
-        const ada = players.find(candidate => candidate.key === 'a');
-        if (ada) {
+        const secondPlayer = players.find(candidate => candidate.id === 1);
+        if (secondPlayer) {
           event.preventDefault?.();
-          scorePoint(ada, 10);
+          scorePoint(secondPlayer, 10);
         }
         return;
       }
       if (key === ']') {
-        const daddy = players.find(candidate => candidate.key === 'd');
-        if (daddy) {
+        const firstPlayer = players.find(candidate => candidate.id === 0);
+        if (firstPlayer) {
           event.preventDefault?.();
-          scorePoint(daddy, 10);
+          scorePoint(firstPlayer, 10);
         }
         return;
       }
