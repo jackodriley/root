@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIDI Tank</title>
+  <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
+  <style>
+    :root {
+      --black: #000;
+      --white: #fff;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--white);
+      color: var(--black);
+      font-family: Helvetica, Arial, sans-serif;
+    }
+
+    #game {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: var(--white);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--white);
+      color: var(--black);
+      text-align: center;
+      letter-spacing: 0;
+    }
+
+    .overlay[hidden] {
+      display: none;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      align-items: center;
+      max-width: min(520px, calc(100vw - 40px));
+    }
+
+    .headline {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .subline {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      text-transform: uppercase;
+    }
+
+    button,
+    input,
+    select {
+      appearance: none;
+      border: 1px solid var(--black);
+      border-radius: 0;
+      background: var(--white);
+      color: var(--black);
+      padding: 10px 16px;
+      font: 700 13px Helvetica, Arial, sans-serif;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    #hud {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 2;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    #instructions,
+    #status,
+    #debugHelp {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+
+    #status {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    #devControls {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 2;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #tuningPanel {
+      position: fixed;
+      right: 16px;
+      bottom: 64px;
+      z-index: 4;
+      width: min(360px, calc(100vw - 32px));
+      padding: 14px;
+      border: 1px solid var(--black);
+      background: var(--white);
+    }
+
+    #tuningPanel[hidden] {
+      display: none;
+    }
+
+    #tuningPanel h2 {
+      margin: 0 0 12px;
+      font-size: 13px;
+    }
+
+    .tuning-row {
+      display: grid;
+      grid-template-columns: 112px 1fr 54px;
+      gap: 8px;
+      align-items: center;
+      margin: 8px 0;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .tuning-row input {
+      width: 100%;
+      padding: 0;
+    }
+
+    .tuning-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      justify-self: start;
+      cursor: pointer;
+    }
+
+    .tuning-row input[type="checkbox"]:checked {
+      background: var(--black);
+      box-shadow: inset 0 0 0 4px var(--white);
+    }
+
+    .tuning-value {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tuning-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    #editor {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: var(--white);
+      color: var(--black);
+    }
+
+    #editor[hidden] {
+      display: none;
+    }
+
+    #editorToolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid var(--black);
+      background: var(--white);
+    }
+
+    #editorToolbar input {
+      min-width: 220px;
+      flex: 1;
+    }
+
+    #editorToolbar .active {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    #editorCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      background: var(--white);
+    }
+
+    #debugHelp {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      z-index: 2;
+      max-width: min(560px, calc(100vw - 32px));
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <p id="instructions">PLAY TO BUILD<br />PLAY C + E + G TO RELEASE TANK</p>
+    <p id="status"></p>
+  </div>
+
+  <p id="debugHelp"></p>
+  <div id="devControls">
+    <button id="tuneButton" type="button">TUNE</button>
+    <button id="editButton" type="button">EDIT</button>
+    <button id="resetButton" type="button">RESET</button>
+  </div>
+
+  <section id="tuningPanel" hidden>
+    <h2>PHYSICS TUNING</h2>
+    <label class="tuning-row">
+      <span>NOTE MASS</span>
+      <input data-tune="letterMass" type="range" min="0.2" max="6" step="0.1" />
+      <span class="tuning-value" data-tune-value="letterMass"></span>
+    </label>
+    <label class="tuning-row">
+      <span>BODY MASS</span>
+      <input data-tune="tankDensity" type="range" min="0.0004" max="0.004" step="0.0001" />
+      <span class="tuning-value" data-tune-value="tankDensity"></span>
+    </label>
+    <label class="tuning-row">
+      <span>WHEEL MASS</span>
+      <input data-tune="wheelDensity" type="range" min="0.0004" max="0.006" step="0.0001" />
+      <span class="tuning-value" data-tune-value="wheelDensity"></span>
+    </label>
+    <label class="tuning-row">
+      <span>DRIVE</span>
+      <input data-tune="assistForce" type="range" min="0.0005" max="0.006" step="0.0001" />
+      <span class="tuning-value" data-tune-value="assistForce"></span>
+    </label>
+    <label class="tuning-row">
+      <span>CLIMB</span>
+      <input data-tune="climbAssistForce" type="range" min="0" max="0.012" step="0.0002" />
+      <span class="tuning-value" data-tune-value="climbAssistForce"></span>
+    </label>
+    <label class="tuning-row">
+      <span>GRAVITY</span>
+      <input data-tune="gravityY" type="range" min="0.4" max="1.8" step="0.05" />
+      <span class="tuning-value" data-tune-value="gravityY"></span>
+    </label>
+    <label class="tuning-row">
+      <span>EXPLODING NOTES</span>
+      <input data-tune-toggle="explodingNotes" type="checkbox" />
+      <span class="tuning-value" data-tune-value="explodingNotes"></span>
+    </label>
+    <label class="tuning-row">
+      <span>EXPLODE TIME</span>
+      <input data-tune="explosionDelay" type="range" min="2" max="30" step="1" />
+      <span class="tuning-value" data-tune-value="explosionDelay"></span>
+    </label>
+    <label class="tuning-row">
+      <span>EXPLOSION SIZE</span>
+      <input data-tune="explosionSize" type="range" min="60" max="360" step="10" />
+      <span class="tuning-value" data-tune-value="explosionSize"></span>
+    </label>
+    <div class="tuning-actions">
+      <button id="resetTuningButton" type="button">DEFAULTS</button>
+      <button id="closeTuningButton" type="button">CLOSE</button>
+    </div>
+  </section>
+
+  <div id="midiOverlay" class="overlay">
+    <div class="panel">
+      <h1 class="headline">CLICK TO ENABLE MIDI</h1>
+      <p class="subline">Debug keys also work: A S D F G H J K L, space starts, R resets.</p>
+      <button id="enableMidiButton" type="button">ENABLE</button>
+    </div>
+  </div>
+
+  <div id="messageOverlay" class="overlay" hidden>
+    <div class="panel">
+      <h2 id="messageTitle" class="headline"></h2>
+      <p id="messageText" class="subline"></p>
+      <button id="messageButton" type="button"></button>
+    </div>
+  </div>
+
+  <section id="editor" hidden>
+    <div id="editorToolbar">
+      <select id="editorLevelSelect" aria-label="Level"></select>
+      <input id="editorName" type="text" aria-label="Level name" />
+      <button id="newLevelButton" type="button">NEW</button>
+      <button id="lineToolButton" type="button" class="active">LINE</button>
+      <button id="exitToolButton" type="button">EXIT</button>
+      <button id="undoLineButton" type="button">UNDO</button>
+      <button id="clearLevelButton" type="button">CLEAR</button>
+      <button id="saveLevelButton" type="button">SAVE</button>
+      <button id="playLevelButton" type="button">PLAY</button>
+      <button id="closeEditorButton" type="button">CLOSE</button>
+    </div>
+    <canvas id="editorCanvas"></canvas>
+  </section>
+
+  <script>
+    const DEBUG = true;
+    const SHOW_PHYSICS_BODIES = false;
+
+    const LOWEST_MIDI_NOTE = 36;
+    const HIGHEST_MIDI_NOTE = 84;
+    const START_CHORD = {
+      name: 'C + E + G',
+      pitchClasses: [0, 4, 7],
+      windowMs: 450
+    };
+
+    const LETTER = {
+      fontSize: 68,
+      width: 62,
+      height: 74,
+      mass: 0.42,
+      friction: 0.9,
+      frictionStatic: 1.2,
+      restitution: 0.08,
+      spawnY: -60
+    };
+
+    const PHYSICS = {
+      gravityY: 1.15,
+      terrainThickness: 16,
+      cleanupMargin: 360
+    };
+
+    const TANK = {
+      width: 76,
+      height: 20,
+      wheelRadius: 20,
+      wheelOffsetX: 38,
+      wheelOffsetY: 18,
+      motorTorque: 0.065,
+      maxWheelSpeed: 0.78,
+      assistForce: 0.0022,
+      climbAssistForce: 0.0038,
+      selfRightTorque: 0.035,
+      maxSpeed: 5,
+      stuckMs: 8000,
+      overturnedMs: 3600
+    };
+
+    const DEFAULT_TUNING = {
+      letterMass: 2.2,
+      tankDensity: 0.0009,
+      wheelDensity: 0.0012,
+      assistForce: TANK.assistForce,
+      climbAssistForce: TANK.climbAssistForce,
+      gravityY: PHYSICS.gravityY,
+      explodingNotes: false,
+      explosionDelay: 8,
+      explosionSize: 180
+    };
+
+    const DEBUG_KEYS = [
+      ['a', 36], ['s', 41], ['d', 46], ['f', 51], ['g', 56],
+      ['h', 61], ['j', 66], ['k', 71], ['l', 76]
+    ];
+
+    const CUSTOM_LEVELS_KEY = 'midi-tank-custom-levels-v1';
+    const TUNING_KEY = 'midi-tank-physics-tuning-v1';
+    const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+
+    const BUILT_IN_LEVELS = [
+      {
+        id: 'playground',
+        name: 'LEVEL 1 - PLAYGROUND',
+        tank: { x: 120, floor: 'main' },
+        exit: { x: 0.9, y: 0.76, width: 56, height: 96 },
+        terrain: [
+          { id: 'main', kind: 'rect', cx: 0.5, cy: 0.84, width: 1, height: 16 }
+        ]
+      },
+      {
+        id: 'holes',
+        name: 'LEVEL 2 - THE HOLES',
+        tank: { x: 118, floor: 'left' },
+        exit: { x: 0.9, y: 0.76, width: 56, height: 96 },
+        terrain: [
+          { id: 'left', kind: 'rect', cx: 0.13, cy: 0.84, width: 0.25, height: 16 },
+          { id: 'middleA', kind: 'rect', cx: 0.38, cy: 0.84, width: 0.21, height: 16 },
+          { id: 'middleB', kind: 'rect', cx: 0.63, cy: 0.84, width: 0.21, height: 16 },
+          { id: 'right', kind: 'rect', cx: 0.86, cy: 0.84, width: 0.26, height: 16 },
+          { kind: 'rect', cx: 0.255, cy: 0.92, width: 0.045, height: 130 },
+          { kind: 'rect', cx: 0.505, cy: 0.92, width: 0.045, height: 130 }
+        ]
+      },
+      {
+        id: 'ramp',
+        name: 'LEVEL 3 - THE RAMP',
+        tank: { x: 118, floor: 'start' },
+        exit: { x: 0.87, y: 0.51, width: 60, height: 96 },
+        terrain: [
+          { id: 'start', kind: 'rect', cx: 0.18, cy: 0.84, width: 0.36, height: 16 },
+          { id: 'basin', kind: 'rect', cx: 0.51, cy: 0.88, width: 0.28, height: 16 },
+          { kind: 'rect', cx: 0.37, cy: 0.86, width: 16, height: 64 },
+          { kind: 'rect', cx: 0.65, cy: 0.71, width: 18, height: 210 },
+          { id: 'top', kind: 'rect', cx: 0.81, cy: 0.6, width: 0.32, height: 16 }
+        ]
+      }
+    ];
+
+    const MatterAlias = window.Matter || {};
+    const {
+      Engine,
+      World,
+      Bodies,
+      Body,
+      Composite,
+      Constraint,
+      Events,
+      Query
+    } = MatterAlias;
+
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const midiOverlay = document.getElementById('midiOverlay');
+    const enableMidiButton = document.getElementById('enableMidiButton');
+    const instructions = document.getElementById('instructions');
+    const statusEl = document.getElementById('status');
+    const debugHelp = document.getElementById('debugHelp');
+    const tuneButton = document.getElementById('tuneButton');
+    const tuningPanel = document.getElementById('tuningPanel');
+    const tuningInputs = [...document.querySelectorAll('[data-tune]')];
+    const tuningToggles = [...document.querySelectorAll('[data-tune-toggle]')];
+    const tuningValues = [...document.querySelectorAll('[data-tune-value]')];
+    const resetTuningButton = document.getElementById('resetTuningButton');
+    const closeTuningButton = document.getElementById('closeTuningButton');
+    const editButton = document.getElementById('editButton');
+    const resetButton = document.getElementById('resetButton');
+    const messageOverlay = document.getElementById('messageOverlay');
+    const messageTitle = document.getElementById('messageTitle');
+    const messageText = document.getElementById('messageText');
+    const messageButton = document.getElementById('messageButton');
+    const editorOverlay = document.getElementById('editor');
+    const editorCanvas = document.getElementById('editorCanvas');
+    const editorCtx = editorCanvas.getContext('2d');
+    const editorLevelSelect = document.getElementById('editorLevelSelect');
+    const editorName = document.getElementById('editorName');
+    const newLevelButton = document.getElementById('newLevelButton');
+    const lineToolButton = document.getElementById('lineToolButton');
+    const exitToolButton = document.getElementById('exitToolButton');
+    const undoLineButton = document.getElementById('undoLineButton');
+    const clearLevelButton = document.getElementById('clearLevelButton');
+    const saveLevelButton = document.getElementById('saveLevelButton');
+    const playLevelButton = document.getElementById('playLevelButton');
+    const closeEditorButton = document.getElementById('closeEditorButton');
+
+    let engine;
+    let world;
+    let levels = [];
+    let customLevels = [];
+    let tuning = { ...DEFAULT_TUNING };
+    let width = 0;
+    let height = 0;
+    let levelIndex = 0;
+    let phase = 'build';
+    let levelBodies = [];
+    let letters = [];
+    let terrainById = new Map();
+    let tank = null;
+    let exitRegion = null;
+    let walls = [];
+    let heldChordNotes = new Map();
+    let lastTankProgressAt = 0;
+    let bestTankX = 0;
+    let overturnedSince = null;
+    let lastTime = performance.now();
+    let nextAction = null;
+    let editorState = {
+      level: null,
+      tool: 'line',
+      drawingStart: null,
+      pointer: null
+    };
+
+    if (!window.Matter) {
+      showFatalError('Matter.js did not load. Open this file with an internet connection, or vendor Matter.js locally.');
+    } else {
+      boot();
+    }
+
+    function boot() {
+      engine = Engine.create();
+      world = engine.world;
+      tuning = loadTuning();
+      applyTuningToConstants();
+      customLevels = loadCustomLevels();
+      rebuildLevels();
+
+      window.addEventListener('resize', () => {
+        if (isEditorOpen()) {
+          resizeEditorCanvas();
+          drawEditor();
+        } else {
+          resetLevel(levelIndex);
+        }
+      });
+      enableMidiButton.addEventListener('click', enableMidi);
+      tuneButton.addEventListener('click', () => {
+        tuningPanel.hidden = !tuningPanel.hidden;
+      });
+      closeTuningButton.addEventListener('click', () => {
+        tuningPanel.hidden = true;
+      });
+      resetTuningButton.addEventListener('click', resetTuning);
+      tuningInputs.forEach(input => {
+        input.addEventListener('input', onTuningInput);
+      });
+      tuningToggles.forEach(input => {
+        input.addEventListener('change', onTuningToggle);
+      });
+      editButton.addEventListener('click', openEditor);
+      resetButton.addEventListener('click', () => resetLevel(levelIndex));
+      messageButton.addEventListener('click', () => {
+        if (nextAction) nextAction();
+      });
+      editorLevelSelect.addEventListener('change', loadSelectedEditorLevel);
+      newLevelButton.addEventListener('click', createBlankEditorLevel);
+      lineToolButton.addEventListener('click', () => setEditorTool('line'));
+      exitToolButton.addEventListener('click', () => setEditorTool('exit'));
+      undoLineButton.addEventListener('click', undoEditorLine);
+      clearLevelButton.addEventListener('click', clearEditorTerrain);
+      saveLevelButton.addEventListener('click', saveEditorLevel);
+      playLevelButton.addEventListener('click', playEditorLevel);
+      closeEditorButton.addEventListener('click', closeEditor);
+      editorCanvas.addEventListener('pointerdown', onEditorPointerDown);
+      editorCanvas.addEventListener('pointermove', onEditorPointerMove);
+      editorCanvas.addEventListener('pointerup', onEditorPointerUp);
+      editorCanvas.addEventListener('pointercancel', cancelEditorLine);
+
+      if (DEBUG) {
+        document.addEventListener('keydown', onDebugKeyDown);
+        debugHelp.textContent = 'DEBUG: A S D F G H J K L DROP NOTES. SPACE RELEASES TANK. R RESETS.';
+      } else {
+        debugHelp.hidden = true;
+        resetButton.hidden = true;
+      }
+
+      Events.on(engine, 'collisionStart', onCollisionStart);
+      syncTuningControls();
+      resetLevel(0);
+      requestAnimationFrame(tick);
+    }
+
+    async function enableMidi() {
+      if (!navigator.requestMIDIAccess) {
+        midiOverlay.hidden = true;
+        setStatus(DEBUG ? 'WEB MIDI UNAVAILABLE - DEBUG MODE' : 'WEB MIDI UNAVAILABLE');
+        return;
+      }
+
+      try {
+        const access = await navigator.requestMIDIAccess();
+        access.inputs.forEach(input => {
+          input.onmidimessage = onMidiMessage;
+        });
+        access.onstatechange = () => {
+          access.inputs.forEach(input => {
+            input.onmidimessage = onMidiMessage;
+          });
+        };
+        midiOverlay.hidden = true;
+        setStatus('MIDI CONNECTED');
+      } catch (error) {
+        setStatus(DEBUG ? 'MIDI BLOCKED - DEBUG MODE' : 'MIDI BLOCKED');
+      }
+    }
+
+    function onMidiMessage(event) {
+      const [status, note, velocity] = event.data;
+      const command = status & 0xf0;
+      if (command === 0x90 && velocity > 0) {
+        handleNoteOn(note);
+      }
+    }
+
+    function onDebugKeyDown(event) {
+      if (isEditorOpen() || ['INPUT', 'SELECT', 'BUTTON'].includes(event.target.tagName)) return;
+      if (event.repeat) return;
+      const key = event.key.toLowerCase();
+      const debugNote = DEBUG_KEYS.find(([mappedKey]) => mappedKey === key);
+
+      if (debugNote) {
+        handleNoteOn(debugNote[1]);
+        return;
+      }
+
+      if (event.code === 'Space') {
+        event.preventDefault();
+        releaseTank();
+      }
+
+      if (key === 'r') {
+        resetLevel(levelIndex);
+      }
+    }
+
+    function handleNoteOn(noteNumber) {
+      spawnLetter(noteNumber);
+      rememberChordNote(noteNumber);
+      if (detectChord(START_CHORD)) {
+        releaseTank();
+      }
+    }
+
+    function rememberChordNote(noteNumber) {
+      heldChordNotes.set(noteNumber % 12, performance.now());
+    }
+
+    function detectChord(chord) {
+      const now = performance.now();
+      return chord.pitchClasses.every(pitchClass => {
+        const playedAt = heldChordNotes.get(pitchClass);
+        return playedAt && now - playedAt <= chord.windowMs;
+      });
+    }
+
+    function spawnLetter(noteNumber) {
+      const x = pitchToX(noteNumber);
+      const label = noteName(noteNumber);
+      const body = Bodies.rectangle(x, LETTER.spawnY, LETTER.width, LETTER.height, {
+        label: 'letter',
+        friction: LETTER.friction,
+        frictionStatic: LETTER.frictionStatic,
+        restitution: LETTER.restitution,
+        density: tuning.letterMass / (LETTER.width * LETTER.height),
+        angle: (Math.random() - 0.5) * 0.4,
+        render: { visible: false }
+      });
+      body.gameLetter = label;
+      body.gameFontSize = LETTER.fontSize;
+      body.gameBornAt = performance.now();
+      body.gameExplodeAt = tuning.explodingNotes ? body.gameBornAt + tuning.explosionDelay * 1000 : null;
+      letters.push(body);
+      World.add(world, body);
+    }
+
+    function pitchToX(noteNumber) {
+      const clamped = clamp(noteNumber, LOWEST_MIDI_NOTE, HIGHEST_MIDI_NOTE);
+      const t = (clamped - LOWEST_MIDI_NOTE) / (HIGHEST_MIDI_NOTE - LOWEST_MIDI_NOTE);
+      return 42 + t * (width - 84);
+    }
+
+    function noteName(noteNumber) {
+      return NOTE_NAMES[noteNumber % 12];
+    }
+
+    function resetLevel(nextLevelIndex) {
+      levelIndex = clamp(nextLevelIndex, 0, levels.length - 1);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * window.devicePixelRatio);
+      canvas.height = Math.floor(height * window.devicePixelRatio);
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+
+      Composite.clear(world, false);
+      levelBodies = [];
+      letters = [];
+      terrainById = new Map();
+      tank = null;
+      exitRegion = null;
+      walls = [];
+      heldChordNotes = new Map();
+      phase = 'build';
+      lastTankProgressAt = performance.now();
+      bestTankX = 0;
+      overturnedSince = null;
+      messageOverlay.hidden = true;
+      nextAction = null;
+
+      loadLevel(levels[levelIndex]);
+      updateHud();
+    }
+
+    function loadLevel(level) {
+      createBoundaries();
+      createTerrain(level);
+      createExit(level.exit);
+      createTank(level.tank);
+    }
+
+    function createBoundaries() {
+      const left = Bodies.rectangle(-18, height / 2, 36, height * 2, {
+        isStatic: true,
+        label: 'boundary'
+      });
+      const right = Bodies.rectangle(width + 18, height / 2, 36, height * 2, {
+        isStatic: true,
+        label: 'boundary'
+      });
+      walls = [left, right];
+      World.add(world, walls);
+    }
+
+    function createTerrain(level) {
+      level.terrain.forEach(item => {
+        const body = createTerrainBody(item);
+        body.gameKind = item.kind;
+        levelBodies.push(body);
+        if (item.id) terrainById.set(item.id, body);
+      });
+      World.add(world, levelBodies);
+    }
+
+    function createTerrainBody(item) {
+      const options = {
+        isStatic: true,
+        label: 'terrain',
+        friction: 1,
+        render: { visible: false }
+      };
+
+      if (item.kind === 'line') {
+        const x1 = resolveMeasure(item.x1, width);
+        const y1 = resolveMeasure(item.y1, height);
+        const x2 = resolveMeasure(item.x2, width);
+        const y2 = resolveMeasure(item.y2, height);
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const length = Math.max(12, Math.hypot(dx, dy));
+        const angle = Math.atan2(dy, dx);
+        return Bodies.rectangle((x1 + x2) / 2, (y1 + y2) / 2, length, item.thickness || PHYSICS.terrainThickness, {
+          ...options,
+          angle,
+          chamfer: { radius: 2 }
+        });
+      }
+
+      return Bodies.rectangle(
+        resolveMeasure(item.cx, width),
+        resolveMeasure(item.cy, height),
+        resolveMeasure(item.width, width),
+        item.height,
+        options
+      );
+    }
+
+    function createExit(exit) {
+      exitRegion = {
+        x: resolveMeasure(exit.x, width),
+        y: resolveMeasure(exit.y, height),
+        width: exit.width,
+        height: exit.height
+      };
+    }
+
+    function createTank(tankConfig) {
+      const x = resolveMeasure(tankConfig.x, width);
+      const floor = terrainById.get(tankConfig.floor) || findTankStartFloor(x) || levelBodies[0];
+      const spawnY = tankConfig.y
+        ? resolveMeasure(tankConfig.y, height)
+        : floor
+          ? floor.bounds.min.y - TANK.wheelOffsetY - TANK.wheelRadius - 2
+          : height * 0.75;
+      const collisionGroup = Body.nextGroup(true);
+      const wheelOptions = {
+        label: 'tank-wheel',
+        collisionFilter: { group: collisionGroup },
+        friction: 2.2,
+        frictionStatic: 2.6,
+        restitution: 0.02,
+        density: tuning.wheelDensity
+      };
+      const chassisOptions = {
+        label: 'tank-body',
+        collisionFilter: { group: collisionGroup },
+        friction: 1.1,
+        frictionStatic: 1.4,
+        restitution: 0.02,
+        density: tuning.tankDensity,
+        chamfer: { radius: 7 }
+      };
+
+      const lowerBase = Bodies.rectangle(x, spawnY + 4, TANK.width, TANK.height - 4, chassisOptions);
+      const roundedBack = Bodies.circle(x, spawnY - 1, TANK.width / 2, {
+        ...chassisOptions,
+        friction: 0.7,
+        frictionStatic: 0.8
+      });
+      const ballast = Bodies.rectangle(x, spawnY + 14, TANK.width * 0.72, 8, {
+        ...chassisOptions,
+        density: tuning.tankDensity * 4
+      });
+      const body = Body.create({
+        label: 'tank-body',
+        parts: [lowerBase, roundedBack, ballast],
+        collisionFilter: { group: collisionGroup },
+        friction: 1.1,
+        frictionStatic: 1.4,
+        restitution: 0.02
+      });
+      const leftWheel = Bodies.circle(x - TANK.wheelOffsetX, spawnY + TANK.wheelOffsetY, TANK.wheelRadius, wheelOptions);
+      const rightWheel = Bodies.circle(x + TANK.wheelOffsetX, spawnY + TANK.wheelOffsetY, TANK.wheelRadius, wheelOptions);
+
+      const constraints = [
+        Constraint.create({ bodyA: body, pointA: { x: -TANK.wheelOffsetX, y: TANK.wheelOffsetY }, bodyB: leftWheel, stiffness: 0.95, length: 0 }),
+        Constraint.create({ bodyA: body, pointA: { x: TANK.wheelOffsetX, y: TANK.wheelOffsetY }, bodyB: rightWheel, stiffness: 0.95, length: 0 })
+      ];
+
+      tank = {
+        body,
+        wheels: [leftWheel, rightWheel],
+        constraints,
+        allBodies: [body, leftWheel, rightWheel]
+      };
+
+      World.add(world, [...tank.allBodies, ...constraints]);
+      setTankLocked(true);
+      bestTankX = x;
+    }
+
+    function findTankStartFloor(x) {
+      return levelBodies
+        .filter(body => body.bounds.min.x <= x + TANK.width && body.bounds.max.x >= x - TANK.width)
+        .sort((a, b) => a.bounds.min.y - b.bounds.min.y)
+        .at(-1);
+    }
+
+    function releaseTank() {
+      if (phase !== 'build') return;
+      phase = 'run';
+      setTankLocked(false);
+      instructions.hidden = true;
+      setStatus('TANK RELEASED');
+      lastTankProgressAt = performance.now();
+    }
+
+    function setTankLocked(locked) {
+      if (!tank) return;
+      tank.allBodies.forEach(body => {
+        Body.setStatic(body, locked);
+        Body.setVelocity(body, { x: 0, y: 0 });
+        Body.setAngularVelocity(body, 0);
+      });
+    }
+
+    function tick(now) {
+      const delta = Math.min(now - lastTime, 32);
+      lastTime = now;
+
+      if (phase === 'run') {
+        driveTank();
+        checkWin();
+        checkFailure(now);
+      }
+
+      processExplodingLetters(now);
+      Engine.update(engine, delta);
+      cleanupEscapedLetters();
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    function driveTank() {
+      if (!tank) return;
+      const speed = tank.body.velocity.x;
+      const uprightError = normalizeAngle(tank.body.angle);
+      tank.wheels.forEach(wheel => {
+        Body.setAngularVelocity(wheel, Math.min(wheel.angularVelocity + TANK.motorTorque, TANK.maxWheelSpeed));
+      });
+      if (speed < TANK.maxSpeed) {
+        Body.applyForce(tank.body, tank.body.position, { x: tuning.assistForce, y: 0 });
+      }
+      if (Math.abs(uprightError) > 0.9) {
+        Body.setAngularVelocity(tank.body, tank.body.angularVelocity - Math.sign(uprightError) * TANK.selfRightTorque);
+      }
+    }
+
+    function processExplodingLetters(now) {
+      if (!tuning.explodingNotes) return;
+      const exploding = letters.filter(body => body.gameExplodeAt && now >= body.gameExplodeAt);
+      exploding.forEach(body => explodeLetter(body));
+      if (exploding.length) {
+        letters = letters.filter(body => !exploding.includes(body));
+        World.remove(world, exploding);
+      }
+    }
+
+    function explodeLetter(source) {
+      const radius = tuning.explosionSize;
+      const strength = 0.035 * (radius / 180);
+      Composite.allBodies(world).forEach(body => {
+        if (body === source || body.isStatic) return;
+        const dx = body.position.x - source.position.x;
+        const dy = body.position.y - source.position.y;
+        const distance = Math.max(12, Math.hypot(dx, dy));
+        if (distance > radius) return;
+        const falloff = 1 - distance / radius;
+        const force = strength * falloff * Math.max(0.7, Math.sqrt(body.mass));
+        Body.applyForce(body, body.position, {
+          x: (dx / distance) * force,
+          y: (dy / distance) * force
+        });
+      });
+    }
+
+    function checkWin() {
+      if (!tank || phase !== 'run') return;
+      const tankX = tank.body.position.x;
+      const tankY = tank.body.position.y;
+      const insideExit =
+        tankX > exitRegion.x - exitRegion.width * 0.7 &&
+        tankX < exitRegion.x + exitRegion.width * 0.9 &&
+        tankY > exitRegion.y - exitRegion.height * 0.9 &&
+        tankY < exitRegion.y + exitRegion.height * 1.25;
+
+      if (insideExit) {
+        phase = 'complete';
+        tank.allBodies.forEach(body => {
+          Body.setVelocity(body, { x: 0, y: body.velocity.y });
+          Body.setAngularVelocity(body, 0);
+        });
+        setStatus('LEVEL COMPLETE');
+        setTimeout(() => showLevelComplete(), 700);
+      }
+    }
+
+    function checkFailure(now) {
+      if (!tank || phase !== 'run') return;
+      const body = tank.body;
+
+      if (body.position.y > height + 160) {
+        failRun();
+        return;
+      }
+
+      if (body.position.x > bestTankX + 10) {
+        bestTankX = body.position.x;
+        lastTankProgressAt = now;
+      } else if (now - lastTankProgressAt > TANK.stuckMs && Math.abs(body.velocity.x) < 0.32) {
+        failRun();
+        return;
+      }
+
+      const flipped = Math.abs(normalizeAngle(body.angle)) > Math.PI * 0.62;
+      if (flipped) {
+        overturnedSince ||= now;
+        if (now - overturnedSince > TANK.overturnedMs) failRun();
+      } else {
+        overturnedSince = null;
+      }
+    }
+
+    function failRun() {
+      if (phase !== 'run') return;
+      phase = 'failed';
+      setStatus('TANK STUCK');
+      showMessage('TANK STUCK', '', 'RETRY', () => resetLevel(levelIndex));
+    }
+
+    function showLevelComplete() {
+      if (levelIndex < levels.length - 1) {
+        showMessage('LEVEL COMPLETE', '', 'NEXT LEVEL', () => resetLevel(levelIndex + 1));
+      } else {
+        showMessage('LEVEL COMPLETE', 'ALL PROTOTYPE LEVELS COMPLETE', 'PLAY AGAIN', () => resetLevel(0));
+      }
+    }
+
+    function showMessage(title, text, button, action) {
+      messageTitle.textContent = title;
+      messageText.textContent = text;
+      messageButton.textContent = button;
+      nextAction = action;
+      messageOverlay.hidden = false;
+    }
+
+    function loadCustomLevels() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed.map(normalizeSavedLevel).filter(Boolean) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function loadTuning() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(TUNING_KEY) || '{}');
+        return normalizeTuning({ ...DEFAULT_TUNING, ...saved });
+      } catch (error) {
+        return { ...DEFAULT_TUNING };
+      }
+    }
+
+    function saveTuning() {
+      try {
+        localStorage.setItem(TUNING_KEY, JSON.stringify(tuning));
+      } catch (error) {
+        setStatus('TUNING STORAGE UNAVAILABLE');
+      }
+    }
+
+    function normalizeTuning(next) {
+      return {
+        letterMass: clamp(Number(next.letterMass) || DEFAULT_TUNING.letterMass, 0.2, 6),
+        tankDensity: clamp(Number(next.tankDensity) || DEFAULT_TUNING.tankDensity, 0.0004, 0.004),
+        wheelDensity: clamp(Number(next.wheelDensity) || DEFAULT_TUNING.wheelDensity, 0.0004, 0.006),
+        assistForce: clamp(Number(next.assistForce) || DEFAULT_TUNING.assistForce, 0.0005, 0.006),
+        climbAssistForce: clamp(Number(next.climbAssistForce) || DEFAULT_TUNING.climbAssistForce, 0, 0.012),
+        gravityY: clamp(Number(next.gravityY) || DEFAULT_TUNING.gravityY, 0.4, 1.8),
+        explodingNotes: Boolean(next.explodingNotes),
+        explosionDelay: clamp(Number(next.explosionDelay) || DEFAULT_TUNING.explosionDelay, 2, 30),
+        explosionSize: clamp(Number(next.explosionSize) || DEFAULT_TUNING.explosionSize, 60, 360)
+      };
+    }
+
+    function applyTuningToConstants() {
+      LETTER.mass = tuning.letterMass;
+      TANK.assistForce = tuning.assistForce;
+      TANK.climbAssistForce = tuning.climbAssistForce;
+      PHYSICS.gravityY = tuning.gravityY;
+      if (engine) engine.gravity.y = tuning.gravityY;
+    }
+
+    function applyTuningToBodies() {
+      letters.forEach(body => {
+        Body.setDensity(body, tuning.letterMass / (LETTER.width * LETTER.height));
+      });
+
+      if (tank) {
+        setBodyDensity(tank.body, tuning.tankDensity);
+        tank.wheels.forEach(wheel => setBodyDensity(wheel, tuning.wheelDensity));
+      }
+    }
+
+    function syncExplodingNotes() {
+      const now = performance.now();
+      letters.forEach(body => {
+        if (tuning.explodingNotes) {
+          body.gameBornAt ||= now;
+          body.gameExplodeAt = now + tuning.explosionDelay * 1000;
+        } else {
+          body.gameExplodeAt = null;
+        }
+      });
+    }
+
+    function setBodyDensity(body, density) {
+      if (!body.isStatic) {
+        Body.setDensity(body, density);
+        return;
+      }
+
+      const position = { ...body.position };
+      const angle = body.angle;
+      Body.setStatic(body, false);
+      Body.setDensity(body, density);
+      Body.setPosition(body, position);
+      Body.setAngle(body, angle);
+      Body.setVelocity(body, { x: 0, y: 0 });
+      Body.setAngularVelocity(body, 0);
+      Body.setStatic(body, true);
+    }
+
+    function syncTuningControls() {
+      tuningInputs.forEach(input => {
+        const key = input.dataset.tune;
+        input.value = tuning[key];
+      });
+      tuningToggles.forEach(input => {
+        const key = input.dataset.tuneToggle;
+        input.checked = Boolean(tuning[key]);
+      });
+      updateTuningLabels();
+    }
+
+    function updateTuningLabels() {
+      tuningValues.forEach(label => {
+        const key = label.dataset.tuneValue;
+        label.textContent = formatTuningValue(key, tuning[key]);
+      });
+    }
+
+    function formatTuningValue(key, value) {
+      if (key === 'tankDensity' || key === 'wheelDensity' || key === 'assistForce' || key === 'climbAssistForce') {
+        return Number(value).toFixed(4);
+      }
+      if (key === 'explodingNotes') {
+        return value ? 'ON' : 'OFF';
+      }
+      if (key === 'explosionDelay') {
+        return Number(value).toFixed(0) + 'S';
+      }
+      if (key === 'explosionSize') {
+        return Number(value).toFixed(0);
+      }
+      return Number(value).toFixed(2);
+    }
+
+    function onTuningInput(event) {
+      const key = event.target.dataset.tune;
+      tuning = normalizeTuning({ ...tuning, [key]: Number(event.target.value) });
+      applyTuningToConstants();
+      applyTuningToBodies();
+      if (key === 'explosionDelay') syncExplodingNotes();
+      updateTuningLabels();
+      saveTuning();
+    }
+
+    function onTuningToggle(event) {
+      const key = event.target.dataset.tuneToggle;
+      tuning = normalizeTuning({ ...tuning, [key]: event.target.checked });
+      syncExplodingNotes();
+      updateTuningLabels();
+      saveTuning();
+    }
+
+    function resetTuning() {
+      tuning = { ...DEFAULT_TUNING };
+      applyTuningToConstants();
+      applyTuningToBodies();
+      syncExplodingNotes();
+      syncTuningControls();
+      saveTuning();
+      setStatus('TUNING RESET');
+    }
+
+    function saveCustomLevels() {
+      try {
+        localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
+      } catch (error) {
+        setStatus('LEVEL STORAGE UNAVAILABLE');
+      }
+    }
+
+    function rebuildLevels() {
+      levels = [...BUILT_IN_LEVELS.map(copyLevel), ...customLevels.map(copyLevel)];
+    }
+
+    function normalizeSavedLevel(level) {
+      if (!level || !Array.isArray(level.terrain) || !level.exit) return null;
+      return {
+        id: level.id || makeLevelId(),
+        custom: true,
+        name: String(level.name || 'CUSTOM LEVEL').toUpperCase(),
+        tank: level.tank || { x: 120 },
+        exit: {
+          x: Number(level.exit.x) || 0.9,
+          y: Number(level.exit.y) || 0.76,
+          width: Number(level.exit.width) || 56,
+          height: Number(level.exit.height) || 96
+        },
+        terrain: level.terrain.filter(Boolean)
+      };
+    }
+
+    function copyLevel(level) {
+      return JSON.parse(JSON.stringify(level));
+    }
+
+    function makeLevelId() {
+      return 'custom-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+    }
+
+    function isEditorOpen() {
+      return !editorOverlay.hidden;
+    }
+
+    function openEditor() {
+      phase = 'editor';
+      messageOverlay.hidden = true;
+      populateEditorLevelSelect();
+      loadEditorLevel(levels[levelIndex] || levels[0]);
+      editorOverlay.hidden = false;
+      resizeEditorCanvas();
+      drawEditor();
+    }
+
+    function closeEditor() {
+      editorOverlay.hidden = true;
+      editorState.drawingStart = null;
+      resetLevel(levelIndex);
+    }
+
+    function populateEditorLevelSelect() {
+      editorLevelSelect.innerHTML = '';
+      levels.forEach((level, index) => {
+        const option = document.createElement('option');
+        option.value = String(index);
+        option.textContent = level.custom ? level.name : level.name + ' (BUILT IN)';
+        editorLevelSelect.appendChild(option);
+      });
+      editorLevelSelect.value = String(levelIndex);
+    }
+
+    function loadSelectedEditorLevel() {
+      const index = Number(editorLevelSelect.value);
+      loadEditorLevel(levels[index] || levels[0]);
+      drawEditor();
+    }
+
+    function loadEditorLevel(level) {
+      editorState.level = copyLevel(level);
+      editorName.value = editorState.level.name || 'CUSTOM LEVEL';
+      setEditorTool('line');
+    }
+
+    function createBlankEditorLevel() {
+      editorState.level = {
+        id: makeLevelId(),
+        custom: true,
+        name: 'CUSTOM LEVEL',
+        tank: { x: 120 },
+        exit: { x: 0.88, y: 0.72, width: 60, height: 96 },
+        terrain: [
+          { kind: 'line', x1: 0.02, y1: 0.86, x2: 0.36, y2: 0.86, thickness: PHYSICS.terrainThickness }
+        ]
+      };
+      editorName.value = editorState.level.name;
+      editorLevelSelect.value = '';
+      setEditorTool('line');
+      drawEditor();
+    }
+
+    function setEditorTool(tool) {
+      editorState.tool = tool;
+      lineToolButton.classList.toggle('active', tool === 'line');
+      exitToolButton.classList.toggle('active', tool === 'exit');
+    }
+
+    function undoEditorLine() {
+      if (!editorState.level) return;
+      editorState.level.terrain.pop();
+      drawEditor();
+    }
+
+    function clearEditorTerrain() {
+      if (!editorState.level) return;
+      editorState.level.terrain = [];
+      drawEditor();
+    }
+
+    function saveEditorLevel() {
+      if (!editorState.level) return;
+      const saved = normalizeSavedLevel({
+        ...editorState.level,
+        id: editorState.level.custom ? editorState.level.id : makeLevelId(),
+        custom: true,
+        name: editorName.value || 'CUSTOM LEVEL',
+        tank: { x: 120 }
+      });
+      if (!saved) return;
+      const existingIndex = customLevels.findIndex(level => level.id === saved.id);
+      if (existingIndex >= 0) {
+        customLevels[existingIndex] = saved;
+      } else {
+        customLevels.push(saved);
+      }
+      saveCustomLevels();
+      rebuildLevels();
+      levelIndex = levels.findIndex(level => level.id === saved.id);
+      populateEditorLevelSelect();
+      editorLevelSelect.value = String(levelIndex);
+      loadEditorLevel(levels[levelIndex]);
+      setStatus('LEVEL SAVED');
+      drawEditor();
+    }
+
+    function playEditorLevel() {
+      saveEditorLevel();
+      editorOverlay.hidden = true;
+      resetLevel(levelIndex);
+    }
+
+    function resizeEditorCanvas() {
+      const rect = editorCanvas.getBoundingClientRect();
+      editorCanvas.width = Math.max(1, Math.floor(rect.width * window.devicePixelRatio));
+      editorCanvas.height = Math.max(1, Math.floor(rect.height * window.devicePixelRatio));
+      editorCtx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+    }
+
+    function onEditorPointerDown(event) {
+      if (!editorState.level) return;
+      const point = editorPoint(event);
+      if (editorState.tool === 'exit') {
+        editorState.level.exit.x = point.x / editorCanvas.clientWidth;
+        editorState.level.exit.y = point.y / editorCanvas.clientHeight;
+        drawEditor();
+        return;
+      }
+      editorCanvas.setPointerCapture(event.pointerId);
+      editorState.drawingStart = point;
+      editorState.pointer = point;
+      drawEditor();
+    }
+
+    function onEditorPointerMove(event) {
+      if (!editorState.drawingStart) return;
+      editorState.pointer = editorPoint(event);
+      drawEditor();
+    }
+
+    function onEditorPointerUp(event) {
+      if (!editorState.level || !editorState.drawingStart) return;
+      const end = editorPoint(event);
+      const start = editorState.drawingStart;
+      if (Math.hypot(end.x - start.x, end.y - start.y) > 12) {
+        editorState.level.terrain.push({
+          kind: 'line',
+          x1: start.x / editorCanvas.clientWidth,
+          y1: start.y / editorCanvas.clientHeight,
+          x2: end.x / editorCanvas.clientWidth,
+          y2: end.y / editorCanvas.clientHeight,
+          thickness: PHYSICS.terrainThickness
+        });
+      }
+      cancelEditorLine();
+    }
+
+    function cancelEditorLine() {
+      editorState.drawingStart = null;
+      editorState.pointer = null;
+      drawEditor();
+    }
+
+    function editorPoint(event) {
+      const rect = editorCanvas.getBoundingClientRect();
+      return {
+        x: clamp(event.clientX - rect.left, 0, rect.width),
+        y: clamp(event.clientY - rect.top, 0, rect.height)
+      };
+    }
+
+    function drawEditor() {
+      if (!editorState.level || editorOverlay.hidden) return;
+      const w = editorCanvas.clientWidth;
+      const h = editorCanvas.clientHeight;
+      editorCtx.clearRect(0, 0, w, h);
+      editorCtx.fillStyle = '#fff';
+      editorCtx.fillRect(0, 0, w, h);
+      drawEditorGuide(w, h);
+      drawEditorTerrain(w, h);
+      drawEditorExit(w, h);
+      drawEditorTankStart(h);
+      if (editorState.drawingStart && editorState.pointer) {
+        editorCtx.save();
+        editorCtx.strokeStyle = '#000';
+        editorCtx.lineWidth = PHYSICS.terrainThickness;
+        editorCtx.lineCap = 'square';
+        editorCtx.beginPath();
+        editorCtx.moveTo(editorState.drawingStart.x, editorState.drawingStart.y);
+        editorCtx.lineTo(editorState.pointer.x, editorState.pointer.y);
+        editorCtx.stroke();
+        editorCtx.restore();
+      }
+    }
+
+    function drawEditorGuide(w, h) {
+      editorCtx.save();
+      editorCtx.strokeStyle = '#eee';
+      editorCtx.lineWidth = 1;
+      for (let x = w / 12; x < w; x += w / 12) {
+        editorCtx.beginPath();
+        editorCtx.moveTo(x, 0);
+        editorCtx.lineTo(x, h);
+        editorCtx.stroke();
+      }
+      for (let y = h / 8; y < h; y += h / 8) {
+        editorCtx.beginPath();
+        editorCtx.moveTo(0, y);
+        editorCtx.lineTo(w, y);
+        editorCtx.stroke();
+      }
+      editorCtx.restore();
+    }
+
+    function drawEditorTerrain(w, h) {
+      editorCtx.save();
+      editorCtx.strokeStyle = '#000';
+      editorCtx.fillStyle = '#000';
+      editorCtx.lineCap = 'square';
+      editorState.level.terrain.forEach(item => {
+        if (item.kind === 'line') {
+          editorCtx.lineWidth = item.thickness || PHYSICS.terrainThickness;
+          editorCtx.beginPath();
+          editorCtx.moveTo(item.x1 * w, item.y1 * h);
+          editorCtx.lineTo(item.x2 * w, item.y2 * h);
+          editorCtx.stroke();
+          return;
+        }
+        const x = resolveEditorMeasure(item.cx, w);
+        const y = resolveEditorMeasure(item.cy, h);
+        const rectWidth = resolveEditorMeasure(item.width, w);
+        editorCtx.fillRect(x - rectWidth / 2, y - item.height / 2, rectWidth, item.height);
+      });
+      editorCtx.restore();
+    }
+
+    function drawEditorExit(w, h) {
+      const exit = editorState.level.exit;
+      const x = exit.x * w;
+      const y = exit.y * h;
+      editorCtx.save();
+      editorCtx.strokeStyle = '#000';
+      editorCtx.fillStyle = '#000';
+      editorCtx.lineWidth = 2;
+      editorCtx.strokeRect(x - exit.width / 2, y - exit.height / 2, exit.width, exit.height);
+      editorCtx.font = '700 16px Helvetica, Arial, sans-serif';
+      editorCtx.textAlign = 'center';
+      editorCtx.textBaseline = 'middle';
+      editorCtx.fillText('EXIT', x, y - exit.height / 2 + 22);
+      editorCtx.restore();
+    }
+
+    function drawEditorTankStart(h) {
+      editorCtx.save();
+      editorCtx.fillStyle = '#000';
+      editorCtx.font = '700 12px Helvetica, Arial, sans-serif';
+      editorCtx.textAlign = 'left';
+      editorCtx.textBaseline = 'middle';
+      editorCtx.fillText('TANK', 18, h * 0.84 - 42);
+      editorCtx.fillRect(18, h * 0.84 - 28, 46, 18);
+      editorCtx.beginPath();
+      editorCtx.arc(26, h * 0.84 - 4, 9, 0, Math.PI * 2);
+      editorCtx.arc(54, h * 0.84 - 4, 9, 0, Math.PI * 2);
+      editorCtx.fill();
+      editorCtx.restore();
+    }
+
+    function resolveEditorMeasure(value, basis) {
+      return value <= 1 ? value * basis : value;
+    }
+
+    function onCollisionStart(event) {
+      if (!tank || phase !== 'run') return;
+      event.pairs.forEach(pair => {
+        const labels = [pair.bodyA.label, pair.bodyB.label];
+        if (labels.includes('tank-wheel') && labels.includes('letter')) {
+          const wheel = pair.bodyA.label === 'tank-wheel' ? pair.bodyA : pair.bodyB;
+          Body.applyForce(wheel, wheel.position, { x: tuning.climbAssistForce, y: -tuning.climbAssistForce * 0.7 });
+        }
+      });
+    }
+
+    function cleanupEscapedLetters() {
+      const escaped = letters.filter(body => body.position.y > height + PHYSICS.cleanupMargin);
+      if (!escaped.length) return;
+      letters = letters.filter(body => body.position.y <= height + PHYSICS.cleanupMargin);
+      World.remove(world, escaped);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      drawTerrain();
+      drawExit();
+      drawLetters();
+      drawTank();
+      if (SHOW_PHYSICS_BODIES) drawPhysicsBodies();
+    }
+
+    function drawTerrain() {
+      ctx.save();
+      ctx.fillStyle = '#000';
+      levelBodies.forEach(drawBodyRect);
+      ctx.restore();
+    }
+
+    function drawExit() {
+      ctx.save();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        exitRegion.x - exitRegion.width / 2,
+        exitRegion.y - exitRegion.height / 2,
+        exitRegion.width,
+        exitRegion.height
+      );
+      ctx.fillStyle = '#000';
+      ctx.font = '700 16px Helvetica, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('EXIT', exitRegion.x, exitRegion.y - exitRegion.height / 2 + 22);
+      ctx.restore();
+    }
+
+    function drawLetters() {
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const now = performance.now();
+      letters.forEach(body => {
+        ctx.save();
+        ctx.translate(body.position.x, body.position.y);
+        ctx.rotate(body.angle);
+        ctx.fillStyle = getLetterColor(body, now);
+        ctx.font = `700 ${body.gameFontSize}px Helvetica, Arial, sans-serif`;
+        ctx.fillText(body.gameLetter, 0, 4);
+        ctx.restore();
+      });
+      ctx.restore();
+    }
+
+    function getLetterColor(body, now) {
+      if (!tuning.explodingNotes || !body.gameExplodeAt) return '#000';
+      const elapsed = now - body.gameBornAt;
+      const duration = Math.max(1, body.gameExplodeAt - body.gameBornAt);
+      const t = clamp(elapsed / duration, 0, 1);
+      const red = Math.round(35 + t * 220);
+      const green = Math.round(165 - t * 145);
+      return `rgb(${red}, ${green}, 0)`;
+    }
+
+    function drawTank() {
+      if (!tank) return;
+      ctx.save();
+      ctx.fillStyle = '#000';
+      drawTankHull(tank.body);
+      drawTankRect(tank.body, 3, -33, 36, 14);
+      drawTankRect(tank.body, 29, -37, 32, 6);
+      tank.wheels.forEach(drawWheel);
+      ctx.restore();
+    }
+
+    function drawTankHull(body) {
+      const roofRadius = TANK.width / 2;
+      const bottomY = 17;
+      ctx.save();
+      ctx.translate(body.position.x, body.position.y);
+      ctx.rotate(body.angle);
+      ctx.beginPath();
+      ctx.moveTo(-roofRadius, bottomY);
+      ctx.lineTo(-roofRadius, 0);
+      ctx.arc(0, 0, roofRadius, Math.PI, 0, false);
+      ctx.lineTo(roofRadius, bottomY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawTankRect(body, offsetX, offsetY, rectWidth, rectHeight) {
+      ctx.save();
+      ctx.translate(body.position.x, body.position.y);
+      ctx.rotate(body.angle);
+      ctx.fillRect(offsetX - rectWidth / 2, offsetY - rectHeight / 2, rectWidth, rectHeight);
+      ctx.restore();
+    }
+
+    function drawBodyRect(body) {
+      const vertices = body.vertices;
+      ctx.beginPath();
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      for (let i = 1; i < vertices.length; i += 1) {
+        ctx.lineTo(vertices[i].x, vertices[i].y);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawWheel(body) {
+      ctx.beginPath();
+      ctx.arc(body.position.x, body.position.y, TANK.wheelRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.save();
+      ctx.translate(body.position.x, body.position.y);
+      ctx.rotate(body.angle);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-TANK.wheelRadius + 4, 0);
+      ctx.lineTo(TANK.wheelRadius - 4, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPhysicsBodies() {
+      ctx.save();
+      ctx.strokeStyle = '#777';
+      ctx.lineWidth = 1;
+      Composite.allBodies(world).forEach(body => {
+        const vertices = body.vertices;
+        ctx.beginPath();
+        ctx.moveTo(vertices[0].x, vertices[0].y);
+        for (let i = 1; i < vertices.length; i += 1) {
+          ctx.lineTo(vertices[i].x, vertices[i].y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    function updateHud() {
+      instructions.hidden = false;
+      setStatus(levels[levelIndex].name);
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function showFatalError(text) {
+      midiOverlay.hidden = true;
+      showMessage('MIDI TANK', text, 'RELOAD', () => window.location.reload());
+    }
+
+    function resolveMeasure(value, basis) {
+      return value <= 1 ? value * basis : value;
+    }
+
+    function normalizeAngle(angle) {
+      return Math.atan2(Math.sin(angle), Math.cos(angle));
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+  </script>
+</body>
+</html>
