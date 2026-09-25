@@ -1,0 +1,18 @@
+- main "Typing Zoo game" [ref=e2]:
+  - generic:
+    - generic:
+      - generic: Level
+      - generic: "1"
+    - generic "Score 0 of 10"
+    - button "Pause" [ref=e3] [cursor=pointer]
+  - region "Tidy Zoo animals":
+    - generic:
+      - img "Purple Pug Puppy"
+    - generic:
+      - img "Rainbow Unicorn"
+    - generic:
+      - img "Stinky but Cute Squid"
+    - generic:
+      - img "Rainbow Pigeon"
+    - generic:
+      - img "Toxic Blob"

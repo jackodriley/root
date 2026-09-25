@@ -1,0 +1,26 @@
+- main "Typing Zoo game" [ref=e2]:
+  - generic:
+    - generic:
+      - generic: Level
+      - generic: "1"
+    - generic "Score 0 of 10"
+    - button "Pause" [ref=e3] [cursor=pointer]
+  - region "Tidy Zoo animals":
+    - generic:
+      - img "Purple Pug Puppy"
+    - generic:
+      - img "Rainbow Unicorn"
+    - generic:
+      - img "Stinky but Cute Squid"
+    - generic:
+      - img "Rainbow Pigeon"
+    - generic:
+      - img "Toxic Blob"
+  - generic [ref=e5]:
+    - generic [ref=e6]: Tidy Zoo friends are ready
+    - heading "Typing Zoo" [level=1] [ref=e7]
+    - paragraph [ref=e8]: Type the falling letter before it reaches the animals. Level 3 brings two-letter sounds.
+    - generic [ref=e9]:
+      - generic [ref=e10]: Preview animals until Tidy Zoo has saves
+      - generic [ref=e11]: Slow beginner speed
+    - button "Start Typing" [ref=e12] [cursor=pointer]

@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typing Zoo</title>
+  <meta name="title" content="Typing Zoo" />
+  <meta name="description" content="Pop falling letters to protect the Tidy Zoo animals." />
+  <meta property="og:title" content="Typing Zoo" />
+  <meta property="og:description" content="Pop falling letters to protect the Tidy Zoo animals." />
+  <meta property="og:image" content="assets/tidying-egg/typing-zoo-background.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Typing Zoo" />
+  <meta name="twitter:description" content="Pop falling letters to protect the Tidy Zoo animals." />
+  <meta name="twitter:image" content="assets/tidying-egg/typing-zoo-background.png" />
+  <link rel="image_src" href="assets/tidying-egg/typing-zoo-background.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/tidying-egg/favicon-rainbow-egg-32.png" />
+  <link rel="apple-touch-icon" href="assets/tidying-egg/favicon-rainbow-egg-192.png" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #fbfbff;
+      --panel: rgba(19, 24, 50, 0.78);
+      --panel-strong: rgba(12, 14, 28, 0.9);
+      --panel-border: rgba(255, 255, 255, 0.2);
+      --button: linear-gradient(135deg, #ff5c7c, #ffbc42 48%, #2ec4b6);
+      --sun: #ffe15a;
+      --aqua: #33d6c8;
+      --rose: #ff5c7c;
+      --sky: #2388f8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      overflow: hidden;
+      font-family: "Nunito Sans", system-ui, sans-serif;
+      background: #49a8ff;
+      color: var(--ink);
+    }
+
+    body,
+    button {
+      font-family: "Nunito Sans", system-ui, sans-serif;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .game-shell {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      min-height: 520px;
+      background:
+        linear-gradient(180deg, rgba(34, 136, 248, 0.08), rgba(16, 100, 80, 0.16)),
+        url("assets/tidying-egg/typing-zoo-background.png") center / cover no-repeat;
+      isolation: isolate;
+    }
+
+    .game-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 38%),
+        linear-gradient(0deg, rgba(20, 36, 24, 0.2) 0%, rgba(20, 36, 24, 0) 23%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .top-bar {
+      position: absolute;
+      top: clamp(10px, 2vw, 18px);
+      left: clamp(10px, 2vw, 18px);
+      right: clamp(10px, 2vw, 18px);
+      z-index: 30;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .badge,
+    .meter,
+    .soft-button {
+      border: 1px solid var(--panel-border);
+      background: rgba(12, 14, 28, 0.72);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(10px);
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    .badge {
+      min-height: 48px;
+      border-radius: 8px;
+      padding: 8px 14px;
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: center;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .badge span:first-child {
+      font-size: 0.78rem;
+      opacity: 0.82;
+    }
+
+    .badge span:last-child {
+      margin-top: 5px;
+      font-size: 1.15rem;
+      font-weight: 900;
+    }
+
+    .meter {
+      height: 48px;
+      border-radius: 8px;
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .meter-fill {
+      width: var(--progress, 0%);
+      height: 100%;
+      border-radius: 6px;
+      background: var(--button);
+      box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16), 0 0 18px rgba(255, 225, 90, 0.5);
+      transition: width 0.26s ease;
+    }
+
+    .soft-button {
+      min-height: 48px;
+      border-radius: 8px;
+      padding: 0 14px;
+      pointer-events: auto;
+    }
+
+    .soft-button:hover {
+      transform: translateY(-1px);
+      filter: saturate(1.08);
+    }
+
+    .animal-lane {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: clamp(32px, 7vh, 82px);
+      height: clamp(128px, 22vh, 190px);
+      z-index: 12;
+      pointer-events: none;
+    }
+
+    .animal {
+      position: absolute;
+      left: var(--x, 50%);
+      top: var(--y, 58%);
+      width: var(--size, 112px);
+      transform: translate(-50%, -50%) scaleX(var(--flip, 1));
+      transition: transform 0.12s linear, left 0.12s linear, top 0.12s linear;
+      filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.2));
+      will-change: transform, left;
+    }
+
+    .animal img {
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: var(--tint-filter, none);
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .animal.safe-hop img {
+      animation: safeHop 0.68s ease-in-out infinite;
+    }
+
+    .animal.hit {
+      animation: animalPop 0.72s ease forwards;
+    }
+
+    @keyframes safeHop {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      45% { transform: translateY(-28px) rotate(-4deg); }
+      70% { transform: translateY(-6px) rotate(4deg); }
+    }
+
+    @keyframes animalPop {
+      0% { opacity: 1; transform: translate(-50%, -50%) scaleX(var(--flip, 1)) rotate(0deg) scale(1); }
+      54% { opacity: 1; transform: translate(-50%, -58%) scaleX(var(--flip, 1)) rotate(330deg) scale(1.08); }
+      100% { opacity: 0; transform: translate(-50%, -70%) scaleX(var(--flip, 1)) rotate(620deg) scale(0.05); }
+    }
+
+    .falling-cloud {
+      position: absolute;
+      left: var(--cloud-x, 50%);
+      top: var(--cloud-y, 8%);
+      width: clamp(100px, 12vw, 156px);
+      height: clamp(48px, 6vw, 70px);
+      z-index: 10;
+      transform: translate(-50%, -50%);
+      opacity: 0.94;
+      filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.15));
+      animation: cloudDrift var(--cloud-ms, 5400ms) ease-in-out forwards;
+      pointer-events: none;
+    }
+
+    .falling-cloud::before,
+    .falling-cloud::after,
+    .cloud-puff {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: inset 0 -8px 0 rgba(214, 232, 255, 0.38);
+    }
+
+    .falling-cloud::before {
+      left: 16%;
+      bottom: 10%;
+      width: 55%;
+      height: 62%;
+    }
+
+    .falling-cloud::after {
+      right: 10%;
+      bottom: 6%;
+      width: 62%;
+      height: 70%;
+    }
+
+    .cloud-puff {
+      left: 34%;
+      top: 0;
+      width: 42%;
+      height: 86%;
+    }
+
+    @keyframes cloudDrift {
+      0% { transform: translate(calc(-50% + var(--cloud-from, -90px)), -50%) scale(0.9); opacity: 0; }
+      14% { opacity: 0.95; }
+      100% { transform: translate(calc(-50% + var(--cloud-to, 60px)), -50%) scale(1); opacity: 0.86; }
+    }
+
+    .falling-token {
+      position: absolute;
+      left: var(--x, 50%);
+      top: var(--top, 14%);
+      z-index: 16;
+      min-width: clamp(74px, 11vw, 124px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--token-color, #ff304f);
+      color: #fff;
+      font-size: clamp(3rem, 8vw, 6.4rem);
+      font-weight: 900;
+      line-height: 0.8;
+      letter-spacing: 0;
+      text-transform: lowercase;
+      text-shadow:
+        0 3px 0 rgba(0, 0, 0, 0.18),
+        0 8px 14px rgba(0, 0, 0, 0.2);
+      box-shadow:
+        inset 0 -9px 0 rgba(0, 0, 0, 0.16),
+        inset 0 8px 0 rgba(255, 255, 255, 0.18),
+        0 16px 18px rgba(0, 0, 0, 0.17);
+      transform: translate(-50%, -50%) rotate(var(--tilt, -4deg));
+      pointer-events: none;
+      user-select: none;
+      will-change: top, transform;
+    }
+
+    .falling-token.digraph {
+      min-width: clamp(118px, 17vw, 176px);
+      aspect-ratio: 1.5 / 1;
+      border-radius: 999px;
+      font-size: clamp(2.7rem, 7vw, 5.8rem);
+      padding-bottom: 0.08em;
+    }
+
+    .falling-token.pop-good {
+      animation: goodPop 0.36s ease forwards;
+    }
+
+    .falling-token.pop-bad {
+      animation: badPop 0.32s ease forwards;
+    }
+
+    .falling-token .typed {
+      opacity: 0.45;
+      color: #171335;
+      text-shadow: none;
+    }
+
+    @keyframes goodPop {
+      0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--tilt, -4deg)) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) rotate(16deg) scale(0.05); }
+    }
+
+    @keyframes badPop {
+      100% { opacity: 0; transform: translate(-50%, -50%) rotate(28deg) scale(1.36); }
+    }
+
+    .spark {
+      position: absolute;
+      left: var(--x, 50%);
+      top: var(--y, 50%);
+      z-index: 24;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--c, #ffe15a);
+      box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.22);
+      animation: spark 0.58s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes spark {
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.15);
+      }
+    }
+
+    .confetti {
+      position: absolute;
+      top: -24px;
+      left: var(--x, 50%);
+      z-index: 50;
+      width: 12px;
+      height: 18px;
+      border-radius: 3px;
+      background: var(--c, #ffbc42);
+      animation: confettiFall var(--ms, 2300ms) linear forwards;
+      pointer-events: none;
+    }
+
+    @keyframes confettiFall {
+      100% {
+        transform: translate(var(--drift, 0), 108vh) rotate(var(--spin, 540deg));
+        opacity: 0.1;
+      }
+    }
+
+    .dialog-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      place-items: center;
+      padding: clamp(14px, 4vw, 32px);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255, 92, 124, 0.24), transparent 24%),
+        radial-gradient(circle at 84% 20%, rgba(51, 214, 200, 0.2), transparent 24%),
+        rgba(5, 8, 22, 0.34);
+      backdrop-filter: blur(4px);
+    }
+
+    .dialog {
+      width: min(620px, 100%);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: clamp(18px, 4vw, 30px);
+      background: var(--panel);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.34);
+      text-align: center;
+    }
+
+    .dialog h1,
+    .dialog h2 {
+      margin: 0;
+      line-height: 0.96;
+      font-size: clamp(2.8rem, 10vw, 6.2rem);
+      font-weight: 900;
+      text-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    .dialog h2 {
+      font-size: clamp(2.2rem, 8vw, 4.8rem);
+    }
+
+    .dialog p {
+      margin: 16px auto 0;
+      max-width: 35rem;
+      font-size: clamp(1.05rem, 2.6vw, 1.32rem);
+      line-height: 1.35;
+      color: rgba(251, 251, 255, 0.88);
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.36);
+    }
+
+    .title-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 14px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.13);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-weight: 900;
+    }
+
+    .big-button {
+      margin-top: 22px;
+      min-height: 58px;
+      min-width: min(280px, 100%);
+      border-radius: 8px;
+      padding: 0 22px;
+      background: var(--button);
+      box-shadow: 0 13px 28px rgba(0, 0, 0, 0.28), inset 0 -4px 0 rgba(0, 0, 0, 0.15);
+      font-size: 1.24rem;
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.35);
+    }
+
+    .big-button:hover,
+    .big-button:focus-visible {
+      transform: translateY(-1px);
+      filter: saturate(1.09);
+    }
+
+    .choice-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .tiny-stat {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      font-weight: 900;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      .game-shell {
+        min-height: 100vh;
+      }
+
+      .top-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .meter {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+
+      .soft-button {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .badge {
+        width: 100%;
+      }
+
+      .animal-lane {
+        bottom: 26px;
+        height: 150px;
+      }
+
+      .animal {
+        width: calc(var(--size, 100px) * 0.78);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="game-shell" id="gameShell" aria-label="Typing Zoo game">
+    <div class="top-bar" aria-live="polite">
+      <div class="badge"><span>Level</span><span id="levelLabel">1</span></div>
+      <div class="meter" aria-label="Level progress"><div class="meter-fill" id="scoreMeter"></div></div>
+      <button class="soft-button" id="pauseButton" type="button">Pause</button>
+    </div>
+
+    <section class="animal-lane" id="animalLane" aria-label="Tidy Zoo animals"></section>
+    <div id="playLayer" aria-hidden="true"></div>
+
+    <section class="dialog-layer" id="startDialog">
+      <div class="dialog">
+        <div class="title-chip">Tidy Zoo friends are ready</div>
+        <h1>Typing Zoo</h1>
+        <p>Type the falling letter before it reaches the animals. Level 3 brings two-letter sounds.</p>
+        <div class="choice-row">
+          <span class="tiny-stat" id="zooCountLabel">Loading zoo...</span>
+          <span class="tiny-stat">Slow beginner speed</span>
+        </div>
+        <button class="big-button" id="startButton" type="button">Start Typing</button>
+      </div>
+    </section>
+
+    <section class="dialog-layer hidden" id="messageDialog">
+      <div class="dialog">
+        <div class="title-chip" id="messageChip">Well done</div>
+        <h2 id="messageTitle">Level complete</h2>
+        <p id="messageText">The animals are safe.</p>
+        <button class="big-button" id="messageButton" type="button">Next Level</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const ZOO_STORAGE_KEY = 'tidyingEggZoo';
+    const LEVELS = [
+      { score: 10, speed: 6.2, tokens: 'abcdefghijklmnopqrstuvwxyz'.split('') },
+      { score: 12, speed: 7.4, tokens: 'abcdefghijklmnopqrstuvwxyz'.split('') },
+      { score: 14, speed: 8.8, tokens: ['ch', 'sh', 'th', 'ng', 'qu', 'ai', 'ee', 'oo', 'oa', 'ar'] },
+      { score: 16, speed: 10.2, tokens: ['ch', 'sh', 'th', 'ng', 'qu', 'ai', 'ee', 'oo', 'oa', 'ar', 'or', 'igh'] }
+    ];
+    const ANIMALS = [
+      { id: 'purple-pug-puppy', name: 'Purple Pug Puppy', fullAsset: 'assets/tidying-egg/full-grown-transparent/purple-pug-puppy.png' },
+      { id: 'rainbow-unicorn', name: 'Rainbow Unicorn', fullAsset: 'assets/tidying-egg/full-grown-transparent/rainbow-unicorn.png' },
+      { id: 'stinky-cute-squid', name: 'Stinky but Cute Squid', fullAsset: 'assets/tidying-egg/full-grown-transparent/stinky-cute-squid.png' },
+      { id: 'rainbow-pigeon', name: 'Rainbow Pigeon', fullAsset: 'assets/tidying-egg/full-grown-transparent/rainbow-pigeon.png' },
+      { id: 'toxic-blob', name: 'Toxic Blob', fullAsset: 'assets/tidying-egg/full-grown-transparent/toxic-blob.png' },
+      { id: 'red-panda', name: 'Red Panda', fullAsset: 'assets/tidying-egg/full-grown-transparent/red-panda.png' },
+      { id: 'sleepy-blue-koala', name: 'Sleepy Blue Koala', fullAsset: 'assets/tidying-egg/full-grown-transparent/sleepy-blue-koala.png' },
+      { id: 'strawberry-axolotl', name: 'Strawberry Axolotl', fullAsset: 'assets/tidying-egg/full-grown-transparent/strawberry-axolotl.png' },
+      { id: 'golden-hamster-wizard', name: 'Golden Hamster Wizard', fullAsset: 'assets/tidying-egg/full-grown-transparent/golden-hamster-wizard.png' },
+      { id: 'tiny-cloud-dragon', name: 'Tiny Cloud Dragon', fullAsset: 'assets/tidying-egg/full-grown-transparent/tiny-cloud-dragon.png' },
+      { id: 'mint-green-frog-prince', name: 'Mint Green Frog Prince', fullAsset: 'assets/tidying-egg/full-grown-transparent/mint-green-frog-prince.png' },
+      { id: 'sparkly-moon-kitten', name: 'Sparkly Moon Kitten', fullAsset: 'assets/tidying-egg/full-grown-transparent/sparkly-moon-kitten.png' }
+    ];
+    const TOKEN_COLORS = ['#ff304f', '#1268ff', '#ffbd00', '#19b957', '#ff7a00', '#7f35ff'];
+    const SPARK_COLORS = ['#ffe15a', '#ff5c7c', '#2ec4b6', '#1268ff', '#ffbc42'];
+
+    const animalLane = document.getElementById('animalLane');
+    const playLayer = document.getElementById('playLayer');
+    const startDialog = document.getElementById('startDialog');
+    const messageDialog = document.getElementById('messageDialog');
+    const levelLabel = document.getElementById('levelLabel');
+    const scoreMeter = document.getElementById('scoreMeter');
+    const pauseButton = document.getElementById('pauseButton');
+    const zooCountLabel = document.getElementById('zooCountLabel');
+    const messageChip = document.getElementById('messageChip');
+    const messageTitle = document.getElementById('messageTitle');
+    const messageText = document.getElementById('messageText');
+    const messageButton = document.getElementById('messageButton');
+
+    let animals = [];
+    let levelIndex = 0;
+    let score = 0;
+    let falling = null;
+    let animationFrame = null;
+    let lastFrameTime = 0;
+    let spawnTimer = null;
+    let isRunning = false;
+    let isPaused = false;
+    let audioContext = null;
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function pick(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function getZoo() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(ZOO_STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function animalForEntry(entry, index) {
+      const base = ANIMALS.find(animal => animal.id === entry.animalId) || ANIMALS[index % ANIMALS.length];
+      return {
+        id: entry.id || `preview-${index}`,
+        animalId: base.id,
+        name: entry.animalName || base.name,
+        asset: base.fullAsset,
+        tint: entry.tint || null,
+        x: randomBetween(8, 92),
+        y: randomBetween(24, 72),
+        speed: randomBetween(3.5, 8.5),
+        wobble: randomBetween(0, Math.PI * 2),
+        flip: Math.random() < 0.5 ? -1 : 1,
+        alive: true
+      };
+    }
+
+    function previewZoo() {
+      return ANIMALS.slice(0, 5).map((animal, index) => ({
+        id: `preview-${animal.id}`,
+        animalId: animal.id,
+        animalName: animal.name,
+        tint: index % 2 ? { hue: 10, saturate: 1.05, brightness: 1.03 } : null
+      }));
+    }
+
+    function tintFilter(tint) {
+      if (!tint) return '';
+      const hue = Number(tint.hue) || 0;
+      const saturate = Number(tint.saturate) || 1;
+      const brightness = Number(tint.brightness) || 1;
+      return `hue-rotate(${hue}deg) saturate(${saturate}) brightness(${brightness})`;
+    }
+
+    function loadAnimals() {
+      const storedZoo = getZoo();
+      const source = storedZoo.length ? storedZoo : previewZoo();
+      animals = source.slice(0, 12).map(animalForEntry);
+      zooCountLabel.textContent = storedZoo.length
+        ? `${storedZoo.length} saved zoo animal${storedZoo.length === 1 ? '' : 's'}`
+        : 'Preview animals until Tidy Zoo has saves';
+      renderAnimals();
+    }
+
+    function renderAnimals() {
+      animalLane.innerHTML = animals.map((animal, index) => `
+        <div class="animal" data-index="${index}" style="--x:${animal.x}%; --y:${animal.y}%; --size:${animal.animalId === 'rainbow-unicorn' ? 140 : 116}px; --flip:${animal.flip}; --tint-filter:${escapeHtml(tintFilter(animal.tint))};">
+          <img src="${escapeHtml(animal.asset)}" alt="${escapeHtml(animal.name)}" />
+        </div>
+      `).join('');
+    }
+
+    function ensureAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') audioContext.resume();
+      return audioContext;
+    }
+
+    function playTone(kind) {
+      const context = ensureAudioContext();
+      const now = context.currentTime;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = kind === 'animal' ? 'triangle' : 'sine';
+      oscillator.frequency.setValueAtTime(kind === 'good' ? 620 : 190, now);
+      if (kind === 'good') {
+        oscillator.frequency.exponentialRampToValueAtTime(1040, now + 0.14);
+      } else {
+        oscillator.frequency.exponentialRampToValueAtTime(90, now + 0.25);
+      }
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(kind === 'good' ? 0.12 : 0.16, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === 'good' ? 0.24 : 0.38));
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.42);
+    }
+
+    function updateHud() {
+      const level = LEVELS[levelIndex];
+      levelLabel.textContent = String(levelIndex + 1);
+      scoreMeter.style.setProperty('--progress', `${Math.min(100, (score / level.score) * 100)}%`);
+      scoreMeter.parentElement.setAttribute('aria-label', `Score ${score} of ${level.score}`);
+    }
+
+    function moveAnimals(deltaSeconds) {
+      animals.forEach((animal, index) => {
+        if (!animal.alive) return;
+        animal.x += animal.speed * animal.flip * deltaSeconds;
+        animal.y += Math.sin(performance.now() / 520 + animal.wobble) * 0.006;
+        if (animal.x > 96) {
+          animal.x = 96;
+          animal.flip = -1;
+        } else if (animal.x < 4) {
+          animal.x = 4;
+          animal.flip = 1;
+        }
+        const element = animalLane.querySelector(`.animal[data-index="${index}"]`);
+        if (!element) return;
+        element.style.setProperty('--x', `${animal.x}%`);
+        element.style.setProperty('--y', `${animal.y}%`);
+        element.style.setProperty('--flip', animal.flip);
+      });
+    }
+
+    function tokenMarkup(token, typed) {
+      if (!typed) return escapeHtml(token);
+      const before = escapeHtml(token.slice(0, typed.length));
+      const after = escapeHtml(token.slice(typed.length));
+      return `<span class="typed">${before}</span>${after}`;
+    }
+
+    function spawnToken() {
+      if (!isRunning || isPaused || falling) return;
+      const level = LEVELS[levelIndex];
+      const token = pick(level.tokens);
+      const fromSide = Math.random() < 0.55;
+      const x = randomBetween(15, 85);
+      const cloudY = randomBetween(7, 18);
+      const tokenY = cloudY + randomBetween(4, 8);
+      const color = pick(TOKEN_COLORS);
+      const cloud = document.createElement('div');
+      const cloudFrom = fromSide ? (Math.random() < 0.5 ? -160 : 160) : randomBetween(-35, 35);
+      const cloudTo = randomBetween(-42, 42);
+      cloud.className = 'falling-cloud';
+      cloud.innerHTML = '<span class="cloud-puff"></span>';
+      cloud.style.setProperty('--cloud-x', `${x}%`);
+      cloud.style.setProperty('--cloud-y', `${cloudY}%`);
+      cloud.style.setProperty('--cloud-from', `${cloudFrom}px`);
+      cloud.style.setProperty('--cloud-to', `${cloudTo}px`);
+      cloud.style.setProperty('--cloud-ms', `${Math.round(randomBetween(4800, 6800))}ms`);
+
+      const tokenEl = document.createElement('div');
+      tokenEl.className = `falling-token${token.length > 1 ? ' digraph' : ''}`;
+      tokenEl.style.setProperty('--x', `${x}%`);
+      tokenEl.style.setProperty('--top', `${tokenY}%`);
+      tokenEl.style.setProperty('--token-color', color);
+      tokenEl.style.setProperty('--tilt', `${randomBetween(-8, 8).toFixed(1)}deg`);
+      tokenEl.innerHTML = escapeHtml(token);
+      playLayer.append(cloud, tokenEl);
+
+      falling = {
+        token,
+        typed: '',
+        x,
+        y: tokenY,
+        speed: level.speed,
+        element: tokenEl,
+        cloud
+      };
+    }
+
+    function removeFalling(className) {
+      if (!falling) return;
+      const { element, cloud } = falling;
+      element.classList.add(className);
+      window.setTimeout(() => element.remove(), 380);
+      cloud.remove();
+      falling = null;
+    }
+
+    function createSparks(x, y, count) {
+      for (let index = 0; index < count; index += 1) {
+        const spark = document.createElement('span');
+        spark.className = 'spark';
+        spark.style.setProperty('--x', `${x}%`);
+        spark.style.setProperty('--y', `${y}%`);
+        spark.style.setProperty('--c', pick(SPARK_COLORS));
+        spark.style.setProperty('--dx', `${randomBetween(-60, 60)}px`);
+        spark.style.setProperty('--dy', `${randomBetween(-56, 34)}px`);
+        playLayer.append(spark);
+        window.setTimeout(() => spark.remove(), 620);
+      }
+    }
+
+    function createConfetti() {
+      for (let index = 0; index < 110; index += 1) {
+        window.setTimeout(() => {
+          const bit = document.createElement('span');
+          bit.className = 'confetti';
+          bit.style.setProperty('--x', `${randomBetween(0, 100)}%`);
+          bit.style.setProperty('--c', pick(SPARK_COLORS));
+          bit.style.setProperty('--drift', `${randomBetween(-95, 95)}px`);
+          bit.style.setProperty('--spin', `${randomBetween(260, 980)}deg`);
+          bit.style.setProperty('--ms', `${Math.round(randomBetween(1800, 3300))}ms`);
+          playLayer.append(bit);
+          window.setTimeout(() => bit.remove(), 3400);
+        }, index * 13);
+      }
+    }
+
+    function handleCorrectToken() {
+      if (!falling) return;
+      score += 1;
+      createSparks(falling.x, falling.y, 11);
+      playTone('good');
+      removeFalling('pop-good');
+      updateHud();
+      if (score >= LEVELS[levelIndex].score) {
+        completeLevel();
+      } else {
+        scheduleSpawn(700);
+      }
+    }
+
+    function hitAnimal() {
+      if (!falling) return;
+      const aliveAnimals = animals
+        .map((animal, index) => ({ animal, index }))
+        .filter(({ animal }) => animal.alive);
+      if (!aliveAnimals.length) {
+        removeFalling('pop-bad');
+        showMessage('Try again', 'The zoo needs a breather', 'Press Start Typing to try this level again.', 'Start Typing', () => startLevel(levelIndex));
+        return;
+      }
+      const target = aliveAnimals.reduce((closest, candidate) => {
+        const currentDistance = Math.abs(candidate.animal.x - falling.x);
+        return currentDistance < closest.distance ? { ...candidate, distance: currentDistance } : closest;
+      }, { ...aliveAnimals[0], distance: 999 });
+      const element = animalLane.querySelector(`.animal[data-index="${target.index}"]`);
+      target.animal.alive = false;
+      if (element) {
+        element.classList.add('hit');
+        window.setTimeout(() => element.remove(), 720);
+      }
+      createSparks(falling.x, 78, 16);
+      playTone('animal');
+      removeFalling('pop-bad');
+      scheduleSpawn(900);
+    }
+
+    function updateFalling(deltaSeconds) {
+      if (!falling) return;
+      falling.y += falling.speed * deltaSeconds;
+      falling.element.style.setProperty('--top', `${falling.y}%`);
+      const bottomLimit = window.innerWidth < 720 ? 74 : 77;
+      if (falling.y >= bottomLimit) {
+        hitAnimal();
+      }
+    }
+
+    function handleKeydown(event) {
+      if (!isRunning || isPaused || !falling) return;
+      const key = event.key.toLowerCase();
+      if (!/^[a-z]$/.test(key)) return;
+      event.preventDefault();
+      const expected = falling.token[falling.typed.length];
+      if (key !== expected) {
+        playTone('animal');
+        falling.typed = '';
+        falling.element.innerHTML = escapeHtml(falling.token);
+        falling.element.animate([
+          { transform: 'translate(-50%, -50%) rotate(var(--tilt, -4deg)) translateX(0)' },
+          { transform: 'translate(-50%, -50%) rotate(var(--tilt, -4deg)) translateX(-8px)' },
+          { transform: 'translate(-50%, -50%) rotate(var(--tilt, -4deg)) translateX(8px)' },
+          { transform: 'translate(-50%, -50%) rotate(var(--tilt, -4deg)) translateX(0)' }
+        ], { duration: 180 });
+        return;
+      }
+      falling.typed += key;
+      falling.element.innerHTML = tokenMarkup(falling.token, falling.typed);
+      if (falling.typed === falling.token) {
+        handleCorrectToken();
+      }
+    }
+
+    function scheduleSpawn(delay = 650) {
+      clearTimeout(spawnTimer);
+      spawnTimer = window.setTimeout(spawnToken, delay);
+    }
+
+    function gameLoop(now) {
+      if (!isRunning) return;
+      const deltaSeconds = lastFrameTime ? Math.min((now - lastFrameTime) / 1000, 0.05) : 0;
+      lastFrameTime = now;
+      if (!isPaused) {
+        moveAnimals(deltaSeconds);
+        updateFalling(deltaSeconds);
+      }
+      animationFrame = requestAnimationFrame(gameLoop);
+    }
+
+    function stopLoop() {
+      clearTimeout(spawnTimer);
+      spawnTimer = null;
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+      lastFrameTime = 0;
+    }
+
+    function clearPlayLayer() {
+      playLayer.innerHTML = '';
+      falling = null;
+    }
+
+    function setAnimalsCelebrating(active) {
+      animalLane.querySelectorAll('.animal').forEach(element => {
+        element.classList.toggle('safe-hop', active);
+      });
+    }
+
+    function startLevel(nextLevelIndex) {
+      levelIndex = clamp(nextLevelIndex, 0, LEVELS.length - 1);
+      score = 0;
+      isRunning = true;
+      isPaused = false;
+      pauseButton.textContent = 'Pause';
+      messageDialog.classList.add('hidden');
+      startDialog.classList.add('hidden');
+      clearPlayLayer();
+      loadAnimals();
+      setAnimalsCelebrating(false);
+      updateHud();
+      stopLoop();
+      animationFrame = requestAnimationFrame(gameLoop);
+      scheduleSpawn(600);
+    }
+
+    function completeLevel() {
+      isRunning = false;
+      stopLoop();
+      clearPlayLayer();
+      setAnimalsCelebrating(true);
+      createConfetti();
+      playTone('good');
+      const isFinal = levelIndex >= LEVELS.length - 1;
+      showMessage(
+        isFinal ? 'Typing hero' : `Level ${levelIndex + 1} complete`,
+        isFinal ? 'All levels complete!' : `Level ${levelIndex + 1} complete`,
+        isFinal ? 'Ada protected the whole zoo.' : `Score ${LEVELS[levelIndex].score} reached. The next level is a little faster.`,
+        isFinal ? 'Play Again' : `Start Level ${levelIndex + 2}`,
+        () => startLevel(isFinal ? 0 : levelIndex + 1)
+      );
+    }
+
+    function showMessage(chip, title, text, buttonText, action) {
+      messageChip.textContent = chip;
+      messageTitle.textContent = title;
+      messageText.textContent = text;
+      messageButton.textContent = buttonText;
+      messageButton.onclick = () => {
+        setAnimalsCelebrating(false);
+        action();
+      };
+      messageDialog.classList.remove('hidden');
+    }
+
+    function togglePause() {
+      if (!isRunning) return;
+      isPaused = !isPaused;
+      pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+      if (!isPaused && !falling) scheduleSpawn(300);
+    }
+
+    document.getElementById('startButton').addEventListener('click', () => {
+      ensureAudioContext();
+      startLevel(0);
+    });
+    pauseButton.addEventListener('click', togglePause);
+    document.addEventListener('keydown', handleKeydown);
+
+    loadAnimals();
+    updateHud();
+  </script>
+</body>
+</html>
