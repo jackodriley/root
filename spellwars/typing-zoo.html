@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Typing Zoo</title>
   <meta name="title" content="Typing Zoo" />
-  <meta name="description" content="Pop falling letters to protect the Tidy Zoo animals." />
+  <meta name="description" content="Spell gentle words to hatch Tidy Zoo eggs." />
   <meta property="og:title" content="Typing Zoo" />
-  <meta property="og:description" content="Pop falling letters to protect the Tidy Zoo animals." />
+  <meta property="og:description" content="Spell gentle words to hatch Tidy Zoo eggs." />
   <meta property="og:image" content="assets/tidying-egg/typing-zoo-background.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Typing Zoo" />
-  <meta name="twitter:description" content="Pop falling letters to protect the Tidy Zoo animals." />
+  <meta name="twitter:description" content="Spell gentle words to hatch Tidy Zoo eggs." />
   <meta name="twitter:image" content="assets/tidying-egg/typing-zoo-background.png" />
   <link rel="image_src" href="assets/tidying-egg/typing-zoo-background.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="assets/tidying-egg/favicon-rainbow-egg-32.png" />
@@ -21,14 +21,16 @@
   <style>
     :root {
       --ink: #fbfbff;
-      --panel: rgba(19, 24, 50, 0.78);
-      --panel-strong: rgba(12, 14, 28, 0.9);
-      --panel-border: rgba(255, 255, 255, 0.2);
+      --soft-ink: rgba(251, 251, 255, 0.84);
+      --panel: rgba(16, 23, 50, 0.76);
+      --panel-strong: rgba(12, 15, 32, 0.9);
+      --panel-border: rgba(255, 255, 255, 0.22);
       --button: linear-gradient(135deg, #ff5c7c, #ffbc42 48%, #2ec4b6);
       --sun: #ffe15a;
       --aqua: #33d6c8;
       --rose: #ff5c7c;
-      --sky: #2388f8;
+      --blue: #1268ff;
+      --green: #19b957;
     }
 
     * {
@@ -41,8 +43,8 @@
       min-height: 100%;
       overflow: hidden;
       font-family: "Nunito Sans", system-ui, sans-serif;
-      background: #49a8ff;
       color: var(--ink);
+      background: #5eb8ff;
     }
 
     body,
@@ -61,9 +63,10 @@
       position: relative;
       width: 100vw;
       height: 100vh;
-      min-height: 520px;
+      min-height: 560px;
+      overflow: hidden;
       background:
-        linear-gradient(180deg, rgba(34, 136, 248, 0.08), rgba(16, 100, 80, 0.16)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(32, 128, 90, 0.13)),
         url("assets/tidying-egg/typing-zoo-background.png") center / cover no-repeat;
       isolation: isolate;
     }
@@ -72,11 +75,11 @@
       content: "";
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 38%),
-        linear-gradient(0deg, rgba(20, 36, 24, 0.2) 0%, rgba(20, 36, 24, 0) 23%);
-      pointer-events: none;
       z-index: 1;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 42%),
+        linear-gradient(0deg, rgba(19, 44, 31, 0.2) 0%, rgba(19, 44, 31, 0) 24%);
+      pointer-events: none;
     }
 
     .top-bar {
@@ -84,9 +87,9 @@
       top: clamp(10px, 2vw, 18px);
       left: clamp(10px, 2vw, 18px);
       right: clamp(10px, 2vw, 18px);
-      z-index: 30;
+      z-index: 20;
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto auto 1fr auto;
       gap: 10px;
       align-items: center;
       pointer-events: none;
@@ -94,12 +97,14 @@
 
     .badge,
     .meter,
-    .soft-button {
+    .soft-button,
+    .game-card,
+    .dialog {
       border: 1px solid var(--panel-border);
       background: rgba(12, 14, 28, 0.72);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.23);
       backdrop-filter: blur(10px);
-      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.35);
     }
 
     .badge {
@@ -114,13 +119,13 @@
     }
 
     .badge span:first-child {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       opacity: 0.82;
     }
 
     .badge span:last-child {
       margin-top: 5px;
-      font-size: 1.15rem;
+      font-size: 1.14rem;
       font-weight: 900;
     }
 
@@ -137,7 +142,7 @@
       border-radius: 6px;
       background: var(--button);
       box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16), 0 0 18px rgba(255, 225, 90, 0.5);
-      transition: width 0.26s ease;
+      transition: width 0.32s ease;
     }
 
     .soft-button {
@@ -152,28 +157,35 @@
       filter: saturate(1.08);
     }
 
-    .animal-lane {
+    .watcher-lane {
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: clamp(32px, 7vh, 82px);
-      height: clamp(128px, 22vh, 190px);
-      z-index: 12;
+      bottom: clamp(34px, 7vh, 78px);
+      width: min(26vw, 260px);
+      height: clamp(150px, 24vh, 220px);
+      z-index: 11;
       pointer-events: none;
     }
 
-    .animal {
-      position: absolute;
-      left: var(--x, 50%);
-      top: var(--y, 58%);
-      width: var(--size, 112px);
-      transform: translate(-50%, -50%) scaleX(var(--flip, 1));
-      transition: transform 0.12s linear, left 0.12s linear, top 0.12s linear;
-      filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.2));
-      will-change: transform, left;
+    .watcher-lane.left {
+      left: clamp(4px, 1vw, 12px);
     }
 
-    .animal img {
+    .watcher-lane.right {
+      right: clamp(4px, 1vw, 12px);
+    }
+
+    .watcher {
+      position: absolute;
+      left: var(--x, 50%);
+      top: var(--y, 50%);
+      width: var(--size, 86px);
+      transform: translate(-50%, -50%) scaleX(var(--flip, 1));
+      filter: drop-shadow(0 9px 8px rgba(0, 0, 0, 0.2));
+      animation: idleWatch 2.6s ease-in-out infinite;
+      animation-delay: var(--delay, 0ms);
+    }
+
+    .watcher img {
       display: block;
       width: 100%;
       height: auto;
@@ -182,177 +194,193 @@
       -webkit-user-drag: none;
     }
 
-    .animal.safe-hop img {
-      animation: safeHop 0.68s ease-in-out infinite;
+    @keyframes idleWatch {
+      0%, 100% { transform: translate(-50%, -50%) scaleX(var(--flip, 1)) translateY(0); }
+      50% { transform: translate(-50%, -50%) scaleX(var(--flip, 1)) translateY(-8px); }
     }
 
-    .animal.hit {
-      animation: animalPop 0.72s ease forwards;
-    }
-
-    @keyframes safeHop {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      45% { transform: translateY(-28px) rotate(-4deg); }
-      70% { transform: translateY(-6px) rotate(4deg); }
-    }
-
-    @keyframes animalPop {
-      0% { opacity: 1; transform: translate(-50%, -50%) scaleX(var(--flip, 1)) rotate(0deg) scale(1); }
-      54% { opacity: 1; transform: translate(-50%, -58%) scaleX(var(--flip, 1)) rotate(330deg) scale(1.08); }
-      100% { opacity: 0; transform: translate(-50%, -70%) scaleX(var(--flip, 1)) rotate(620deg) scale(0.05); }
-    }
-
-    .falling-cloud {
+    .stage {
       position: absolute;
-      left: var(--cloud-x, 50%);
-      top: var(--cloud-y, 8%);
-      width: clamp(100px, 12vw, 156px);
-      height: clamp(48px, 6vw, 70px);
+      inset: clamp(82px, 12vh, 112px) clamp(18px, 20vw, 232px) 34px;
       z-index: 10;
-      transform: translate(-50%, -50%);
-      opacity: 0.94;
-      filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.15));
-      animation: cloudDrift var(--cloud-ms, 5400ms) ease-in-out forwards;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      align-items: center;
+      justify-items: center;
+      gap: clamp(10px, 2vh, 18px);
       pointer-events: none;
     }
 
-    .falling-cloud::before,
-    .falling-cloud::after,
-    .cloud-puff {
-      content: "";
-      position: absolute;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.95);
-      box-shadow: inset 0 -8px 0 rgba(214, 232, 255, 0.38);
+    .game-card {
+      width: min(720px, 100%);
+      border-radius: 12px;
+      padding: clamp(14px, 3vw, 22px);
+      text-align: center;
+      pointer-events: auto;
     }
 
-    .falling-cloud::before {
-      left: 16%;
-      bottom: 10%;
-      width: 55%;
-      height: 62%;
+    .prompt-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
     }
 
-    .falling-cloud::after {
-      right: 10%;
-      bottom: 6%;
-      width: 62%;
-      height: 70%;
+    .word-display {
+      min-height: clamp(72px, 13vh, 118px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(6px, 1.4vw, 12px);
+      flex-wrap: wrap;
+      margin: 0;
+      line-height: 1;
     }
 
-    .cloud-puff {
-      left: 34%;
-      top: 0;
-      width: 42%;
-      height: 86%;
+    .letter-tile {
+      min-width: clamp(42px, 8vw, 68px);
+      height: clamp(52px, 10vw, 82px);
+      padding: 0 8px;
+      border-radius: 8px;
+      display: inline-grid;
+      place-items: center;
+      background: #fbfbff;
+      color: #17213c;
+      font-size: clamp(2.1rem, 7vw, 4.6rem);
+      font-weight: 900;
+      text-shadow: none;
+      box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 8px 14px rgba(0, 0, 0, 0.16);
+      transition: transform 0.16s ease, background 0.18s ease, color 0.18s ease;
     }
 
-    @keyframes cloudDrift {
-      0% { transform: translate(calc(-50% + var(--cloud-from, -90px)), -50%) scale(0.9); opacity: 0; }
-      14% { opacity: 0.95; }
-      100% { transform: translate(calc(-50% + var(--cloud-to, 60px)), -50%) scale(1); opacity: 0.86; }
+    .letter-tile.done {
+      background: var(--aqua);
+      color: #062f36;
+      transform: translateY(-7px) rotate(-2deg);
+      box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.14), 0 0 18px rgba(51, 214, 200, 0.52);
     }
 
-    .falling-token {
-      position: absolute;
-      left: var(--x, 50%);
-      top: var(--top, 14%);
-      z-index: 16;
-      min-width: clamp(74px, 11vw, 124px);
+    .letter-tile.next {
+      outline: 5px solid rgba(255, 225, 90, 0.75);
+    }
+
+    .word-hint {
+      min-height: 28px;
+      color: var(--soft-ink);
+      font-size: clamp(1rem, 2vw, 1.18rem);
+      margin: 0;
+    }
+
+    .result-name {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: clamp(52px, 9vw, 76px);
+      max-width: 100%;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: var(--aqua);
+      color: #062f36;
+      font-size: clamp(1.45rem, 5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: none;
+      box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.14), 0 0 18px rgba(51, 214, 200, 0.52);
+      overflow-wrap: anywhere;
+    }
+
+    .egg-stage {
+      position: relative;
+      width: min(360px, 48vw, 44vh);
       aspect-ratio: 1;
       display: grid;
       place-items: center;
-      border-radius: 999px;
-      background: var(--token-color, #ff304f);
-      color: #fff;
-      font-size: clamp(3rem, 8vw, 6.4rem);
-      font-weight: 900;
-      line-height: 0.8;
-      letter-spacing: 0;
-      text-transform: lowercase;
-      text-shadow:
-        0 3px 0 rgba(0, 0, 0, 0.18),
-        0 8px 14px rgba(0, 0, 0, 0.2);
-      box-shadow:
-        inset 0 -9px 0 rgba(0, 0, 0, 0.16),
-        inset 0 8px 0 rgba(255, 255, 255, 0.18),
-        0 16px 18px rgba(0, 0, 0, 0.17);
-      transform: translate(-50%, -50%) rotate(var(--tilt, -4deg));
       pointer-events: none;
-      user-select: none;
-      will-change: top, transform;
     }
 
-    .falling-token.digraph {
-      min-width: clamp(118px, 17vw, 176px);
-      aspect-ratio: 1.5 / 1;
-      border-radius: 999px;
-      font-size: clamp(2.7rem, 7vw, 5.8rem);
-      padding-bottom: 0.08em;
+    .egg {
+      width: 66%;
+      aspect-ratio: 0.78 / 1;
+      border-radius: 48% 48% 44% 44% / 58% 58% 40% 40%;
+      background:
+        radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.92), transparent 12%),
+        radial-gradient(circle at 61% 58%, rgba(255, 92, 124, 0.24) 0 9%, transparent 10%),
+        radial-gradient(circle at 35% 68%, rgba(51, 214, 200, 0.24) 0 8%, transparent 9%),
+        linear-gradient(145deg, #fff8cd 0%, #ffdf70 48%, #f9a83b 100%);
+      box-shadow: inset -16px -18px 0 rgba(166, 99, 23, 0.16), 0 16px 26px rgba(0, 0, 0, 0.22);
+      animation: eggBob 2s ease-in-out infinite;
     }
 
-    .falling-token.pop-good {
-      animation: goodPop 0.36s ease forwards;
-    }
-
-    .falling-token.pop-bad {
-      animation: badPop 0.32s ease forwards;
-    }
-
-    .falling-token .typed {
-      opacity: 0.45;
-      color: #171335;
-      text-shadow: none;
-    }
-
-    @keyframes goodPop {
-      0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--tilt, -4deg)) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -50%) rotate(16deg) scale(0.05); }
-    }
-
-    @keyframes badPop {
-      100% { opacity: 0; transform: translate(-50%, -50%) rotate(28deg) scale(1.36); }
-    }
-
-    .spark {
+    .egg.cracked::after {
+      content: "";
       position: absolute;
-      left: var(--x, 50%);
-      top: var(--y, 50%);
-      z-index: 24;
-      width: 12px;
-      height: 12px;
-      border-radius: 999px;
-      background: var(--c, #ffe15a);
-      box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.22);
-      animation: spark 0.58s ease-out forwards;
-      pointer-events: none;
+      width: 42%;
+      height: 30%;
+      top: 35%;
+      left: 30%;
+      background: linear-gradient(135deg, transparent 0 36%, rgba(99, 58, 20, 0.72) 37% 41%, transparent 42% 52%, rgba(99, 58, 20, 0.72) 53% 58%, transparent 59%);
+      clip-path: polygon(0 0, 34% 30%, 23% 48%, 56% 50%, 45% 82%, 100% 100%, 66% 54%, 78% 30%);
     }
 
-    @keyframes spark {
-      100% {
-        opacity: 0;
-        transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.15);
-      }
+    .egg.ready {
+      animation: hatchWiggle 0.58s ease-in-out infinite;
     }
 
-    .confetti {
+    .hatched-animal {
       position: absolute;
-      top: -24px;
-      left: var(--x, 50%);
-      z-index: 50;
-      width: 12px;
-      height: 18px;
-      border-radius: 3px;
-      background: var(--c, #ffbc42);
-      animation: confettiFall var(--ms, 2300ms) linear forwards;
-      pointer-events: none;
+      width: 78%;
+      max-width: 260px;
+      opacity: 0;
+      transform: translateY(18px) scale(0.76);
+      filter: var(--animal-tint-filter, none) drop-shadow(0 16px 12px rgba(0, 0, 0, 0.2));
+      transition: opacity 0.3s ease, transform 0.3s ease;
     }
 
-    @keyframes confettiFall {
-      100% {
-        transform: translate(var(--drift, 0), 108vh) rotate(var(--spin, 540deg));
-        opacity: 0.1;
-      }
+    .hatched .egg {
+      opacity: 0;
+      transform: scale(0.3);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .hatched .hatched-animal {
+      opacity: 1;
+      transform: translateY(0) scale(var(--animal-stage-scale, 1));
+      animation: animalCelebrate 0.72s ease-in-out infinite;
+    }
+
+    @keyframes eggBob {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-8px) rotate(1.5deg); }
+    }
+
+    @keyframes hatchWiggle {
+      0%, 100% { transform: rotate(-4deg); }
+      50% { transform: rotate(4deg); }
+    }
+
+    @keyframes animalCelebrate {
+      0%, 100% { transform: translateY(0) scale(var(--animal-stage-scale, 1)); }
+      45% { transform: translateY(-30px) scale(var(--animal-stage-scale, 1)); }
+    }
+
+    .big-button {
+      min-height: 58px;
+      min-width: min(280px, 100%);
+      border-radius: 8px;
+      padding: 0 22px;
+      background: var(--button);
+      box-shadow: 0 13px 28px rgba(0, 0, 0, 0.28), inset 0 -4px 0 rgba(0, 0, 0, 0.15);
+      font-size: 1.24rem;
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.35);
+      pointer-events: auto;
+    }
+
+    .big-button:hover,
+    .big-button:focus-visible {
+      transform: translateY(-1px);
+      filter: saturate(1.09);
     }
 
     .dialog-layer {
@@ -370,12 +398,9 @@
     }
 
     .dialog {
-      width: min(620px, 100%);
-      border: 1px solid var(--panel-border);
+      width: min(640px, 100%);
       border-radius: 12px;
       padding: clamp(18px, 4vw, 30px);
-      background: var(--panel);
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.34);
       text-align: center;
     }
 
@@ -389,61 +414,23 @@
     }
 
     .dialog h2 {
-      font-size: clamp(2.2rem, 8vw, 4.8rem);
+      font-size: clamp(2.1rem, 8vw, 4.5rem);
     }
 
     .dialog p {
       margin: 16px auto 0;
-      max-width: 35rem;
-      font-size: clamp(1.05rem, 2.6vw, 1.32rem);
+      max-width: 36rem;
+      font-size: clamp(1.05rem, 2.5vw, 1.28rem);
       line-height: 1.35;
-      color: rgba(251, 251, 255, 0.88);
-      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.36);
+      color: var(--soft-ink);
     }
 
-    .title-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      margin-bottom: 14px;
-      padding: 7px 12px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.13);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      font-weight: 900;
-    }
-
-    .big-button {
-      margin-top: 22px;
-      min-height: 58px;
-      min-width: min(280px, 100%);
-      border-radius: 8px;
-      padding: 0 22px;
-      background: var(--button);
-      box-shadow: 0 13px 28px rgba(0, 0, 0, 0.28), inset 0 -4px 0 rgba(0, 0, 0, 0.15);
-      font-size: 1.24rem;
-      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.35);
-    }
-
-    .big-button:hover,
-    .big-button:focus-visible {
-      transform: translateY(-1px);
-      filter: saturate(1.09);
-    }
-
-    .choice-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
+    .title-chip,
     .tiny-stat {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 38px;
+      min-height: 36px;
       padding: 7px 12px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.14);
@@ -451,13 +438,67 @@
       font-weight: 900;
     }
 
+    .title-chip {
+      margin-bottom: 14px;
+    }
+
+    .choice-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 16px 0 22px;
+    }
+
     .hidden {
       display: none;
     }
 
-    @media (max-width: 720px) {
+    .spark {
+      position: absolute;
+      left: var(--x, 50%);
+      top: var(--y, 50%);
+      z-index: 50;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--c, #ffe15a);
+      box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.22);
+      animation: spark 0.62s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes spark {
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.15);
+      }
+    }
+
+    .confetti {
+      position: absolute;
+      top: -24px;
+      left: var(--x, 50%);
+      z-index: 55;
+      width: 12px;
+      height: 18px;
+      border-radius: 3px;
+      background: var(--c, #ffbc42);
+      animation: confettiFall var(--ms, 2400ms) linear forwards;
+      pointer-events: none;
+    }
+
+    @keyframes confettiFall {
+      100% {
+        transform: translate(var(--drift, 0), 108vh) rotate(var(--spin, 540deg));
+        opacity: 0.08;
+      }
+    }
+
+    @media (max-width: 800px) {
       .game-shell {
         min-height: 100vh;
+        overflow-y: auto;
       }
 
       .top-bar {
@@ -474,102 +515,162 @@
         grid-row: 1;
       }
 
-      .badge {
-        width: 100%;
+      .stage {
+        inset: 128px 10px 26px;
       }
 
-      .animal-lane {
+      .watcher-lane {
+        opacity: 0.5;
+        width: 112px;
+        height: 160px;
         bottom: 26px;
-        height: 150px;
       }
 
-      .animal {
-        width: calc(var(--size, 100px) * 0.78);
+      .game-card {
+        padding: 13px;
+      }
+
+      .egg-stage {
+        width: min(320px, 68vw, 36vh);
       }
     }
   </style>
 </head>
 <body>
-  <main class="game-shell" id="gameShell" aria-label="Typing Zoo game">
+  <main class="game-shell" id="gameShell" aria-label="Typing Zoo word game">
     <div class="top-bar" aria-live="polite">
       <div class="badge"><span>Level</span><span id="levelLabel">1</span></div>
-      <div class="meter" aria-label="Level progress"><div class="meter-fill" id="scoreMeter"></div></div>
-      <button class="soft-button" id="pauseButton" type="button">Pause</button>
+      <div class="badge"><span>Best</span><span id="bestLabel">1</span></div>
+      <div class="meter" id="progressMeter" aria-label="Egg progress"><div class="meter-fill" id="progressFill"></div></div>
+      <button class="soft-button" id="speakButton" type="button">Say Word</button>
     </div>
 
-    <section class="animal-lane" id="animalLane" aria-label="Tidy Zoo animals"></section>
-    <div id="playLayer" aria-hidden="true"></div>
+    <section class="watcher-lane left" id="leftWatchers" aria-label="Zoo animals watching"></section>
+    <section class="watcher-lane right" id="rightWatchers" aria-label="Zoo animals watching"></section>
+
+    <section class="stage">
+      <div class="game-card">
+        <div class="prompt-row">
+          <span class="tiny-stat" id="wordNumberLabel">Word 1</span>
+          <span class="tiny-stat" id="stageLabel">Fresh egg</span>
+        </div>
+        <h2 class="word-display" id="wordDisplay" aria-label="Current word"></h2>
+        <p class="word-hint" id="wordHint">Listen, then type the word.</p>
+      </div>
+      <div class="egg-stage" id="eggStage">
+        <div class="egg" id="egg"></div>
+        <img class="hatched-animal" id="hatchedAnimal" alt="" />
+      </div>
+      <button class="big-button hidden" id="nextLevelButton" type="button">Next Level</button>
+    </section>
 
     <section class="dialog-layer" id="startDialog">
       <div class="dialog">
-        <div class="title-chip">Tidy Zoo friends are ready</div>
+        <div class="title-chip">Calm spelling and hatching</div>
         <h1>Typing Zoo</h1>
-        <p>Type the falling letter before it reaches the animals. Level 3 brings two-letter sounds.</p>
+        <p>Hear a word, type its letters, and gently hatch an egg. Every completed level adds a new creature to Tidy Zoo.</p>
         <div class="choice-row">
+          <span class="tiny-stat" id="startBestLabel">Best level 1</span>
           <span class="tiny-stat" id="zooCountLabel">Loading zoo...</span>
-          <span class="tiny-stat">Slow beginner speed</span>
         </div>
-        <button class="big-button" id="startButton" type="button">Start Typing</button>
-      </div>
-    </section>
-
-    <section class="dialog-layer hidden" id="messageDialog">
-      <div class="dialog">
-        <div class="title-chip" id="messageChip">Well done</div>
-        <h2 id="messageTitle">Level complete</h2>
-        <p id="messageText">The animals are safe.</p>
-        <button class="big-button" id="messageButton" type="button">Next Level</button>
+        <button class="big-button" id="startButton" type="button">Start Level 1</button>
       </div>
     </section>
   </main>
 
   <script>
     const ZOO_STORAGE_KEY = 'tidyingEggZoo';
-    const LEVELS = [
-      { score: 10, speed: 6.2, tokens: 'abcdefghijklmnopqrstuvwxyz'.split('') },
-      { score: 12, speed: 7.4, tokens: 'abcdefghijklmnopqrstuvwxyz'.split('') },
-      { score: 14, speed: 8.8, tokens: ['ch', 'sh', 'th', 'ng', 'qu', 'ai', 'ee', 'oo', 'oa', 'ar'] },
-      { score: 16, speed: 10.2, tokens: ['ch', 'sh', 'th', 'ng', 'qu', 'ai', 'ee', 'oo', 'oa', 'ar', 'or', 'igh'] }
-    ];
-    const ANIMALS = [
-      { id: 'purple-pug-puppy', name: 'Purple Pug Puppy', fullAsset: 'assets/tidying-egg/full-grown-transparent/purple-pug-puppy.png' },
-      { id: 'rainbow-unicorn', name: 'Rainbow Unicorn', fullAsset: 'assets/tidying-egg/full-grown-transparent/rainbow-unicorn.png' },
-      { id: 'stinky-cute-squid', name: 'Stinky but Cute Squid', fullAsset: 'assets/tidying-egg/full-grown-transparent/stinky-cute-squid.png' },
-      { id: 'rainbow-pigeon', name: 'Rainbow Pigeon', fullAsset: 'assets/tidying-egg/full-grown-transparent/rainbow-pigeon.png' },
-      { id: 'toxic-blob', name: 'Toxic Blob', fullAsset: 'assets/tidying-egg/full-grown-transparent/toxic-blob.png' },
-      { id: 'red-panda', name: 'Red Panda', fullAsset: 'assets/tidying-egg/full-grown-transparent/red-panda.png' },
-      { id: 'sleepy-blue-koala', name: 'Sleepy Blue Koala', fullAsset: 'assets/tidying-egg/full-grown-transparent/sleepy-blue-koala.png' },
-      { id: 'strawberry-axolotl', name: 'Strawberry Axolotl', fullAsset: 'assets/tidying-egg/full-grown-transparent/strawberry-axolotl.png' },
-      { id: 'golden-hamster-wizard', name: 'Golden Hamster Wizard', fullAsset: 'assets/tidying-egg/full-grown-transparent/golden-hamster-wizard.png' },
-      { id: 'tiny-cloud-dragon', name: 'Tiny Cloud Dragon', fullAsset: 'assets/tidying-egg/full-grown-transparent/tiny-cloud-dragon.png' },
-      { id: 'mint-green-frog-prince', name: 'Mint Green Frog Prince', fullAsset: 'assets/tidying-egg/full-grown-transparent/mint-green-frog-prince.png' },
-      { id: 'sparkly-moon-kitten', name: 'Sparkly Moon Kitten', fullAsset: 'assets/tidying-egg/full-grown-transparent/sparkly-moon-kitten.png' }
-    ];
-    const TOKEN_COLORS = ['#ff304f', '#1268ff', '#ffbd00', '#19b957', '#ff7a00', '#7f35ff'];
+    const HIGH_SCORE_KEY = 'typingZooMaxLevel';
+    const TARGET_SCORE = 50;
+    const CRACK_SCORE = 15;
+    const HATCH_SCORE = 30;
+    const BABY_SCORE = 38;
+    const GROWING_SCORE = 45;
+    const WORD_POINTS = 5;
     const SPARK_COLORS = ['#ffe15a', '#ff5c7c', '#2ec4b6', '#1268ff', '#ffbc42'];
+    const WORDS = {
+      3: ['cat', 'dog', 'sun', 'hat', 'cup', 'bed', 'bee', 'fox', 'pig', 'bat', 'red', 'pop'],
+      4: ['fish', 'frog', 'sock', 'star', 'tree', 'ball', 'moon', 'cake', 'duck', 'book', 'rain', 'ship'],
+      5: ['tiger', 'zebra', 'apple', 'happy', 'water', 'party', 'green', 'cloud', 'magic', 'smile', 'chair', 'plant'],
+      6: ['banana', 'kitten', 'rocket', 'flower', 'planet', 'castle', 'dragon', 'animal', 'button', 'yellow', 'pencil', 'garden'],
+      7: ['rainbow', 'cupcake', 'monster', 'teacher', 'picture', 'morning', 'sparkle', 'bedtime', 'biscuit', 'holiday'],
+      8: ['sunshine', 'sandwich', 'dinosaur', 'elephant', 'birthday', 'treasure', 'painting', 'princess', 'starfish', 'backpack', 'snowball', 'seashell'],
+      9: ['adventure', 'butterfly', 'strawberry', 'wonderful', 'chocolate', 'beautiful', 'rainstorm', 'breakfast', 'moonlight', 'storybook', 'dragonfly', 'jellybean'],
+      10: ['playground', 'friendship', 'everything', 'watermelon', 'celebrate', 'storytime', 'skateboard', 'basketball', 'toothbrush', 'fairytale', 'blueberry', 'downstairs']
+    };
+    const ANIMALS = [
+      { id: 'purple-pug-puppy', name: 'Purple Pug Puppy', weight: 20, fullAsset: 'assets/tidying-egg/full-grown-transparent/purple-pug-puppy.png' },
+      { id: 'rainbow-unicorn', name: 'Rainbow Unicorn', weight: 6, fullAsset: 'assets/tidying-egg/full-grown-transparent/rainbow-unicorn.png' },
+      { id: 'stinky-cute-squid', name: 'Stinky but Cute Squid', weight: 15, fullAsset: 'assets/tidying-egg/full-grown-transparent/stinky-cute-squid.png' },
+      { id: 'rainbow-pigeon', name: 'Rainbow Pigeon', weight: 19, fullAsset: 'assets/tidying-egg/full-grown-transparent/rainbow-pigeon.png' },
+      { id: 'toxic-blob', name: 'Toxic Blob', weight: 13, fullAsset: 'assets/tidying-egg/full-grown-transparent/toxic-blob.png' },
+      { id: 'red-panda', name: 'Red Panda', weight: 10, fullAsset: 'assets/tidying-egg/full-grown-transparent/red-panda.png' },
+      { id: 'sleepy-blue-koala', name: 'Sleepy Blue Koala', weight: 13, fullAsset: 'assets/tidying-egg/full-grown-transparent/sleepy-blue-koala.png' },
+      { id: 'strawberry-axolotl', name: 'Strawberry Axolotl', weight: 12, fullAsset: 'assets/tidying-egg/full-grown-transparent/strawberry-axolotl.png' },
+      { id: 'golden-hamster-wizard', name: 'Golden Hamster Wizard', weight: 11, fullAsset: 'assets/tidying-egg/full-grown-transparent/golden-hamster-wizard.png' },
+      { id: 'tiny-cloud-dragon', name: 'Tiny Cloud Dragon', weight: 8, fullAsset: 'assets/tidying-egg/full-grown-transparent/tiny-cloud-dragon.png' },
+      { id: 'mint-green-frog-prince', name: 'Mint Green Frog Prince', weight: 13, fullAsset: 'assets/tidying-egg/full-grown-transparent/mint-green-frog-prince.png' },
+      { id: 'sparkly-moon-kitten', name: 'Sparkly Moon Kitten', weight: 10, fullAsset: 'assets/tidying-egg/full-grown-transparent/sparkly-moon-kitten.png' }
+    ];
+    const ZOO_TINT_PALETTES = {
+      'purple-pug-puppy': { hue: [-145, 165], saturate: [0.9, 1.28], brightness: [0.92, 1.1] },
+      'rainbow-unicorn': { hue: [-16, 16], saturate: [0.94, 1.14], brightness: [0.96, 1.1] },
+      'stinky-cute-squid': { hue: [-28, 78], saturate: [0.96, 1.26], brightness: [0.9, 1.08] },
+      'rainbow-pigeon': { hue: [-22, 22], saturate: [0.95, 1.18], brightness: [0.94, 1.08] },
+      'toxic-blob': { hue: [-42, 38], saturate: [1, 1.34], brightness: [0.9, 1.12] },
+      'red-panda': { hue: [-170, 28], saturate: [0.86, 1.18], brightness: [0.88, 1.08] },
+      'sleepy-blue-koala': { hue: [-20, 44], saturate: [0.88, 1.2], brightness: [0.92, 1.1] },
+      'strawberry-axolotl': { hue: [-34, 58], saturate: [0.92, 1.25], brightness: [0.94, 1.12] },
+      'golden-hamster-wizard': { hue: [-30, 34], saturate: [0.9, 1.2], brightness: [0.92, 1.1] },
+      'tiny-cloud-dragon': { hue: [-40, 52], saturate: [0.9, 1.22], brightness: [0.94, 1.12] },
+      'mint-green-frog-prince': { hue: [-46, 34], saturate: [0.92, 1.24], brightness: [0.92, 1.1] },
+      'sparkly-moon-kitten': { hue: [-18, 42], saturate: [0.88, 1.16], brightness: [0.96, 1.12] }
+    };
+    const ZOO_HABITATS = {
+      meadow: { xMin: 8, xMax: 58, yMin: 61, yMax: 89, anchor: 'feet' },
+      water: { xMin: 57, xMax: 94, yMin: 66, yMax: 89, anchor: 'feet' },
+      amphibious: { xMin: 45, xMax: 94, yMin: 61, yMax: 89, anchor: 'feet' },
+      sky: { xMin: 8, xMax: 93, yMin: 21, yMax: 44, anchor: 'center' }
+    };
+    const ZOO_MOVEMENT_TRAITS = {
+      'stinky-cute-squid': { habitat: 'water' },
+      'rainbow-pigeon': { habitat: 'sky' },
+      'toxic-blob': { habitat: 'water' },
+      'strawberry-axolotl': { habitat: 'amphibious' },
+      'tiny-cloud-dragon': { habitat: 'sky' },
+      'mint-green-frog-prince': { habitat: 'water' }
+    };
 
-    const animalLane = document.getElementById('animalLane');
-    const playLayer = document.getElementById('playLayer');
-    const startDialog = document.getElementById('startDialog');
-    const messageDialog = document.getElementById('messageDialog');
+    const progressFill = document.getElementById('progressFill');
+    const progressMeter = document.getElementById('progressMeter');
     const levelLabel = document.getElementById('levelLabel');
-    const scoreMeter = document.getElementById('scoreMeter');
-    const pauseButton = document.getElementById('pauseButton');
+    const bestLabel = document.getElementById('bestLabel');
+    const startBestLabel = document.getElementById('startBestLabel');
     const zooCountLabel = document.getElementById('zooCountLabel');
-    const messageChip = document.getElementById('messageChip');
-    const messageTitle = document.getElementById('messageTitle');
-    const messageText = document.getElementById('messageText');
-    const messageButton = document.getElementById('messageButton');
+    const startDialog = document.getElementById('startDialog');
+    const wordDisplay = document.getElementById('wordDisplay');
+    const wordHint = document.getElementById('wordHint');
+    const wordNumberLabel = document.getElementById('wordNumberLabel');
+    const stageLabel = document.getElementById('stageLabel');
+    const eggStage = document.getElementById('eggStage');
+    const egg = document.getElementById('egg');
+    const hatchedAnimal = document.getElementById('hatchedAnimal');
+    const speakButton = document.getElementById('speakButton');
+    const nextLevelButton = document.getElementById('nextLevelButton');
+    const leftWatchers = document.getElementById('leftWatchers');
+    const rightWatchers = document.getElementById('rightWatchers');
 
-    let animals = [];
-    let levelIndex = 0;
+    let level = 1;
     let score = 0;
-    let falling = null;
-    let animationFrame = null;
-    let lastFrameTime = 0;
-    let spawnTimer = null;
+    let wordCount = 0;
+    let currentWord = '';
+    let levelWordQueue = [];
+    let usedWordsThisLevel = new Set();
+    let typedIndex = 0;
+    let currentAnimal = null;
+    let currentTint = null;
     let isRunning = false;
-    let isPaused = false;
+    let bestLevel = readBestLevel();
     let audioContext = null;
 
     function escapeHtml(value) {
@@ -592,6 +693,25 @@
       return list[Math.floor(Math.random() * list.length)];
     }
 
+    function shuffle(list) {
+      const shuffled = [...list];
+      for (let index = shuffled.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+      }
+      return shuffled;
+    }
+
+    function readBestLevel() {
+      const value = Number(localStorage.getItem(HIGH_SCORE_KEY));
+      return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
+    }
+
+    function saveBestLevel(value) {
+      bestLevel = Math.max(bestLevel, value);
+      localStorage.setItem(HIGH_SCORE_KEY, String(bestLevel));
+    }
+
     function getZoo() {
       try {
         const parsed = JSON.parse(localStorage.getItem(ZOO_STORAGE_KEY) || '[]');
@@ -601,33 +721,44 @@
       }
     }
 
-    function animalForEntry(entry, index) {
-      const base = ANIMALS.find(animal => animal.id === entry.animalId) || ANIMALS[index % ANIMALS.length];
+    function saveZoo(zoo) {
+      localStorage.setItem(ZOO_STORAGE_KEY, JSON.stringify(zoo));
+    }
+
+    function hashText(value) {
+      let hash = 2166136261;
+      const text = String(value);
+      for (let index = 0; index < text.length; index += 1) {
+        hash ^= text.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function seededRatio(hash, shift) {
+      return ((hash >>> shift) & 0xff) / 255;
+    }
+
+    function tintValue(range, ratio) {
+      return range[0] + (range[1] - range[0]) * ratio;
+    }
+
+    function createZooTint(animal, seed) {
+      const palette = ZOO_TINT_PALETTES[animal.id] || {
+        hue: [-10, 10],
+        saturate: [0.94, 1.08],
+        brightness: [0.96, 1.06]
+      };
+      const hash = hashText(`${animal.id}-${seed}`);
       return {
-        id: entry.id || `preview-${index}`,
-        animalId: base.id,
-        name: entry.animalName || base.name,
-        asset: base.fullAsset,
-        tint: entry.tint || null,
-        x: randomBetween(8, 92),
-        y: randomBetween(24, 72),
-        speed: randomBetween(3.5, 8.5),
-        wobble: randomBetween(0, Math.PI * 2),
-        flip: Math.random() < 0.5 ? -1 : 1,
-        alive: true
+        hue: Math.round(tintValue(palette.hue, seededRatio(hash, 0))),
+        saturate: Number(tintValue(palette.saturate, seededRatio(hash, 8)).toFixed(2)),
+        brightness: Number(tintValue(palette.brightness, seededRatio(hash, 16)).toFixed(2))
       };
     }
 
-    function previewZoo() {
-      return ANIMALS.slice(0, 5).map((animal, index) => ({
-        id: `preview-${animal.id}`,
-        animalId: animal.id,
-        animalName: animal.name,
-        tint: index % 2 ? { hue: 10, saturate: 1.05, brightness: 1.03 } : null
-      }));
-    }
-
-    function tintFilter(tint) {
+    function zooTintFilter(entryOrTint) {
+      const tint = entryOrTint && entryOrTint.tint ? entryOrTint.tint : entryOrTint;
       if (!tint) return '';
       const hue = Number(tint.hue) || 0;
       const saturate = Number(tint.saturate) || 1;
@@ -635,147 +766,247 @@
       return `hue-rotate(${hue}deg) saturate(${saturate}) brightness(${brightness})`;
     }
 
-    function loadAnimals() {
-      const storedZoo = getZoo();
-      const source = storedZoo.length ? storedZoo : previewZoo();
-      animals = source.slice(0, 12).map(animalForEntry);
-      zooCountLabel.textContent = storedZoo.length
-        ? `${storedZoo.length} saved zoo animal${storedZoo.length === 1 ? '' : 's'}`
-        : 'Preview animals until Tidy Zoo has saves';
-      renderAnimals();
+    function weightedAnimalPick() {
+      const totalWeight = ANIMALS.reduce((sum, animal) => sum + animal.weight, 0);
+      let roll = Math.random() * totalWeight;
+      for (const animal of ANIMALS) {
+        roll -= animal.weight;
+        if (roll <= 0) return animal;
+      }
+      return ANIMALS[0];
     }
 
-    function renderAnimals() {
-      animalLane.innerHTML = animals.map((animal, index) => `
-        <div class="animal" data-index="${index}" style="--x:${animal.x}%; --y:${animal.y}%; --size:${animal.animalId === 'rainbow-unicorn' ? 140 : 116}px; --flip:${animal.flip}; --tint-filter:${escapeHtml(tintFilter(animal.tint))};">
-          <img src="${escapeHtml(animal.asset)}" alt="${escapeHtml(animal.name)}" />
-        </div>
-      `).join('');
+    function movementTraitsForAnimal(animal) {
+      return ZOO_MOVEMENT_TRAITS[animal.id] || { habitat: 'meadow' };
+    }
+
+    function habitatBoundsForAnimal(animal) {
+      const traits = movementTraitsForAnimal(animal);
+      return ZOO_HABITATS[traits.habitat] || ZOO_HABITATS.meadow;
+    }
+
+    function createZooMotion(seed, index, animal = ANIMALS[0]) {
+      const hash = hashText(`${seed}-${index}`);
+      const bounds = habitatBoundsForAnimal(animal);
+      const xRange = bounds.xMax - bounds.xMin;
+      const yRange = bounds.yMax - bounds.yMin;
+      return {
+        x: clamp(bounds.xMin + ((hash % 1000) / 1000) * xRange, bounds.xMin, bounds.xMax),
+        y: clamp(bounds.yMin + ((((hash >>> 8) % 1000) / 1000) * yRange), bounds.yMin, bounds.yMax),
+        flip: (hash & 1) ? -1 : 1
+      };
+    }
+
+    function addZooEntry(animal, tint) {
+      const zoo = getZoo();
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      zoo.unshift({
+        id,
+        playerName: 'Ada',
+        animalId: animal.id,
+        animalName: animal.name,
+        wonAt: new Date().toISOString(),
+        motion: createZooMotion(`Ada-${animal.id}-${id}`, zoo.length, animal),
+        tint: tint || createZooTint(animal, id)
+      });
+      saveZoo(zoo.slice(0, 60));
+      renderWatchers();
+    }
+
+    function animalForZooEntry(entry, index = 0) {
+      return ANIMALS.find(animal => animal.id === entry.animalId) || ANIMALS[index % ANIMALS.length];
+    }
+
+    function previewZoo() {
+      return ANIMALS.slice(0, 6).map((animal, index) => ({
+        id: `preview-${animal.id}`,
+        animalId: animal.id,
+        animalName: animal.name,
+        tint: index % 2 ? { hue: 8, saturate: 1.04, brightness: 1.02 } : null
+      }));
+    }
+
+    function renderWatchers() {
+      const storedZoo = getZoo();
+      const previewAudience = previewZoo().filter(preview =>
+        !storedZoo.some(entry => entry.animalId === preview.animalId)
+      );
+      const watchers = (storedZoo.length ? [...storedZoo, ...previewAudience] : previewAudience).slice(0, 10);
+      zooCountLabel.textContent = storedZoo.length
+        ? `${storedZoo.length} saved zoo animal${storedZoo.length === 1 ? '' : 's'}`
+        : 'Preview audience today';
+      leftWatchers.innerHTML = '';
+      rightWatchers.innerHTML = '';
+      watchers.forEach((entry, index) => {
+        const animal = animalForZooEntry(entry, index);
+        const side = index % 2 ? rightWatchers : leftWatchers;
+        const crowdIndex = Math.floor(index / 2);
+        const element = document.createElement('div');
+        element.className = 'watcher';
+        const column = crowdIndex % 3;
+        const row = Math.floor(crowdIndex / 3);
+        const x = index % 2
+          ? 76 - column * 17 + randomBetween(-4, 4)
+          : 24 + column * 17 + randomBetween(-4, 4);
+        const y = 76 - row * 18 + randomBetween(-4, 4);
+        element.style.setProperty('--x', `${x}%`);
+        element.style.setProperty('--y', `${y}%`);
+        element.style.setProperty('--size', `${animal.id === 'rainbow-unicorn' ? 106 : 88}px`);
+        element.style.setProperty('--flip', index % 2 ? -1 : 1);
+        element.style.setProperty('--delay', `${index * -180}ms`);
+        element.style.setProperty('--tint-filter', zooTintFilter(entry));
+        element.style.zIndex = String(Math.round(y));
+        element.innerHTML = `<img src="${escapeHtml(animal.fullAsset)}" alt="${escapeHtml(animal.name)}" />`;
+        side.append(element);
+      });
+    }
+
+    function stageForScore(value) {
+      if (value >= TARGET_SCORE) {
+        return { id: 'fully-grown', label: 'Ready to join the zoo!', hatched: true, column: 3, scale: 1 };
+      }
+      if (value >= GROWING_SCORE) {
+        return { id: 'growing', label: 'Growing fast!', hatched: true, column: 2, scale: 0.92 };
+      }
+      if (value >= BABY_SCORE) {
+        return { id: 'baby', label: 'Sweet baby!', hatched: true, column: 1, scale: 0.82 };
+      }
+      if (value >= HATCH_SCORE) {
+        return { id: 'just-hatched', label: 'Freshly hatched', hatched: true, column: 0, scale: 0.74 };
+      }
+      if (value >= CRACK_SCORE) {
+        return { id: 'cracked', label: 'Cracks appearing...', hatched: false, eggClass: 'cracked' };
+      }
+      return { id: 'egg', label: 'Fresh egg', hatched: false, eggClass: '' };
+    }
+
+    function gameStageAsset(animal, column) {
+      const stageNames = ['hatched', 'baby', 'growing', 'grown'];
+      return `assets/tidying-egg/game-stages/${animal.id}-${stageNames[column] || 'grown'}.png`;
+    }
+
+    function wordLengthForLevel(value) {
+      if (value <= 2) return value === 1 ? 3 : 4;
+      if (value <= 4) return 5;
+      if (value <= 6) return 6;
+      if (value <= 8) return 7;
+      if (value === 9) return 8;
+      return Math.min(10, 6 + Math.floor(value / 2));
+    }
+
+    function wordListForLevel(value) {
+      const length = wordLengthForLevel(value);
+      const availableLengths = Object.keys(WORDS).map(Number).sort((a, b) => a - b);
+      const chosenLength = availableLengths.includes(length)
+        ? length
+        : availableLengths.reduce((best, candidate) => Math.abs(candidate - length) < Math.abs(best - length) ? candidate : best, availableLengths[0]);
+      return WORDS[chosenLength];
+    }
+
+    function resetLevelWordQueue() {
+      usedWordsThisLevel = new Set();
+      levelWordQueue = shuffle([...new Set(wordListForLevel(level))]);
+    }
+
+    function chooseWord() {
+      if (!levelWordQueue.length) {
+        const remaining = wordListForLevel(level).filter(word => !usedWordsThisLevel.has(word));
+        levelWordQueue = shuffle(remaining);
+      }
+      const next = levelWordQueue.shift();
+      if (!next) return;
+      currentWord = next;
+      usedWordsThisLevel.add(currentWord);
+      typedIndex = 0;
+      wordCount += 1;
+      renderWord();
+      speakCurrentWord();
+    }
+
+    function renderWord() {
+      wordDisplay.innerHTML = currentWord.split('').map((letter, index) => {
+        const state = index < typedIndex ? 'done' : index === typedIndex ? 'next' : '';
+        return `<span class="letter-tile ${state}">${escapeHtml(letter)}</span>`;
+      }).join('');
+      wordNumberLabel.textContent = `Word ${wordCount}`;
+      wordHint.textContent = typedIndex
+        ? `${typedIndex} of ${currentWord.length} letters found`
+        : 'Listen, then type the word.';
+    }
+
+    function updateHud() {
+      const stage = stageForScore(score);
+      levelLabel.textContent = String(level);
+      bestLabel.textContent = String(bestLevel);
+      startBestLabel.textContent = `Best level ${bestLevel}`;
+      progressFill.style.setProperty('--progress', `${Math.min(100, (score / TARGET_SCORE) * 100)}%`);
+      progressMeter.setAttribute('aria-label', `Egg progress ${score} of ${TARGET_SCORE}`);
+      stageLabel.textContent = stage.label;
+      egg.className = `egg ${stage.eggClass || ''} ${score >= GROWING_SCORE ? 'ready' : ''}`.trim();
+      eggStage.classList.toggle('hatched', stage.hatched);
+      if (stage.hatched) {
+        hatchedAnimal.src = gameStageAsset(currentAnimal, stage.column);
+        hatchedAnimal.alt = currentAnimal.name;
+        hatchedAnimal.style.setProperty('--animal-stage-scale', String(stage.scale));
+        const filter = zooTintFilter(currentTint);
+        if (filter) {
+          hatchedAnimal.style.setProperty('--animal-tint-filter', filter);
+        } else {
+          hatchedAnimal.style.removeProperty('--animal-tint-filter');
+        }
+      } else {
+        hatchedAnimal.removeAttribute('src');
+        hatchedAnimal.alt = '';
+      }
     }
 
     function ensureAudioContext() {
       if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioContext = new AudioCtx();
       }
-      if (audioContext.state === 'suspended') audioContext.resume();
-      return audioContext;
+      if (audioContext && audioContext.state === 'suspended') audioContext.resume();
     }
 
     function playTone(kind) {
-      const context = ensureAudioContext();
-      const now = context.currentTime;
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      oscillator.type = kind === 'animal' ? 'triangle' : 'sine';
-      oscillator.frequency.setValueAtTime(kind === 'good' ? 620 : 190, now);
-      if (kind === 'good') {
-        oscillator.frequency.exponentialRampToValueAtTime(1040, now + 0.14);
-      } else {
-        oscillator.frequency.exponentialRampToValueAtTime(90, now + 0.25);
-      }
+      ensureAudioContext();
+      if (!audioContext) return;
+      const now = audioContext.currentTime;
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = kind === 'wrong' ? 'triangle' : 'sine';
+      oscillator.frequency.setValueAtTime(kind === 'wrong' ? 180 : 540, now);
+      oscillator.frequency.exponentialRampToValueAtTime(kind === 'wrong' ? 120 : 920, now + 0.16);
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(kind === 'good' ? 0.12 : 0.16, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === 'good' ? 0.24 : 0.38));
+      gain.gain.exponentialRampToValueAtTime(kind === 'wrong' ? 0.08 : 0.12, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
       oscillator.connect(gain);
-      gain.connect(context.destination);
+      gain.connect(audioContext.destination);
       oscillator.start(now);
-      oscillator.stop(now + 0.42);
+      oscillator.stop(now + 0.28);
     }
 
-    function updateHud() {
-      const level = LEVELS[levelIndex];
-      levelLabel.textContent = String(levelIndex + 1);
-      scoreMeter.style.setProperty('--progress', `${Math.min(100, (score / level.score) * 100)}%`);
-      scoreMeter.parentElement.setAttribute('aria-label', `Score ${score} of ${level.score}`);
+    function speakCurrentWord() {
+      if (!currentWord || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(currentWord);
+      utterance.rate = 0.72;
+      utterance.pitch = 1.08;
+      utterance.volume = 0.95;
+      window.speechSynthesis.speak(utterance);
     }
 
-    function moveAnimals(deltaSeconds) {
-      animals.forEach((animal, index) => {
-        if (!animal.alive) return;
-        animal.x += animal.speed * animal.flip * deltaSeconds;
-        animal.y += Math.sin(performance.now() / 520 + animal.wobble) * 0.006;
-        if (animal.x > 96) {
-          animal.x = 96;
-          animal.flip = -1;
-        } else if (animal.x < 4) {
-          animal.x = 4;
-          animal.flip = 1;
-        }
-        const element = animalLane.querySelector(`.animal[data-index="${index}"]`);
-        if (!element) return;
-        element.style.setProperty('--x', `${animal.x}%`);
-        element.style.setProperty('--y', `${animal.y}%`);
-        element.style.setProperty('--flip', animal.flip);
-      });
-    }
-
-    function tokenMarkup(token, typed) {
-      if (!typed) return escapeHtml(token);
-      const before = escapeHtml(token.slice(0, typed.length));
-      const after = escapeHtml(token.slice(typed.length));
-      return `<span class="typed">${before}</span>${after}`;
-    }
-
-    function spawnToken() {
-      if (!isRunning || isPaused || falling) return;
-      const level = LEVELS[levelIndex];
-      const token = pick(level.tokens);
-      const fromSide = Math.random() < 0.55;
-      const x = randomBetween(15, 85);
-      const cloudY = randomBetween(7, 18);
-      const tokenY = cloudY + randomBetween(4, 8);
-      const color = pick(TOKEN_COLORS);
-      const cloud = document.createElement('div');
-      const cloudFrom = fromSide ? (Math.random() < 0.5 ? -160 : 160) : randomBetween(-35, 35);
-      const cloudTo = randomBetween(-42, 42);
-      cloud.className = 'falling-cloud';
-      cloud.innerHTML = '<span class="cloud-puff"></span>';
-      cloud.style.setProperty('--cloud-x', `${x}%`);
-      cloud.style.setProperty('--cloud-y', `${cloudY}%`);
-      cloud.style.setProperty('--cloud-from', `${cloudFrom}px`);
-      cloud.style.setProperty('--cloud-to', `${cloudTo}px`);
-      cloud.style.setProperty('--cloud-ms', `${Math.round(randomBetween(4800, 6800))}ms`);
-
-      const tokenEl = document.createElement('div');
-      tokenEl.className = `falling-token${token.length > 1 ? ' digraph' : ''}`;
-      tokenEl.style.setProperty('--x', `${x}%`);
-      tokenEl.style.setProperty('--top', `${tokenY}%`);
-      tokenEl.style.setProperty('--token-color', color);
-      tokenEl.style.setProperty('--tilt', `${randomBetween(-8, 8).toFixed(1)}deg`);
-      tokenEl.innerHTML = escapeHtml(token);
-      playLayer.append(cloud, tokenEl);
-
-      falling = {
-        token,
-        typed: '',
-        x,
-        y: tokenY,
-        speed: level.speed,
-        element: tokenEl,
-        cloud
-      };
-    }
-
-    function removeFalling(className) {
-      if (!falling) return;
-      const { element, cloud } = falling;
-      element.classList.add(className);
-      window.setTimeout(() => element.remove(), 380);
-      cloud.remove();
-      falling = null;
-    }
-
-    function createSparks(x, y, count) {
+    function createSparks(x = 50, y = 50, count = 14) {
       for (let index = 0; index < count; index += 1) {
         const spark = document.createElement('span');
         spark.className = 'spark';
-        spark.style.setProperty('--x', `${x}%`);
-        spark.style.setProperty('--y', `${y}%`);
+        spark.style.setProperty('--x', `${x + randomBetween(-5, 5)}%`);
+        spark.style.setProperty('--y', `${y + randomBetween(-5, 5)}%`);
         spark.style.setProperty('--c', pick(SPARK_COLORS));
-        spark.style.setProperty('--dx', `${randomBetween(-60, 60)}px`);
-        spark.style.setProperty('--dy', `${randomBetween(-56, 34)}px`);
-        playLayer.append(spark);
-        window.setTimeout(() => spark.remove(), 620);
+        spark.style.setProperty('--dx', `${randomBetween(-70, 70)}px`);
+        spark.style.setProperty('--dy', `${randomBetween(-60, 42)}px`);
+        document.getElementById('gameShell').append(spark);
+        window.setTimeout(() => spark.remove(), 660);
       }
     }
 
@@ -789,183 +1020,92 @@
           bit.style.setProperty('--drift', `${randomBetween(-95, 95)}px`);
           bit.style.setProperty('--spin', `${randomBetween(260, 980)}deg`);
           bit.style.setProperty('--ms', `${Math.round(randomBetween(1800, 3300))}ms`);
-          playLayer.append(bit);
+          document.getElementById('gameShell').append(bit);
           window.setTimeout(() => bit.remove(), 3400);
         }, index * 13);
       }
     }
 
-    function handleCorrectToken() {
-      if (!falling) return;
-      score += 1;
-      createSparks(falling.x, falling.y, 11);
-      playTone('good');
-      removeFalling('pop-good');
-      updateHud();
-      if (score >= LEVELS[levelIndex].score) {
-        completeLevel();
-      } else {
-        scheduleSpawn(700);
-      }
-    }
-
-    function hitAnimal() {
-      if (!falling) return;
-      const aliveAnimals = animals
-        .map((animal, index) => ({ animal, index }))
-        .filter(({ animal }) => animal.alive);
-      if (!aliveAnimals.length) {
-        removeFalling('pop-bad');
-        showMessage('Try again', 'The zoo needs a breather', 'Press Start Typing to try this level again.', 'Start Typing', () => startLevel(levelIndex));
-        return;
-      }
-      const target = aliveAnimals.reduce((closest, candidate) => {
-        const currentDistance = Math.abs(candidate.animal.x - falling.x);
-        return currentDistance < closest.distance ? { ...candidate, distance: currentDistance } : closest;
-      }, { ...aliveAnimals[0], distance: 999 });
-      const element = animalLane.querySelector(`.animal[data-index="${target.index}"]`);
-      target.animal.alive = false;
-      if (element) {
-        element.classList.add('hit');
-        window.setTimeout(() => element.remove(), 720);
-      }
-      createSparks(falling.x, 78, 16);
-      playTone('animal');
-      removeFalling('pop-bad');
-      scheduleSpawn(900);
-    }
-
-    function updateFalling(deltaSeconds) {
-      if (!falling) return;
-      falling.y += falling.speed * deltaSeconds;
-      falling.element.style.setProperty('--top', `${falling.y}%`);
-      const bottomLimit = window.innerWidth < 720 ? 74 : 77;
-      if (falling.y >= bottomLimit) {
-        hitAnimal();
-      }
-    }
-
     function handleKeydown(event) {
-      if (!isRunning || isPaused || !falling) return;
+      if (!isRunning || !currentWord) return;
       const key = event.key.toLowerCase();
       if (!/^[a-z]$/.test(key)) return;
       event.preventDefault();
-      const expected = falling.token[falling.typed.length];
+      const expected = currentWord[typedIndex];
       if (key !== expected) {
-        playTone('animal');
-        falling.typed = '';
-        falling.element.innerHTML = escapeHtml(falling.token);
-        falling.element.animate([
-          { transform: 'translate(-50%, -50%) rotate(var(--tilt, -4deg)) translateX(0)' },
-          { transform: 'translate(-50%, -50%) rotate(var(--tilt, -4deg)) translateX(-8px)' },
-          { transform: 'translate(-50%, -50%) rotate(var(--tilt, -4deg)) translateX(8px)' },
-          { transform: 'translate(-50%, -50%) rotate(var(--tilt, -4deg)) translateX(0)' }
+        playTone('wrong');
+        wordDisplay.animate([
+          { transform: 'translateX(0)' },
+          { transform: 'translateX(-8px)' },
+          { transform: 'translateX(8px)' },
+          { transform: 'translateX(0)' }
         ], { duration: 180 });
+        wordHint.textContent = 'Try that letter again.';
         return;
       }
-      falling.typed += key;
-      falling.element.innerHTML = tokenMarkup(falling.token, falling.typed);
-      if (falling.typed === falling.token) {
-        handleCorrectToken();
+      typedIndex += 1;
+      playTone('right');
+      renderWord();
+      if (typedIndex >= currentWord.length) {
+        finishWord();
       }
     }
 
-    function scheduleSpawn(delay = 650) {
-      clearTimeout(spawnTimer);
-      spawnTimer = window.setTimeout(spawnToken, delay);
-    }
-
-    function gameLoop(now) {
-      if (!isRunning) return;
-      const deltaSeconds = lastFrameTime ? Math.min((now - lastFrameTime) / 1000, 0.05) : 0;
-      lastFrameTime = now;
-      if (!isPaused) {
-        moveAnimals(deltaSeconds);
-        updateFalling(deltaSeconds);
-      }
-      animationFrame = requestAnimationFrame(gameLoop);
-    }
-
-    function stopLoop() {
-      clearTimeout(spawnTimer);
-      spawnTimer = null;
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-      animationFrame = null;
-      lastFrameTime = 0;
-    }
-
-    function clearPlayLayer() {
-      playLayer.innerHTML = '';
-      falling = null;
-    }
-
-    function setAnimalsCelebrating(active) {
-      animalLane.querySelectorAll('.animal').forEach(element => {
-        element.classList.toggle('safe-hop', active);
-      });
-    }
-
-    function startLevel(nextLevelIndex) {
-      levelIndex = clamp(nextLevelIndex, 0, LEVELS.length - 1);
-      score = 0;
-      isRunning = true;
-      isPaused = false;
-      pauseButton.textContent = 'Pause';
-      messageDialog.classList.add('hidden');
-      startDialog.classList.add('hidden');
-      clearPlayLayer();
-      loadAnimals();
-      setAnimalsCelebrating(false);
+    function finishWord() {
+      score = Math.min(TARGET_SCORE, score + WORD_POINTS);
+      createSparks(50, 42, 18);
       updateHud();
-      stopLoop();
-      animationFrame = requestAnimationFrame(gameLoop);
-      scheduleSpawn(600);
+      if (score >= TARGET_SCORE) {
+        finishLevel();
+      } else {
+        wordHint.textContent = 'Lovely spelling.';
+        window.setTimeout(chooseWord, 760);
+      }
     }
 
-    function completeLevel() {
+    function finishLevel() {
       isRunning = false;
-      stopLoop();
-      clearPlayLayer();
-      setAnimalsCelebrating(true);
+      saveBestLevel(level + 1);
+      updateHud();
+      addZooEntry(currentAnimal, currentTint);
       createConfetti();
-      playTone('good');
-      const isFinal = levelIndex >= LEVELS.length - 1;
-      showMessage(
-        isFinal ? 'Typing hero' : `Level ${levelIndex + 1} complete`,
-        isFinal ? 'All levels complete!' : `Level ${levelIndex + 1} complete`,
-        isFinal ? 'Ada protected the whole zoo.' : `Score ${LEVELS[levelIndex].score} reached. The next level is a little faster.`,
-        isFinal ? 'Play Again' : `Start Level ${levelIndex + 2}`,
-        () => startLevel(isFinal ? 0 : levelIndex + 1)
-      );
+      createSparks(50, 55, 36);
+      wordHint.textContent = `${currentAnimal.name} joined the zoo.`;
+      wordDisplay.innerHTML = `<span class="result-name">${escapeHtml(currentAnimal.name)}</span>`;
+      nextLevelButton.textContent = `Start Level ${level + 1}`;
+      nextLevelButton.classList.remove('hidden');
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(`${currentAnimal.name} joined the zoo`);
+        utterance.rate = 0.82;
+        window.speechSynthesis.speak(utterance);
+      }
     }
 
-    function showMessage(chip, title, text, buttonText, action) {
-      messageChip.textContent = chip;
-      messageTitle.textContent = title;
-      messageText.textContent = text;
-      messageButton.textContent = buttonText;
-      messageButton.onclick = () => {
-        setAnimalsCelebrating(false);
-        action();
-      };
-      messageDialog.classList.remove('hidden');
-    }
-
-    function togglePause() {
-      if (!isRunning) return;
-      isPaused = !isPaused;
-      pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
-      if (!isPaused && !falling) scheduleSpawn(300);
-    }
-
-    document.getElementById('startButton').addEventListener('click', () => {
+    function startLevel(nextLevel) {
       ensureAudioContext();
-      startLevel(0);
-    });
-    pauseButton.addEventListener('click', togglePause);
+      level = nextLevel;
+      score = 0;
+      wordCount = 0;
+      resetLevelWordQueue();
+      currentAnimal = weightedAnimalPick();
+      currentTint = createZooTint(currentAnimal, `${Date.now()}-${level}`);
+      isRunning = true;
+      startDialog.classList.add('hidden');
+      nextLevelButton.classList.add('hidden');
+      eggStage.classList.remove('hatched');
+      updateHud();
+      chooseWord();
+    }
+
+    document.getElementById('startButton').addEventListener('click', () => startLevel(1));
+    nextLevelButton.addEventListener('click', () => startLevel(level + 1));
+    speakButton.addEventListener('click', speakCurrentWord);
     document.addEventListener('keydown', handleKeydown);
 
-    loadAnimals();
+    bestLabel.textContent = String(bestLevel);
+    startBestLabel.textContent = `Best level ${bestLevel}`;
+    renderWatchers();
     updateHud();
   </script>
 </body>

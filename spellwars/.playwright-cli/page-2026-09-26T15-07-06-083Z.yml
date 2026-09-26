@@ -1,0 +1,38 @@
+- main "Typing Zoo word game" [ref=e2]:
+  - generic:
+    - generic:
+      - generic: Level
+      - generic: "1"
+    - generic:
+      - generic: Best
+      - generic: "1"
+    - generic "Egg progress 0 of 50"
+    - button "Say Word" [ref=e3] [cursor=pointer]
+  - region "Zoo animals watching":
+    - generic:
+      - img "Purple Pug Puppy"
+    - generic:
+      - img "Stinky but Cute Squid"
+    - generic:
+      - img "Toxic Blob"
+  - region "Zoo animals watching":
+    - generic:
+      - img "Rainbow Unicorn"
+    - generic:
+      - img "Rainbow Pigeon"
+    - generic:
+      - img "Red Panda"
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: Word 1
+      - generic [ref=e7]: Fresh egg
+    - heading "Current word" [level=2] [ref=e8]
+    - paragraph [ref=e9]: Listen, then type the word.
+  - generic [ref=e11]:
+    - generic [ref=e12]: Calm spelling and hatching
+    - heading "Typing Zoo" [level=1] [ref=e13]
+    - paragraph [ref=e14]: Hear a word, type its letters, and gently hatch an egg. Every completed level adds a new creature to Tidy Zoo.
+    - generic [ref=e15]:
+      - generic [ref=e16]: Best level 1
+      - generic [ref=e17]: Preview audience today
+    - button "Start Level 1" [ref=e18] [cursor=pointer]
