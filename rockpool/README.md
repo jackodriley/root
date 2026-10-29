@@ -1,10 +1,10 @@
-# The Rockpool
+# Your Rockpool
 
 Static Bluetooth control page for potatocorp.ai/rockpool/. No build step or backend.
 
 This folder belongs at `rockpool/` inside the `jackodriley/root` repository, alongside the domain's existing homepage. Commit and push its added files using GitHub Desktop, then wait for the repository's existing GitHub Pages deployment. This work does not change the homepage or publish automatically.
 
-On iPhone, open https://potatocorp.ai/rockpool/ in Bluefy. Keep the board powered, tap Connect to Rockpool and select Faye's Rockpool. No iOS Settings pairing is normally needed. Controls appear only after a valid connection state is read. Tapping the crab reveals a labelled, disconnected preview.
+On iPhone, open https://potatocorp.ai/rockpool/ in Bluefy. Keep the board powered, tap Connect to Rockpool and select The Rockpool. No iOS Settings pairing is normally needed. Controls appear only after a valid connection state is read. Tapping the crab reveals a labelled, disconnected preview.
 
 Power and presets apply immediately. Colours apply on tap or when the shade wheel is released. Tide Speed applies on slider release. Timer scrolling is a draft: press Start timer to arm it. The board keeps animating and its timer keeps running after the page disconnects or closes.
 

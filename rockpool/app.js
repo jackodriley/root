@@ -1,5 +1,5 @@
 'use strict';
-const $=id=>document.getElementById(id),names=['Off','Ocean','Rainbow','Red light','Custom colour'],speeds=['0.25×','0.5×','0.75×','1× · Original','1.5×','2×'];
+const $=id=>document.getElementById(id),names=['Off','Ocean','Rainbow','Dark room','Custom colour'],speeds=['0.25×','0.5×','0.75×','1× · Original','1.5×','2×'];
 let device,commandChar,stateChar,confirmed=null,ready=false,busy=false,connecting=false,manual=false;
 let hueDraft=false,timerDraft=false,timerValue=0,reportedAt=0,checking=false,revision=0,epoch=0;
 let notificationWait=null,readChain=Promise.resolve(),previewUnlocked=false,pendingHue=null;
@@ -22,6 +22,10 @@ function preview(){
  const h=Number($('hue').value),choice=seasideColours.find(c=>c.hue===h);
  const label=choice?choice.name:'Your saved seaside shade';
  $('hueValue').textContent=label;
+ const palette=`linear-gradient(90deg,hsl(${h} 72% 72%),hsl(${(h+30)%360} 72% 72%))`;
+ for(const id of ['hueValue','colour-heading']){
+  $(id).style.backgroundImage=palette;$(id).classList.add('shade-text');
+ }
  $('rockPreview').style.setProperty('--selected-hue',h);
  $('rockPreview').setAttribute('aria-label',`Pixel art rockpool with a suspended shell. Colour preview: ${label}.`);
  $('palette').style.background=`linear-gradient(to right,hsl(${h} 65% 60%),hsl(${(h+15)%360} 65% 60%),hsl(${(h+30)%360} 65% 60%))`;
@@ -45,7 +49,6 @@ function showControls(){
  const visible=ready||previewUnlocked,wasHidden=$('controls').hidden;
  $('controls').hidden=!visible;$('landingCrab').hidden=visible;
  $('previewNotice').hidden=!previewUnlocked||ready;
- $('colourHelp').textContent=ready?'Colours apply as soon as you choose them.':'Colour preview only. Connect to change your Rockpool.';
  $('connection').hidden=!ready&&!connecting;
  document.body.dataset.expanded=String(visible);
  if(visible&&wasHidden)positionColours();
@@ -78,7 +81,13 @@ $('colourWheel').addEventListener('pointerdown',e=>{
 });
 $('colourWheel').addEventListener('pointermove',e=>{
  if(!dragState||e.pointerId!==dragState.id)return;
- if(!dragState.dragged && Math.hypot(e.clientX-dragState.x,e.clientY-dragState.y)<8)return;
+ if(!dragState.dragged){
+  const dx=e.clientX-dragState.x,dy=e.clientY-dragState.y;
+  if(Math.hypot(dx,dy)<8)return;
+  // On touchscreens vertical gestures belong to page scrolling. A sideways
+  // sweep turns the wheel; a cancelled scroll gesture never sends a colour.
+  if(e.pointerType==='touch'&&Math.abs(dy)>Math.abs(dx))return;
+ }
  if(!dragState.dragged){dragState.dragged=true;$('colourWheel').classList.add('dragging');$('colourWheel').setPointerCapture(e.pointerId);}
  const angle=pointerAngle(e),delta=((angle-dragState.last+540)%360)-180;
  turnWheel(wheelRotation+delta);dragState.last=angle;
@@ -119,11 +128,11 @@ function render(){
  $('connect').disabled=busy||connecting;$('connect').textContent=connecting?'Connecting…':ready?'Disconnect':'Connect to Rockpool';
  document.body.dataset.connected=String(ready);
  $('speed').disabled=busy||connecting;
- $('connection').textContent=connecting?'Connecting…':ready?'Connected':'Not connected';
+ $('connectionText').textContent=connecting?'Connecting…':ready?"Connected to Faye's Rockpool":'Not connected';
+ $('connectionShell').hidden=!ready;
  if(confirmed){
  $('current').textContent=(ready?'':'Last known: ')+names[confirmed.mode];$('power').textContent=confirmed.mode?'Turn off':'Turn on';
  document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(confirmed.mode===Number(b.dataset.mode))));
- $('customSelected').hidden=confirmed.mode!==4;
  $('speed').value=confirmed.speed;$('speed').setAttribute('aria-valuetext',speeds[confirmed.speed]);crabSpeed(confirmed.speed);
  }
  renderTimerActions();

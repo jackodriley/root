@@ -1,27 +1,27 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#565d62"><title>The Rockpool · Potatocorp</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#565d62"><title>Your Rockpool · Potatocorp</title>
 <link rel="stylesheet" href="styles.css"></head><body><main>
-<header><h1 aria-label="The Rockpool"><span style="--letter:0" aria-hidden="true">T</span><span style="--letter:1" aria-hidden="true">H</span><span style="--letter:2" aria-hidden="true">E</span><span class="space" aria-hidden="true"> </span><span style="--letter:4" aria-hidden="true">R</span><span style="--letter:5" aria-hidden="true">O</span><span style="--letter:6" aria-hidden="true">C</span><span style="--letter:7" aria-hidden="true">K</span><span style="--letter:8" aria-hidden="true">P</span><span style="--letter:9" aria-hidden="true">O</span><span style="--letter:10" aria-hidden="true">O</span><span style="--letter:11" aria-hidden="true">L</span></h1></header><hr class="divider"><div class="connection-bar"><span id="connection" role="status">Not connected</span><button id="connect" class="wide">Connect to Rockpool</button></div>
+<header><h1 aria-label="Your Rockpool"><span style="--letter:0" aria-hidden="true">Y</span><span style="--letter:1" aria-hidden="true">O</span><span style="--letter:2" aria-hidden="true">U</span><span style="--letter:3" aria-hidden="true">R</span><span class="space" aria-hidden="true"> </span><span style="--letter:5" aria-hidden="true">R</span><span style="--letter:6" aria-hidden="true">O</span><span style="--letter:7" aria-hidden="true">C</span><span style="--letter:8" aria-hidden="true">K</span><span style="--letter:9" aria-hidden="true">P</span><span style="--letter:10" aria-hidden="true">O</span><span style="--letter:11" aria-hidden="true">O</span><span style="--letter:12" aria-hidden="true">L</span></h1></header><hr class="divider"><div class="connection-bar"><span id="connection" role="status"><span id="connectionShell" class="connection-shell" aria-hidden="true" hidden><svg viewBox="0 0 32 28"><path d="M26 23c-4 4-12 4-18 0C1 19 1 10 7 5c5-5 14-4 18 2 3 4 3 9 0 12l5 4-4 3-5-4"/><path d="M22 18c4-5 0-13-6-13-6 0-10 5-8 10 1 4 7 6 10 3 3-2 2-7-1-8-3-1-5 1-4 3 0 2 3 2 3 1"/></svg></span><span id="connectionText">Not connected</span></span><button id="connect" class="wide">Connect to Rockpool</button></div>
 <p id="help" hidden>Switch on your Rockpool, keep it nearby, then tap Connect.</p>
 <p id="message" role="status" aria-live="polite"></p>
 <div id="landingCrab" class="landing-crab crab-lane"><div class="crab-traveller"><button type="button" id="previewCrab" class="crab-sprite crab-secret" aria-label="Show Rockpool controls preview"></button></div></div>
 <p id="previewNotice" class="subtle preview-notice" hidden>Preview only — connect to control your Rockpool.</p>
 <div id="controls" hidden>
 <section><div class="power-row"><span id="current" class="sr-only" role="status">Off</span><button id="power" class="wide" data-device disabled>Turn on</button></div><div class="modes">
-<button data-mode="1" data-device disabled aria-pressed="false">Ocean<small>Blue and turquoise waves.</small></button>
-<button data-mode="2" data-device disabled aria-pressed="false">Rainbow<small>Three colours moving through the spectrum.</small></button>
-<button data-mode="3" data-device disabled aria-pressed="false">Red light<small>A gentle red glow for a dark room.</small></button></div></section>
-<section class="colour-section" aria-labelledby="colour-heading"><h2 id="colour-heading">Find your seaside shade <span id="customSelected" hidden>· Selected</span></h2>
+<button data-mode="1" data-device disabled aria-pressed="false"><span class="mode-emoji" aria-hidden="true">🌊</span><span class="mode-name">Ocean</span></button>
+<button data-mode="2" data-device disabled aria-pressed="false"><span class="mode-emoji" aria-hidden="true">🌈</span><span class="mode-name">Rainbow</span></button>
+<button data-mode="3" data-device disabled aria-pressed="false"><span class="mode-emoji" aria-hidden="true">🔴</span><span class="mode-name">Dark room</span></button></div></section>
+<section class="colour-section" aria-labelledby="colour-heading"><h2 id="colour-heading">Select your seaside shade</h2>
 <p class="colour-intro">Tap a colour or turn the wheel.</p>
 <input id="hue" type="hidden" value="0">
 <div id="colourWheel" class="colour-wheel" role="group" aria-label="Seaside colours. Drag around the wheel or tap a colour.">
 <div id="shadeRing" class="shade-ring"></div>
 <div class="rock-preview" role="img" aria-label="Pixel art rockpool with a suspended shell. Colour preview: Crab red." id="rockPreview"><div class="water"></div><img src="assets/rockpool-rock-v2.png" alt="" width="768" height="512"></div>
 </div>
-<p id="hueValue" class="colour-name" aria-live="polite">Crab red</p><div id="palette" role="img" aria-label="Preview of hues 0 to 30 degrees"></div><p class="range-caption">Your colour, with gently shifting shades</p>
-<p class="preview-hint" id="colourHelp">Colours apply as soon as you choose them.</p>
+<p id="hueValue" class="colour-name" aria-live="polite">Crab red</p><div id="palette" role="img" aria-label="Preview of hues 0 to 30 degrees"></div>
+
 </section>
 <section class="speed-section"><h2>Tide Speed</h2><label for="speed" class="sr-only">Tide Speed</label><input id="speed" type="range" min="0" max="5" value="3" aria-valuetext="1× · Original"><div id="speedEnds"><span>Gentle</span><span>Choppy</span><span>Stormy</span></div><div class="crab-lane" id="crabLane" aria-hidden="true"><div class="crab-traveller" id="crabTraveller"><span class="crab-sprite" id="crabSprite"></span></div></div></section>
 <section><h2>Sleep timer</h2><label id="wheelLabel">Turn off after</label><div id="wheel" role="listbox" tabindex="0" aria-labelledby="wheelLabel" aria-disabled="false"></div><p id="timerDraft" class="subtle" aria-live="polite">Off selected</p><div id="timerActions"><button id="startTimer" data-device disabled>Start timer</button><button id="cancelTimer" data-device disabled hidden>Cancel timer</button></div><p id="countdown">No timer running</p><p id="timerHelp" class="subtle">Turn on your Rockpool to start a timer.</p></section>
-<p class="footnote">Your Rockpool keeps glowing when you close this page. Any timer keeps running too.</p>
+<p class="footnote">Rockpool keeps glowing when you close this page, and timers will keep running too.</p>
 </div><footer><p>A Potatocorp product.</p><p>© POTATOCORP 2026</p></footer></main><script src="protocol.js"></script><script src="app.js"></script></body></html>

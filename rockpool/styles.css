@@ -18,7 +18,18 @@ button{min-height:48px;border:2px solid #25313a;border-top-color:#9aadb8;border-
 body{min-height:100svh}
 
 /* Consistent Potatocorp type, with a compact tide scale. */
-.speed-section h2,h2{text-align:center}.speed-section h2{margin-bottom:12px}#speed{display:block;margin:0;height:34px;min-height:44px}#speedEnds{margin-top:-4px;line-height:1.1}button,input,output,small{font-family:inherit}.power-row{font-size:24px}#power{font-size:26px}.modes button{font-size:24px}body[data-expanded=false] h1 span{animation:title-drop .7s cubic-bezier(.2,.8,.3,1.1) both,stone-shades 6s ease-in-out infinite alternate;animation-delay:calc(var(--letter,0) * .045s),calc(var(--letter,0) * -.45s)}
+.speed-section h2,h2{text-align:center}.speed-section h2{margin-bottom:12px}#speed{display:block;margin:0;height:34px;min-height:44px}#speedEnds{margin-top:-4px;line-height:1.1}button,input,output,small{font-family:inherit}.power-row{font-size:24px}#power{font-size:26px}.modes button{font-size:24px}body[data-expanded=false] h1 span{animation:title-drop 1.3s cubic-bezier(.2,.8,.3,1.1) both,stone-shades 6s ease-in-out infinite alternate;animation-delay:calc(var(--letter,0) * .075s),calc(var(--letter,0) * -.45s)}
 @keyframes title-drop{from{transform:translateY(-130px);opacity:0}70%{transform:translateY(5px);opacity:1}to{transform:translateY(0);opacity:1}}
 @media(prefers-reduced-motion:reduce){body h1 span{animation:none!important}}
 #speedEnds{margin-top:0}#speed:focus-visible{outline-offset:0}
+
+/* Keep vertical page scrolling available throughout the shade picker. */
+.colour-wheel,.colour-option{touch-action:pan-y}.shade-text{color:#d6edff;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:100% 100%}.colour-name{display:inline-block}.colour-section h2{width:fit-content;max-width:100%;margin-left:auto;margin-right:auto}#connection::before{content:none}#connection{display:flex;align-items:center;justify-content:center;gap:8px}.connection-shell{width:25px;height:25px;flex:none;fill:#a1d5a6;stroke:#3c7757;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.connection-shell path+path{fill:none;stroke:#32694e;stroke-width:1.8}
+.modes [data-mode="1"][aria-pressed=true] .mode-name{color:#9ee7ed;background:linear-gradient(90deg,#9ed9ff,#8fe8d9);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}.modes [data-mode="2"][aria-pressed=true] .mode-name{color:#e2b7e8;background:linear-gradient(90deg,#ffa7ad,#f6d58d,#a8dda9,#9dd7f0,#c7b3f0);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}.modes [data-mode="3"][aria-pressed=true] .mode-name{color:#ffa29b}
+/* The crab straddles the shoreline above a shallower strip of sand. */
+.crab-lane{height:72px;border-top:0;background:none}.crab-lane::before{content:'';position:absolute;left:0;right:0;bottom:0;height:34px;border-top:2px solid #a79666;background-color:#e4cd82;background-image:radial-gradient(#ad945c 1px,transparent 1px),radial-gradient(#f8e5a9 1px,transparent 1px);background-size:17px 13px,23px 19px;background-position:0 2px,8px 6px}.crab-traveller{top:-16px;z-index:1}.landing-crab{border:0;box-shadow:none}
+
+.connection-shell{display:inline-flex}.connection-shell svg{width:100%;height:100%}
+
+/* Compact copy and a gentler title entrance. */
+header{padding-bottom:0}h1{margin-bottom:4px}.divider{margin-top:2px}.speed-section .crab-lane{margin-top:10px}.mode-emoji{display:inline-block;margin-right:10px;font-size:22px;vertical-align:middle}.colour-section{padding-bottom:20px}#palette{margin-bottom:0}
