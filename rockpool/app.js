@@ -1,8 +1,83 @@
 'use strict';
-const $=id=>document.getElementById(id),names=['Off','Ocean','Rainbow','Dark room','Custom colour'],speeds=['0.25×','0.5×','0.75×','1× · Original','1.5×','2×'];
+const $=id=>document.getElementById(id),names=['Off','Ocean','Rainbow','Dark room','Custom colour','Weather'],speeds=['0.25×','0.5×','0.75×','1× · Original','1.5×','2×'];
 let device,commandChar,stateChar,confirmed=null,ready=false,busy=false,connecting=false,manual=false;
 let hueDraft=false,timerDraft=false,timerValue=0,reportedAt=0,checking=false,revision=0,epoch=0;
 let notificationWait=null,readChain=Promise.resolve(),previewUnlocked=false,pendingHue=null;
+let transportChain=Promise.resolve(),weatherTransferChar=null,weatherStatusChar=null,weatherStatus=null,weatherSupported=false;
+let weatherJob=null,weatherSequence=0,weatherMetadata=null,savedWeather=null,weatherError=false;
+try{savedWeather=RockpoolWeather.checkStored(JSON.parse(localStorage.getItem('rockpool.weather.london.v1')));}catch(_){}
+function gattRun(task,token=epoch){const result=transportChain.catch(()=>{}).then(()=>{if(token!==epoch)throw Error('Connection changed.');return bounded(task());});transportChain=result;return result;}
+function weatherText(text){$('weatherMessage').textContent=text;}
+function weatherCacheSave(pattern){savedWeather=pattern;try{localStorage.setItem('rockpool.weather.london.v1',JSON.stringify({...pattern,payload:Array.from(pattern.payload)}));}catch(_){} }
+function renderWeather(){
+ $('weatherButton').disabled=ready&&!weatherSupported;
+ $('weatherButton').setAttribute('aria-pressed',String(ready&&confirmed?.mode===5));
+ $('weatherButton').title=ready&&!weatherSupported?'Update Rockpool to use Weather.':'';
+ $('weatherRefresh').disabled=Boolean(weatherJob)||(ready&&!weatherSupported);
+ $('weatherDemo').disabled=Boolean(weatherJob)||(ready&&!weatherSupported);
+ $('weatherCancel').hidden=!weatherJob;
+ $('weatherSaved').hidden=!RockpoolWeather.eligible(savedWeather);
+ $('weatherSaved').disabled=Boolean(weatherJob)||!ready||!weatherSupported;
+ if(ready&&!weatherSupported)weatherText('Update Rockpool to use Weather. Your other controls still work.');
+ if(!weatherJob&&!weatherError&&ready&&confirmed?.mode===5){
+  const meta=weatherMetadata?.id===weatherStatus?.id?weatherMetadata:savedWeather?.id===weatherStatus?.id?savedWeather:null;
+  if(meta){describeWeather(meta);weatherText(meta.kind==='synthetic'?'Synthetic test pattern playing — not a forecast.':meta.end<Date.now()/1000?'Saved weather pattern — refresh for a new forecast.':'Weather for '+RockpoolWeather.location.name);}
+  else{weatherText('Weather pattern playing');$('weatherDates').textContent='';}
+ }
+}
+function describeWeather(p){
+ const format=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+ $('weatherDates').textContent=p.kind==='synthetic'?'Synthetic test · 24-minute loop':`${format.format(new Date(p.start*1000))} – ${format.format(new Date(p.end*1000))} · Europe/London. Fetched ${format.format(new Date(p.fetched*1000))}.${p.partial?' Some weather detail unavailable.':''}`;
+ const colours=[];for(let i=0;i<25;i+=4)colours.push(`rgb(${Array.from(p.payload.slice(i*10,i*10+3)).join(',')})`);
+ $('weatherPalette').style.background='linear-gradient(90deg,'+colours.join(',')+')';
+}
+function acceptWeatherStatus(view){
+ weatherStatus=RockpoolWeather.decodeStatus(view);
+ if(weatherJob&&weatherJob.revision!==undefined&&weatherStatus.revision!==weatherJob.revision&&!(weatherJob.committing&&weatherStatus.playing&&weatherStatus.id===weatherJob.pattern?.id))cancelWeather('Weather loading cancelled. Your latest light setting is kept.');
+ renderWeather();return weatherStatus;
+}
+async function readWeatherStatus(){const chr=weatherStatusChar;if(!chr)throw Error('Update Rockpool to use Weather.');return acceptWeatherStatus(await gattRun(()=>chr.readValue()));}
+function weatherNotify(e){try{acceptWeatherStatus(e.target.value);}catch(e){cancelWeather(e.message);}}
+function cancelWeather(text='Weather loading cancelled.'){
+ const job=weatherJob;weatherSequence++;weatherJob=null;if(job)job.abort.abort();
+ if(job?.pattern&&ready&&weatherTransferChar){const packet=RockpoolWeather.operation(0x13,job.pattern.id),chr=weatherTransferChar;gattRun(()=>chr.writeValueWithResponse(packet)).catch(()=>{});}
+ if(job){weatherError=true;weatherText(text);}renderWeather();
+}
+async function loadWeather(kind='forecast'){
+ if(weatherJob)return;weatherError=false;const previewOnly=!ready;
+ if(!previewOnly&&!weatherSupported){weatherText('Update Rockpool to use Weather.');return;}
+ const job={sequence:++weatherSequence,abort:new AbortController(),epoch,revision:undefined,pattern:null,committing:false};weatherJob=job;
+ const current=()=>weatherJob===job&&weatherSequence===job.sequence&&(previewOnly||ready&&epoch===job.epoch);
+ $('weatherPanel').hidden=false;renderWeather();weatherText(kind==='synthetic'?'Preparing synthetic test sky…':kind==='saved'?'Preparing saved weather…':'Getting weather for SE27…');
+ let timeout;
+ try{
+  if(!previewOnly){const status=await readWeatherStatus();if(!current())return;job.revision=status.revision;}
+  timeout=setTimeout(()=>job.abort.abort(),10000);
+  const pattern=kind==='synthetic'?RockpoolWeather.synthetic():kind==='saved'&&RockpoolWeather.eligible(savedWeather)?savedWeather:await RockpoolWeather.fetchLondon(job.abort.signal);
+  clearTimeout(timeout);if(!current())return;job.pattern=pattern;describeWeather(pattern);
+  if(previewOnly){weatherText((pattern.kind==='synthetic'?'Synthetic test preview.':'London forecast preview.')+' Connect, then tap Weather to load a pattern.');return;}
+  const chr=weatherTransferChar;
+  await gattRun(()=>chr.writeValueWithResponse(RockpoolWeather.begin(pattern,job.revision)));if(!current())return;
+  for(let at=0;at<pattern.payload.length;at+=13){
+   if(!current())return;weatherText(`Sending weather to your Rockpool… ${Math.round(at/pattern.payload.length*100)}%`);
+   await gattRun(()=>chr.writeValueWithResponse(RockpoolWeather.chunk(pattern,at)));
+  }
+  if(!current())return;job.committing=true;weatherText('Checking your weather pattern…');
+  await gattRun(()=>chr.writeValueWithResponse(RockpoolWeather.operation(0x12,pattern.id)));
+  await readState();if(!current())return;await readWeatherStatus();if(!current())return;
+  if(confirmed.mode!==5||weatherStatus.id!==pattern.id||!weatherStatus.playing)throw Error('Rockpool did not confirm the new pattern. Please retry.');
+  weatherMetadata=pattern;if(pattern.kind==='forecast')weatherCacheSave(pattern);
+  weatherText(pattern.kind==='synthetic'?'Synthetic test pattern playing — not a forecast.':'Weather for '+RockpoolWeather.location.name);
+ }catch(e){
+  if(current()){
+   weatherError=true;weatherText(e.name==='AbortError'?'Weather request timed out. Please retry.':e.message||'Weather could not be loaded. Please retry.');
+   if(job.pattern&&ready&&weatherTransferChar){const chr=weatherTransferChar;gattRun(()=>chr.writeValueWithResponse(RockpoolWeather.operation(0x13,job.pattern.id))).catch(()=>{});}
+  }
+ }finally{clearTimeout(timeout);if(weatherJob===job){weatherJob=null;renderWeather();}}
+}
+$('weatherButton').onclick=()=>{weatherError=false;$('weatherPanel').hidden=false;renderWeather();if(confirmed?.mode!==5)loadWeather();};
+$('weatherRefresh').onclick=()=>loadWeather();$('weatherDemo').onclick=()=>loadWeather('synthetic');$('weatherSaved').onclick=()=>loadWeather('saved');$('weatherCancel').onclick=()=>cancelWeather();
+$('weatherForget').onclick=()=>{savedWeather=null;weatherMetadata=null;try{localStorage.removeItem('rockpool.weather.london.v1');}catch(_){}weatherText('Saved weather forgotten.');renderWeather();};
 function message(text){$('message').textContent=text;}
 const seasideColours=[
  {hue:0,name:'Crab red',swatch:'#de6261'},
@@ -137,10 +212,10 @@ function render(){
  }
  renderTimerActions();
  $('timerHelp').textContent=confirmed?.mode?'Choose a duration, then start your timer.':'Turn on your Rockpool to start a timer.';
- countdown();
+ countdown();renderWeather();
 }
 function receive(view){
- const s=Rockpool.decode(view);confirmed=s;reportedAt=performance.now();checking=false;revision++;
+ const s=Rockpool.decode(view);if(weatherJob&&confirmed&&s.mode!==confirmed.mode&&!(weatherJob.committing&&s.mode===5))cancelWeather('Weather loading cancelled by a newer light setting.');confirmed=s;reportedAt=performance.now();checking=false;revision++;
  if(!hueDraft){$('hue').value=s.hue;preview();}
  if(!timerDraft)wheelSet(s.active?s.minutes:0);render();
  if(notificationWait){notificationWait();notificationWait=null;}
@@ -149,10 +224,11 @@ function notify(e){try{receive(e.target.value);}catch(e){fail(e);}}
 function bounded(p,ms=5000){let t;return Promise.race([p,new Promise((_,reject)=>t=setTimeout(()=>reject(Error('Rockpool did not respond. Tap Connect to reconnect.')),ms))]).finally(()=>clearTimeout(t));}
 function readState(){
  const ch=stateChar,token=epoch;
- const next=readChain.catch(()=>{}).then(async()=>{if(token!==epoch||!ch)throw Error('Connection changed.');const v=await bounded(ch.readValue());if(token===epoch)receive(v);});readChain=next;return next;
+ const next=readChain.catch(()=>{}).then(async()=>{if(token!==epoch||!ch)throw Error('Connection changed.');const v=await gattRun(()=>ch.readValue(),token);if(token===epoch)receive(v);});readChain=next;return next;
 }
 function lost(){
- epoch++;ready=false;busy=false;connecting=false;hueDraft=timerDraft=false;pendingHue=null;previewUnlocked=false;
+ if(weatherStatusChar)weatherStatusChar.removeEventListener('characteristicvaluechanged',weatherNotify);
+ epoch++;ready=false;cancelWeather('Connection lost during weather loading.');weatherTransferChar=null;weatherStatusChar=null;weatherSupported=false;weatherStatus=null;$('weatherPanel').hidden=true;busy=false;connecting=false;hueDraft=timerDraft=false;pendingHue=null;previewUnlocked=false;
  if(stateChar)stateChar.removeEventListener('characteristicvaluechanged',notify);commandChar=stateChar=null;
  if(notificationWait){notificationWait();notificationWait=null;}
  render();if(!manual)message('Connection lost. Tap Connect to reconnect.');else message('Disconnected.');
@@ -167,13 +243,19 @@ async function connect(){
  const token=++epoch;const server=await bounded(device.gatt.connect());const service=await bounded(server.getPrimaryService(Rockpool.service));
  commandChar=await bounded(service.getCharacteristic(Rockpool.command));stateChar=await bounded(service.getCharacteristic(Rockpool.state));
  stateChar.addEventListener('characteristicvaluechanged',notify);await bounded(stateChar.startNotifications());
- hueDraft=timerDraft=false;await readState();if(token!==epoch)throw Error('Connection changed.');ready=true;connecting=false;render();
+ hueDraft=timerDraft=false;await readState();
+ if(confirmed.version===4){
+  try{weatherTransferChar=await bounded(service.getCharacteristic(Rockpool.weatherTransfer));weatherStatusChar=await bounded(service.getCharacteristic(Rockpool.weatherState));
+   weatherStatusChar.addEventListener('characteristicvaluechanged',weatherNotify);await bounded(weatherStatusChar.startNotifications());await readWeatherStatus();weatherSupported=true;
+  }catch(e){weatherSupported=false;weatherText('Weather unavailable: '+e.message);}
+ }
+ if(token!==epoch)throw Error('Connection changed.');ready=true;connecting=false;render();
  }catch(e){connecting=false;if(e.name==='NotFoundError'){message('');render();}else fail(e);}
 }
 async function send(bytes,kind,submittedHue){
- if(!ready||busy)return;busy=true;message('Applying…');render();const token=epoch,before=revision;
+ if(!ready||busy)return;if(bytes[0]<=5)cancelWeather('Weather loading cancelled by your new selection.');busy=true;message('Applying…');render();const token=epoch,before=revision;
  try{
- await bounded(commandChar.writeValueWithResponse(Uint8Array.from(bytes)));
+ await gattRun(()=>commandChar.writeValueWithResponse(Uint8Array.from(bytes)));
  if(token!==epoch)throw Error('Connection lost. Tap Connect to reconnect.');
  if(revision===before)await new Promise(resolve=>{const timer=setTimeout(()=>{notificationWait=null;resolve();},2000);notificationWait=()=>{clearTimeout(timer);resolve();};});
  if(token!==epoch)throw Error('Connection lost. Tap Connect to reconnect.');
@@ -210,6 +292,6 @@ $('wheel').onscroll=()=>{
 };
 $('wheel').onkeydown=e=>{let n=timerValue;if(e.key==='ArrowUp')n--;else if(e.key==='ArrowDown')n++;else if(e.key==='Home')n=0;else if(e.key==='End')n=180;else return;e.preventDefault();timerDraft=true;wheelSet(Math.max(0,Math.min(180,n)));};
 $('startTimer').onclick=()=>send(timerValue?[7,timerValue,0]:[8],'timer');$('cancelTimer').onclick=()=>send([8],'timer');
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready)readState().catch(fail);});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready){readState().then(()=>weatherSupported?readWeatherStatus():null).catch(fail);}});
 wheelSet(0,false);preview();render();setInterval(countdown,250);
 if(!navigator.bluetooth||!window.isSecureContext){$('connect').hidden=true;$('help').hidden=false;$('help').textContent='To control your Rockpool on iPhone, open this page in Bluefy.';const a=document.createElement('a');a.href='https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055';a.textContent='Get Bluefy on the App Store';$('help').append(document.createElement('br'),a);}

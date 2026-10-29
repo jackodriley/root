@@ -48,3 +48,5 @@ body[data-expanded=false] #message{color:#284d5d}
 body[data-expanded=false] #help,body[data-expanded=false] #help a{color:#284d5d}
 
 .controls-footer{display:none}body[data-expanded=true] .controls-footer{display:block}body[data-expanded=true] .landing-footer{display:none}
+
+.weather-panel{text-align:center}.weather-panel p{margin:12px 0}.weather-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}.weather-actions button{flex:1;min-width:145px}.weather-palette{height:12px;margin:16px 0;border-radius:2px}.weather-attribution{font-size:16px}.weather-panel details{margin-top:20px;border-top:1px dotted #9eb5c2;padding-top:14px}.weather-panel summary{cursor:pointer;min-height:44px;padding:8px}.weather-forget{margin-top:18px;font-size:17px;min-height:44px;border:1px dashed #a9c1cd;background:transparent;box-shadow:none}#weatherButton[aria-pressed=true] .mode-name{background:linear-gradient(90deg,#f0d39a,#a7dce8);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}#weatherMessage{min-height:26px}#weatherDates{font-variant-numeric:tabular-nums}
