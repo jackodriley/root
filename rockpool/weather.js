@@ -48,7 +48,14 @@ function fromForecast(json,start){
   const t=start+k*3600;let i=Math.floor((t-times[0])/3600);if(i===times.length-1)i--;
   const mix=(t-times[i])/3600,a=source(i),b=source(i+1);records.push(a.map((v,n)=>lerp(v,b[n],mix)));
  }
- return packagePattern(encode(records),start,partial);
+ const pattern=packagePattern(encode(records),start,partial);
+ pattern.samples=[];
+ const firstHour=Math.ceil(start/3600)*3600;
+ for(let time=firstHour;time<start+86400;time+=7200){
+  const i=Math.floor((time-times[0])/3600);
+  pattern.samples.push({time,code:h.weather_code[i],day:h.is_day[i],wind:h.wind_speed_10m[i],rain:h.precipitation[Math.min(i+1,times.length-1)]});
+ }
+ return pattern;
 }
 async function fetchLondon(signal,start=Math.floor(Date.now()/1000)){
  const params=new URLSearchParams({latitude:String(location.latitude),longitude:String(location.longitude),hourly:'weather_code,cloud_cover,precipitation,wind_speed_10m,is_day',past_hours:'1',forecast_hours:'28',timeformat:'unixtime',timezone:'auto',wind_speed_unit:'kmh',precipitation_unit:'mm'});
@@ -63,7 +70,8 @@ function synthetic(){
 function checkStored(p){
  if(!p||p.mapping!==1||p.location!==location.key||p.kind!=='forecast'||!Number.isInteger(p.id)||!p.id||!Number.isFinite(p.start)||p.end!==p.start+86400||!Number.isFinite(p.fetched)||!Array.isArray(p.payload)||p.payload.length!==250||p.payload.some(x=>!Number.isInteger(x)||x<0||x>255))return null;
  const payload=Uint8Array.from(p.payload);if(((crc(payload)^p.start)>>>0||1)!==p.id)return null;
- return {...p,payload};
+ const samples=Array.isArray(p.samples)&&p.samples.length===12&&p.samples.every(x=>x&&Number.isFinite(x.time)&&x.time>=p.start&&x.time<p.end&&Number.isInteger(x.code)&&(x.day===0||x.day===1)&&(x.wind===null||Number.isFinite(x.wind))&&(x.rain===null||Number.isFinite(x.rain)))?p.samples:[];
+ return {...p,payload,samples};
 }
 function eligible(p,now=Date.now()/1000){return p&&p.kind==='forecast'&&now>=p.fetched&&now-p.fetched<=21600&&p.end>now;}
 function begin(p,revision){const a=new Uint8Array(18),v=new DataView(a.buffer);a.set([0x10,1,1,25]);v.setUint32(4,p.id,true);v.setUint16(8,250,true);v.setUint32(10,crc(p.payload),true);v.setUint32(14,revision,true);return a;}
@@ -75,6 +83,17 @@ function decodeStatus(v){
  if(flags>7||received>250||offset>=1440000||Boolean(flags&1)!==Boolean(id)||(flags&4)&&!(flags&1)||!(flags&2)&&received||!(flags&4)&&offset)throw Error('Rockpool reported invalid weather state.');
  return {available:Boolean(flags&1),staging:Boolean(flags&2),playing:Boolean(flags&4),id,offset,received,revision:v.getUint32(12,true)};
 }
-const api={location,crc,compose,encode,fromForecast,fetchLondon,synthetic,checkStored,eligible,begin,chunk,operation,decodeStatus};
+function condition(sample){
+ const c=sample.code;
+ if([95,96,99].includes(c))return {emoji:'⛈️',label:'Thunderstorms'};
+ if([71,73,75,77,85,86].includes(c))return {emoji:'🌨️',label:'Snow'};
+ if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(c)||sample.rain>0)return {emoji:'🌧️',label:'Rain'};
+ if(c===45||c===48)return {emoji:'🌫️',label:'Fog'};
+ if(sample.wind>=25)return {emoji:'💨',label:'Windy'};
+ if(c===0||c===1)return {emoji:sample.day?'☀️':'🌙',label:sample.day?'Clear sky':'Clear night'};
+ if(c===2)return {emoji:sample.day?'🌤️':'☁️',label:'Partly cloudy'};
+ return {emoji:'☁️',label:'Cloudy'};
+}
+const api={condition,location,crc,compose,encode,fromForecast,fetchLondon,synthetic,checkStored,eligible,begin,chunk,operation,decodeStatus};
 if(typeof module!=='undefined')module.exports=api;else root.RockpoolWeather=api;
 })(globalThis);

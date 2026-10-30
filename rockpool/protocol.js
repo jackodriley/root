@@ -1,12 +1,12 @@
-/* Protocol v3/v4 shared by the page and automated checks. */
+/* Protocol v3/v4/v5 shared by the page and automated checks. */
 (function(root){
 'use strict';
 function decode(view){
  if(view.byteLength!==10)throw Error('This Rockpool has an incompatible state format.');
  const a=new Uint8Array(view.buffer,view.byteOffset,view.byteLength),u=i=>a[i]|a[i+1]<<8;
- if(a[0]!==3&&a[0]!==4)throw Error('This page needs Rockpool firmware protocol v3 or v4.');
+ if(a[0]!==3&&a[0]!==4&&a[0]!==5)throw Error('This page needs Rockpool firmware protocol v3, v4 or v5.');
  const s={version:a[0],mode:a[1],hue:u(2),speed:a[4],active:a[5],remaining:u(6),minutes:u(8)};
- if(s.mode>(s.version===4?5:4)||s.hue>359||s.speed>5||s.active>1||
+ if(s.mode>(s.version===5?8:s.version===4?5:4)||s.hue>359||s.speed>5||s.active>1||
   (s.active?(!s.mode||s.minutes<1||s.minutes>180||s.remaining<1||s.remaining>s.minutes*60):(s.remaining!==0||s.minutes!==0)))
   throw Error('Rockpool reported an invalid state. Reconnect to try again.');
  return s;

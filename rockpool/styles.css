@@ -50,3 +50,29 @@ body[data-expanded=false] #help,body[data-expanded=false] #help a{color:#284d5d}
 .controls-footer{display:none}body[data-expanded=true] .controls-footer{display:block}body[data-expanded=true] .landing-footer{display:none}
 
 .weather-panel{text-align:center}.weather-panel p{margin:12px 0}.weather-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}.weather-actions button{flex:1;min-width:145px}.weather-palette{height:12px;margin:16px 0;border-radius:2px}.weather-attribution{font-size:16px}.weather-panel details{margin-top:20px;border-top:1px dotted #9eb5c2;padding-top:14px}.weather-panel summary{cursor:pointer;min-height:44px;padding:8px}.weather-forget{margin-top:18px;font-size:17px;min-height:44px;border:1px dashed #a9c1cd;background:transparent;box-shadow:none}#weatherButton[aria-pressed=true] .mode-name{background:linear-gradient(90deg,#f0d39a,#a7dce8);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}#weatherMessage{min-height:26px}#weatherDates{font-variant-numeric:tabular-nums}
+
+/* The ring turns freely; the centre and the space around it scroll the page. */
+.colour-option{touch-action:none}.shade-ring{pointer-events:none}.colour-option{pointer-events:auto}
+#customPanel{margin-top:26px;padding:0 0 2px}.timer-section{padding-bottom:12px}#timerHelp:empty{display:none}#countdown{margin-bottom:8px}
+.brightness-track{position:relative;height:48px;margin:0 4px}
+#brightness{appearance:none;-webkit-appearance:none;margin:0;width:100%;height:48px;background:transparent;position:relative;z-index:2;cursor:pointer}
+#brightness::-webkit-slider-runnable-track{height:12px;border:2px inset #92a6b2;border-radius:4px;background:linear-gradient(90deg,#142c70,#738aba,#ffce92)}
+#brightness::-moz-range-track{height:8px;border:2px inset #92a6b2;border-radius:4px;background:linear-gradient(90deg,#142c70,#738aba,#ffce92)}
+#brightness::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:40px;height:40px;margin-top:-16px;background:transparent;border:0}
+#brightness::-moz-range-thumb{width:40px;height:40px;background:transparent;border:0}
+#brightnessThumb{--brightness:1;position:absolute;pointer-events:none;width:40px;height:40px;top:4px;left:calc(20px + (100% - 40px) * var(--brightness));transform:translateX(-50%);z-index:3}
+#brightnessThumb span{position:absolute;inset:0;background-image:url('assets/brightness-icons.png');background-size:200% 100%;image-rendering:pixelated}
+.brightness-moon{background-position:left center;opacity:calc(1 - var(--brightness))}.brightness-sun{background-position:right center;opacity:var(--brightness)}
+.rock-preview .water{background:linear-gradient(135deg,hsl(calc(var(--selected-hue) - 36) 62% 44%),hsl(var(--selected-hue) 65% 64%),hsl(calc(var(--selected-hue) + 36) 65% 54%))}
+
+.brightness-moon{opacity:1}.brightness-sun{opacity:0}
+#brightnessThumb[data-icon=sun] .brightness-moon{opacity:0}#brightnessThumb[data-icon=sun] .brightness-sun{opacity:1}
+.weather-ring{position:relative;width:min(100%,360px);aspect-ratio:1;margin:20px auto;isolation:isolate}
+.weather-ring::before{content:'';position:absolute;inset:3%;border-radius:50%;background:var(--forecast-colours,conic-gradient(#8cbbd0,#ead295,#658ab4,#8cbbd0));mask:radial-gradient(circle,transparent 54%,#000 55%);-webkit-mask:radial-gradient(circle,transparent 54%,#000 55%);z-index:-1}
+.weather-ring-centre{position:absolute;inset:32%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:26px;color:var(--water)}.weather-ring-centre span{font-size:34px;color:#c1d8e7}
+.forecast-hour{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;width:42px;min-height:42px;color:#eff9ff;background:#303c49e8;border:1px solid #c5e7f08a;border-radius:5px;font-size:16px;line-height:1.05;text-shadow:1px 1px #182730}.forecast-emoji{font-family:system-ui,sans-serif;font-size:20px;line-height:1.2}
+#weatherMessage:empty,#weatherDates:empty,#weatherFetched:empty{display:none}.weather-panel #weatherFetched{margin:18px 0 2px;font-size:16px}.weather-panel .weather-attribution{margin-top:4px}
+.meditation-panel{text-align:center}.meditation-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.meditation-choices button{padding:12px 4px;font-size:22px}.meditation-choices small{display:block;margin-top:6px;color:#c5d9e6;font-size:18px}.meditation-player{margin-top:22px;padding:12px 8px;background:#324b59;border:2px inset #91aab4;border-radius:5px}.meditation-player[data-theme=farm]{background:#50583c}.meditation-player[data-theme=forest]{background:#304d43}.meditation-player h3{font-size:25px;font-weight:400;margin:0 0 10px}.meditation-player audio{width:100%;display:block;min-width:0;color-scheme:dark}.meditation-panel #meditationMessage:empty{display:none}
+@media(max-width:360px){.forecast-hour{width:35px;min-height:38px;font-size:14px}.forecast-emoji{font-size:18px}.meditation-choices{gap:6px}.meditation-choices button{font-size:20px}.weather-ring-centre{font-size:23px}}
+
+.meditation-icon{display:block;margin-top:6px;font-size:24px}.meditation-choices button[aria-pressed=true]::after{content:none}

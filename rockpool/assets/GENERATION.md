@@ -19,3 +19,10 @@ Use case: stylized-concept. Asset type: transparent PNG game sprite sheet for a 
 ## Rock prompt
 
 Use case: stylized-concept. Asset type: transparent PNG illustration for a retro 1990s webpage. Primary request: a cute 16-bit pixel art rockpool sculpture: a low, irregular charcoal-grey and warm-brown rock seen slightly from above, with a large oval open rockpool hollow at its centre and one pale peach ribbed scallop seashell suspended in the middle of that hollow. The hollow interior must be completely TRANSPARENT around the shell so a website can place changing colours behind it; preserve only a few pale-blue pixel sparkle marks around the shell. Outer silhouette also transparent. Style: authentic SNES 16-bit hand-pixelled sprite, crisp chunky square pixels, dark outline, limited earthy grey/brown palette, cream and pale peach shell. Composition: one isolated rock centred in a square canvas, occupies 85% width and 60% height, broad elliptical opening centred in rock, shell visible and unmistakable. No other objects, no plants, no text, no lettering, no watermark, no scenic background, no floor. The rock rim is solid stone, opening is transparent, shell floats within opening.
+
+
+## Brightness slider icons — 29 October 2026
+
+Built-in imagegen, transparent background. Saved as `brightness-icons.png`; CSS uses the left and right halves without altering the generated artwork.
+
+Prompt: "Use case: stylized-concept. Create a single sprite sheet for a brightness slider: two equally sized icons side by side, crescent moon on the left and sun on the right, each centered in its half with generous transparent padding. 1990s 16-bit seaside computer game / Potatocorp aesthetic, crisp chunky pixel art, dark navy pixel outlines, moon pale icy blue, sun warm pale orange and golden yellow. Square pixels, simple readable silhouettes at 32px, no text, no scenery, no border, genuinely transparent background. Output wide 2:1 image."

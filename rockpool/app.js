@@ -1,5 +1,5 @@
 'use strict';
-const $=id=>document.getElementById(id),names=['Off','Ocean','Rainbow','Dark room','Custom colour','Weather'],speeds=['0.25×','0.5×','0.75×','1× · Original','1.5×','2×'];
+const $=id=>document.getElementById(id),names=['Off','Ocean','Rainbow','Dark room','Custom colour','Weather','Sea meditation','Farm meditation','Forest meditation'],speeds=['0.25×','0.5×','0.75×','1× · Original','1.5×','2×'];
 let device,commandChar,stateChar,confirmed=null,ready=false,busy=false,connecting=false,manual=false;
 let hueDraft=false,timerDraft=false,timerValue=0,reportedAt=0,checking=false,revision=0,epoch=0;
 let notificationWait=null,readChain=Promise.resolve(),previewUnlocked=false,pendingHue=null;
@@ -14,22 +14,35 @@ function renderWeather(){
  $('weatherButton').setAttribute('aria-pressed',String(ready&&confirmed?.mode===5));
  $('weatherButton').title=ready&&!weatherSupported?'Update Rockpool to use Weather.':'';
  $('weatherRefresh').disabled=Boolean(weatherJob)||(ready&&!weatherSupported);
- $('weatherDemo').disabled=Boolean(weatherJob)||(ready&&!weatherSupported);
+
  $('weatherCancel').hidden=!weatherJob;
  $('weatherSaved').hidden=!RockpoolWeather.eligible(savedWeather);
  $('weatherSaved').disabled=Boolean(weatherJob)||!ready||!weatherSupported;
  if(ready&&!weatherSupported)weatherText('Update Rockpool to use Weather. Your other controls still work.');
  if(!weatherJob&&!weatherError&&ready&&confirmed?.mode===5){
   const meta=weatherMetadata?.id===weatherStatus?.id?weatherMetadata:savedWeather?.id===weatherStatus?.id?savedWeather:null;
-  if(meta){describeWeather(meta);weatherText(meta.kind==='synthetic'?'Synthetic test pattern playing — not a forecast.':meta.end<Date.now()/1000?'Saved weather pattern — refresh for a new forecast.':'Weather for '+RockpoolWeather.location.name);}
+  if(meta){describeWeather(meta);weatherText(meta.kind==='synthetic'?'Synthetic test pattern playing — not a forecast.':meta.end<Date.now()/1000?'Saved weather pattern — refresh for a new forecast.':'Weather playing');}
   else{weatherText('Weather pattern playing');$('weatherDates').textContent='';}
  }
 }
 function describeWeather(p){
  const format=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
- $('weatherDates').textContent=p.kind==='synthetic'?'Synthetic test · 24-minute loop':`${format.format(new Date(p.start*1000))} – ${format.format(new Date(p.end*1000))} · Europe/London. Fetched ${format.format(new Date(p.fetched*1000))}.${p.partial?' Some weather detail unavailable.':''}`;
- const colours=[];for(let i=0;i<25;i+=4)colours.push(`rgb(${Array.from(p.payload.slice(i*10,i*10+3)).join(',')})`);
- $('weatherPalette').style.background='linear-gradient(90deg,'+colours.join(',')+')';
+ const hour=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',hour:'2-digit',hourCycle:'h23'});
+ $('weatherDates').textContent=`${format.format(new Date(p.start*1000))} – ${format.format(new Date(p.end*1000))}`;
+ $('weatherFetched').textContent=`Fetched ${format.format(new Date(p.fetched*1000))}${p.partial?' · Some detail unavailable':''}`;
+ const colours=[];for(let i=0;i<25;i++)colours.push(`rgb(${Array.from(p.payload.slice(i*10,i*10+3)).join(',')}) ${i*15}deg`);
+ const ring=$('weatherPalette');ring.style.setProperty('--forecast-colours','conic-gradient('+colours.join(',')+')');
+ ring.querySelectorAll('.forecast-hour').forEach(node=>node.remove());
+ for(const sample of p.samples||[]){
+  const angle=(sample.time-p.start)/86400*2*Math.PI-Math.PI/2,condition=RockpoolWeather.condition(sample);
+  const node=document.createElement('div');node.className='forecast-hour';node.setAttribute('role','listitem');
+  const detail=`${format.format(new Date(sample.time*1000))}: ${condition.label}${sample.wind!==null?', wind '+sample.wind+' km/h':''}${sample.rain!==null?', rain '+sample.rain+' mm':''}`;
+  node.setAttribute('aria-label',detail);node.title=detail;
+  node.style.left=(50+40*Math.cos(angle))+'%';node.style.top=(50+40*Math.sin(angle))+'%';
+  const time=document.createElement('span');time.textContent=hour.format(new Date(sample.time*1000))+':00';
+  const icon=document.createElement('span');icon.className='forecast-emoji';icon.textContent=condition.emoji;
+  time.setAttribute('aria-hidden','true');icon.setAttribute('aria-hidden','true');node.append(time,icon);ring.append(node);
+ }
 }
 function acceptWeatherStatus(view){
  weatherStatus=RockpoolWeather.decodeStatus(view);
@@ -48,14 +61,15 @@ async function loadWeather(kind='forecast'){
  if(!previewOnly&&!weatherSupported){weatherText('Update Rockpool to use Weather.');return;}
  const job={sequence:++weatherSequence,abort:new AbortController(),epoch,revision:undefined,pattern:null,committing:false};weatherJob=job;
  const current=()=>weatherJob===job&&weatherSequence===job.sequence&&(previewOnly||ready&&epoch===job.epoch);
- $('weatherPanel').hidden=false;renderWeather();weatherText(kind==='synthetic'?'Preparing synthetic test sky…':kind==='saved'?'Preparing saved weather…':'Getting weather for SE27…');
+ $('weatherPanel').hidden=false;renderWeather();weatherText(kind==='synthetic'?'Preparing synthetic test sky…':kind==='saved'?'Preparing saved weather…':'Getting your forecast…');
  let timeout;
  try{
   if(!previewOnly){const status=await readWeatherStatus();if(!current())return;job.revision=status.revision;}
   timeout=setTimeout(()=>job.abort.abort(),10000);
-  const pattern=kind==='synthetic'?RockpoolWeather.synthetic():kind==='saved'&&RockpoolWeather.eligible(savedWeather)?savedWeather:await RockpoolWeather.fetchLondon(job.abort.signal);
+  if(kind==='saved'&&!RockpoolWeather.eligible(savedWeather))throw Error('Saved weather is too old. Refresh for a new forecast.');
+  const pattern=kind==='synthetic'?RockpoolWeather.synthetic():kind==='saved'?savedWeather:await RockpoolWeather.fetchLondon(job.abort.signal);
   clearTimeout(timeout);if(!current())return;job.pattern=pattern;describeWeather(pattern);
-  if(previewOnly){weatherText((pattern.kind==='synthetic'?'Synthetic test preview.':'London forecast preview.')+' Connect, then tap Weather to load a pattern.');return;}
+  if(previewOnly){weatherText('');return;}
   const chr=weatherTransferChar;
   await gattRun(()=>chr.writeValueWithResponse(RockpoolWeather.begin(pattern,job.revision)));if(!current())return;
   for(let at=0;at<pattern.payload.length;at+=13){
@@ -66,8 +80,8 @@ async function loadWeather(kind='forecast'){
   await gattRun(()=>chr.writeValueWithResponse(RockpoolWeather.operation(0x12,pattern.id)));
   await readState();if(!current())return;await readWeatherStatus();if(!current())return;
   if(confirmed.mode!==5||weatherStatus.id!==pattern.id||!weatherStatus.playing)throw Error('Rockpool did not confirm the new pattern. Please retry.');
-  weatherMetadata=pattern;if(pattern.kind==='forecast')weatherCacheSave(pattern);
-  weatherText(pattern.kind==='synthetic'?'Synthetic test pattern playing — not a forecast.':'Weather for '+RockpoolWeather.location.name);
+  track('rockpool_pattern',{pattern:'weather'});weatherMetadata=pattern;if(pattern.kind==='forecast')weatherCacheSave(pattern);
+  weatherText(pattern.kind==='synthetic'?'Synthetic test pattern playing — not a forecast.':'Weather playing');
  }catch(e){
   if(current()){
    weatherError=true;weatherText(e.name==='AbortError'?'Weather request timed out. Please retry.':e.message||'Weather could not be loaded. Please retry.');
@@ -75,9 +89,9 @@ async function loadWeather(kind='forecast'){
   }
  }finally{clearTimeout(timeout);if(weatherJob===job){weatherJob=null;renderWeather();}}
 }
-$('weatherButton').onclick=()=>{weatherError=false;$('weatherPanel').hidden=false;renderWeather();if(confirmed?.mode!==5)loadWeather();};
-$('weatherRefresh').onclick=()=>loadWeather();$('weatherDemo').onclick=()=>loadWeather('synthetic');$('weatherSaved').onclick=()=>loadWeather('saved');$('weatherCancel').onclick=()=>cancelWeather();
-$('weatherForget').onclick=()=>{savedWeather=null;weatherMetadata=null;try{localStorage.removeItem('rockpool.weather.london.v1');}catch(_){}weatherText('Saved weather forgotten.');renderWeather();};
+$('weatherButton').onclick=()=>{showModePanel('weather');weatherError=false;$('weatherPanel').hidden=false;renderWeather();if(confirmed?.mode!==5)loadWeather();};
+$('weatherRefresh').onclick=()=>loadWeather();$('weatherSaved').onclick=()=>loadWeather('saved');$('weatherCancel').onclick=()=>cancelWeather();
+
 function message(text){$('message').textContent=text;}
 const seasideColours=[
  {hue:0,name:'Crab red',swatch:'#de6261'},
@@ -97,14 +111,14 @@ function preview(){
  const h=Number($('hue').value),choice=seasideColours.find(c=>c.hue===h);
  const label=choice?choice.name:'Your saved seaside shade';
  $('hueValue').textContent=label;
- const palette=`linear-gradient(90deg,hsl(${h} 72% 72%),hsl(${(h+30)%360} 72% 72%))`;
+ const palette=`linear-gradient(90deg,hsl(${h-36} 72% 72%),hsl(${h} 72% 72%),hsl(${h+36} 72% 72%))`;
  for(const id of ['hueValue','colour-heading']){
   $(id).style.backgroundImage=palette;$(id).classList.add('shade-text');
  }
  $('rockPreview').style.setProperty('--selected-hue',h);
  $('rockPreview').setAttribute('aria-label',`Pixel art rockpool with a suspended shell. Colour preview: ${label}.`);
- $('palette').style.background=`linear-gradient(to right,hsl(${h} 65% 60%),hsl(${(h+15)%360} 65% 60%),hsl(${(h+30)%360} 65% 60%))`;
- $('palette').setAttribute('aria-label',`Preview of hues ${h} to ${(h+30)%360} degrees`);
+ $('palette').style.background=`linear-gradient(to right,hsl(${h-36} 65% 60%),hsl(${h} 65% 60%),hsl(${h+36} 65% 60%))`;
+ $('palette').setAttribute('aria-label',`Preview of hues ${(h+324)%360} to ${(h+36)%360} degrees`);
  document.querySelectorAll('[data-colour]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.colour)===h)));
 }
 let wheelRotation=0,dragState=null,suppressColourClickUntil=0;
@@ -152,7 +166,7 @@ window.addEventListener('resize',positionColours);positionColours();
 function pointerAngle(e){const r=$('colourWheel').getBoundingClientRect();return Math.atan2(e.clientY-r.top-r.height/2,e.clientX-r.left-r.width/2)*180/Math.PI;}
 $('colourWheel').addEventListener('pointerdown',e=>{
  if(e.isPrimary===false || (e.pointerType==='mouse'&&e.button!==0))return;
- dragState={id:e.pointerId,x:e.clientX,y:e.clientY,last:pointerAngle(e),dragged:false};
+ dragState={id:e.pointerId,x:e.clientX,y:e.clientY,last:pointerAngle(e),ring:!!e.target?.closest?.('.colour-option'),dragged:false};
 });
 $('colourWheel').addEventListener('pointermove',e=>{
  if(!dragState||e.pointerId!==dragState.id)return;
@@ -161,7 +175,7 @@ $('colourWheel').addEventListener('pointermove',e=>{
   if(Math.hypot(dx,dy)<8)return;
   // On touchscreens vertical gestures belong to page scrolling. A sideways
   // sweep turns the wheel; a cancelled scroll gesture never sends a colour.
-  if(e.pointerType==='touch'&&Math.abs(dy)>Math.abs(dx))return;
+  if(e.pointerType==='touch'&&!dragState.ring&&Math.abs(dy)>Math.abs(dx))return;
  }
  if(!dragState.dragged){dragState.dragged=true;$('colourWheel').classList.add('dragging');$('colourWheel').setPointerCapture(e.pointerId);}
  const angle=pointerAngle(e),delta=((angle-dragState.last+540)%360)-180;
@@ -180,7 +194,7 @@ function finishColourTurn(e){
 $('colourWheel').addEventListener('pointerup',finishColourTurn);
 $('colourWheel').addEventListener('pointercancel',finishColourTurn);
 function renderTimerActions(){
- const enabled=ready&&!busy&&!connecting;
+ const enabled=ready&&!busy&&!connecting&&!isMeditationMode(confirmed?.mode);
  $('startTimer').textContent=timerValue?'Start timer':'Apply';
  $('startTimer').disabled=!enabled||!confirmed||(timerValue?!confirmed.mode:!confirmed.active);
  $('cancelTimer').hidden=!confirmed?.active;
@@ -202,7 +216,9 @@ function render(){
  $('wheel').setAttribute('aria-disabled','false');$('wheel').tabIndex=0;
  $('connect').disabled=busy||connecting;$('connect').textContent=connecting?'Connecting…':ready?'Disconnect':'Connect to Rockpool';
  document.body.dataset.connected=String(ready);
- $('speed').disabled=busy||connecting;
+ $('speed').disabled=busy||connecting||isMeditationMode(confirmed?.mode);
+ $('brightness').disabled=connecting||(ready&&!brightnessChar);
+ $('brightness').title=ready&&!brightnessChar?'Update Rockpool to use brightness.':'';
  $('connectionText').textContent=connecting?'Connecting…':ready?"Connected to Faye's Rockpool":'Not connected';
  $('connectionShell').hidden=!ready;
  if(confirmed){
@@ -211,11 +227,11 @@ function render(){
  $('speed').value=confirmed.speed;$('speed').setAttribute('aria-valuetext',speeds[confirmed.speed]);crabSpeed(confirmed.speed);
  }
  renderTimerActions();
- $('timerHelp').textContent=confirmed?.mode?'Choose a duration, then start your timer.':'Turn on your Rockpool to start a timer.';
- countdown();renderWeather();
+ $('timerHelp').textContent=confirmed?.mode?'':'Turn on your Rockpool to start a timer.';
+ countdown();renderWeather();renderMeditations();
 }
 function receive(view){
- const s=Rockpool.decode(view);if(weatherJob&&confirmed&&s.mode!==confirmed.mode&&!(weatherJob.committing&&s.mode===5))cancelWeather('Weather loading cancelled by a newer light setting.');confirmed=s;reportedAt=performance.now();checking=false;revision++;
+ const s=Rockpool.decode(view);if(weatherJob&&confirmed&&s.mode!==confirmed.mode&&!(weatherJob.committing&&s.mode===5))cancelWeather('Weather loading cancelled by a newer light setting.');confirmed=s;if(meditationSession?.started&&s.mode!==6+meditationSession.index)stopMeditation(false);reportedAt=performance.now();checking=false;revision++;
  if(!hueDraft){$('hue').value=s.hue;preview();}
  if(!timerDraft)wheelSet(s.active?s.minutes:0);render();
  if(notificationWait){notificationWait();notificationWait=null;}
@@ -227,8 +243,9 @@ function readState(){
  const next=readChain.catch(()=>{}).then(async()=>{if(token!==epoch||!ch)throw Error('Connection changed.');const v=await gattRun(()=>ch.readValue(),token);if(token===epoch)receive(v);});readChain=next;return next;
 }
 function lost(){
+ stopMeditation(false);
  if(weatherStatusChar)weatherStatusChar.removeEventListener('characteristicvaluechanged',weatherNotify);
- epoch++;ready=false;cancelWeather('Connection lost during weather loading.');weatherTransferChar=null;weatherStatusChar=null;weatherSupported=false;weatherStatus=null;$('weatherPanel').hidden=true;busy=false;connecting=false;hueDraft=timerDraft=false;pendingHue=null;previewUnlocked=false;
+ brightnessPending=null;brightnessChar=null;epoch++;ready=false;cancelWeather('Connection lost during weather loading.');weatherTransferChar=null;weatherStatusChar=null;weatherSupported=false;weatherStatus=null;$('weatherPanel').hidden=true;busy=false;connecting=false;hueDraft=timerDraft=false;pendingHue=null;previewUnlocked=false;
  if(stateChar)stateChar.removeEventListener('characteristicvaluechanged',notify);commandChar=stateChar=null;
  if(notificationWait){notificationWait();notificationWait=null;}
  render();if(!manual)message('Connection lost. Tap Connect to reconnect.');else message('Disconnected.');
@@ -236,6 +253,7 @@ function lost(){
 function fail(e){message(e.message||'Connection failed. Tap Connect to retry.');manual=true;if(device?.gatt.connected)device.gatt.disconnect();else lost();message(e.message);}
 async function connect(){
  if(ready){manual=true;device.gatt.disconnect();return;}
+ if(meditationSession)stopMeditation(false);
  connecting=true;manual=false;message('');render();
  try{
  device=await navigator.bluetooth.requestDevice({filters:[{services:[Rockpool.service]}]});
@@ -244,16 +262,17 @@ async function connect(){
  commandChar=await bounded(service.getCharacteristic(Rockpool.command));stateChar=await bounded(service.getCharacteristic(Rockpool.state));
  stateChar.addEventListener('characteristicvaluechanged',notify);await bounded(stateChar.startNotifications());
  hueDraft=timerDraft=false;await readState();
- if(confirmed.version===4){
+ if(confirmed.version>=4){
   try{weatherTransferChar=await bounded(service.getCharacteristic(Rockpool.weatherTransfer));weatherStatusChar=await bounded(service.getCharacteristic(Rockpool.weatherState));
    weatherStatusChar.addEventListener('characteristicvaluechanged',weatherNotify);await bounded(weatherStatusChar.startNotifications());await readWeatherStatus();weatherSupported=true;
   }catch(e){weatherSupported=false;weatherText('Weather unavailable: '+e.message);}
  }
+ try{brightnessChar=await bounded(service.getCharacteristic('5f740006-6f63-4b70-9a79-726f636b706c'));const value=await gattRun(()=>brightnessChar.readValue());if(value.byteLength!==1||value.getUint8(0)<1||value.getUint8(0)>100)throw Error("Invalid brightness");setBrightness(value.getUint8(0));}catch(_){brightnessChar=null;}
  if(token!==epoch)throw Error('Connection changed.');ready=true;connecting=false;render();
  }catch(e){connecting=false;if(e.name==='NotFoundError'){message('');render();}else fail(e);}
 }
 async function send(bytes,kind,submittedHue){
- if(!ready||busy)return;if(bytes[0]<=5)cancelWeather('Weather loading cancelled by your new selection.');busy=true;message('Applying…');render();const token=epoch,before=revision;
+ if(!ready||busy)return;if(bytes[0]<=5)cancelWeather('Weather loading cancelled by your new selection.');busy=true;message('');render();const token=epoch,before=revision;
  try{
  await gattRun(()=>commandChar.writeValueWithResponse(Uint8Array.from(bytes)));
  if(token!==epoch)throw Error('Connection lost. Tap Connect to reconnect.');
@@ -261,6 +280,9 @@ async function send(bytes,kind,submittedHue){
  if(token!==epoch)throw Error('Connection lost. Tap Connect to reconnect.');
  if(revision===before)await readState();
  if(kind==='hue'&&pendingHue===null&&Number($('hue').value)===submittedHue){hueDraft=false;$('hue').value=confirmed.hue;preview();}
+ if(bytes[0]<=5)track('rockpool_pattern',{pattern:names[confirmed.mode]});
+ if(bytes[0]===6)track('rockpool_speed',{speed:bytes[1]});
+ if(kind==='timer')track('rockpool_timer',{minutes:confirmed.minutes});
  if(kind==='timer'){timerDraft=false;wheelSet(confirmed.active?confirmed.minutes:0);}
  message('');
  }catch(e){fail(e);}finally{busy=false;render();if(pendingHue!==null)flushHue();}
@@ -272,8 +294,8 @@ function countdown(){
  $('countdown').textContent=remaining?`Turns off in ${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')} · ${s.minutes} min timer`:'Checking timer…';
  if(!remaining&&!checking&&!busy){checking=true;readState().catch(fail);}
 }
-$('connect').onclick=connect;$('power').onclick=()=>send([confirmed.mode?0:4]);
- document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>send([Number(b.dataset.mode)]));
+$('connect').onclick=connect;$('power').onclick=()=>{showModePanel(null);send([confirmed.mode?0:4]);};
+ document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{showModePanel(null);send([Number(b.dataset.mode)]);});
 $('hue').oninput=()=>{hueDraft=true;preview();};
 $('speed').oninput=()=>{$('speed').setAttribute('aria-valuetext',speeds[$('speed').value]);crabSpeed(Number($('speed').value));};$('speed').onchange=()=>send([6,Number($('speed').value)]);
 const spacer=()=>{const s=document.createElement('div');s.className='spacer';return s;};$('wheel').append(spacer());
@@ -293,5 +315,94 @@ $('wheel').onscroll=()=>{
 $('wheel').onkeydown=e=>{let n=timerValue;if(e.key==='ArrowUp')n--;else if(e.key==='ArrowDown')n++;else if(e.key==='Home')n=0;else if(e.key==='End')n=180;else return;e.preventDefault();timerDraft=true;wheelSet(Math.max(0,Math.min(180,n)));};
 $('startTimer').onclick=()=>send(timerValue?[7,timerValue,0]:[8],'timer');$('cancelTimer').onclick=()=>send([8],'timer');
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready){readState().then(()=>weatherSupported?readWeatherStatus():null).catch(fail);}});
+
+function track(event,params){if(typeof gtag==='function')gtag('event',event,params);}
+let brightnessChar=null,brightnessPending=null,brightnessSending=false;
+function setBrightness(value){
+ value=Math.max(1,Math.min(100,Number(value)||100));$('brightness').value=value;
+ $('brightness').setAttribute('aria-valuetext',value+'%');
+ $('brightnessThumb').style.setProperty('--brightness',(value-1)/99);
+ $('brightnessThumb').dataset.icon=value<50?'moon':'sun';
+ try{localStorage.setItem('rockpool.brightness',String(value));}catch(_){}
+}
+$('brightness').oninput=()=>setBrightness($('brightness').value);
+$('brightness').onchange=async()=>{
+ if(!ready||!brightnessChar)return;
+ brightnessPending=Number($('brightness').value);if(brightnessSending)return;brightnessSending=true;
+ try{while(brightnessPending!==null&&ready&&brightnessChar){const value=brightnessPending;brightnessPending=null;const chr=brightnessChar;await gattRun(()=>chr.writeValueWithResponse(Uint8Array.of(value)));track('rockpool_brightness',{brightness:value});}}
+ catch(e){fail(e);}finally{brightnessSending=false;}
+};
+try{setBrightness(localStorage.getItem('rockpool.brightness'));}catch(_){setBrightness(100);}
+$('customSlot').append($('customPanel'));
+$('customise').onclick=()=>{const open=$('customPanel').hidden;showModePanel(open?'custom':null);if(open){positionColours();track('rockpool_customise',{});}};
+
+const meditationTracks=[
+ {name:'Sea',theme:'sea',duration:'2:28',src:'assets/Meditations/sea.m4a'},
+ {name:'Farm',theme:'farm',duration:'1:55',src:'assets/Meditations/farm.m4a'},
+ {name:'Forest',theme:'forest',duration:'1:06',src:'assets/Meditations/forest.m4a'}
+];
+let meditationSession=null,meditationSequence=0,meditationChoice=null;
+function isMeditationMode(mode){return mode>=6&&mode<=8;}
+function renderMeditations(){
+ const supported=!ready||confirmed?.version>=5;
+ $('meditationButton').disabled=busy||connecting;
+ document.querySelectorAll('[data-meditation]').forEach(b=>{
+  b.disabled=!supported||busy||connecting;
+  b.setAttribute('aria-pressed',String(meditationSession?.index===Number(b.dataset.meditation)));
+ });
+ if(ready&&!supported)$('meditationMessage').textContent='Update your Rockpool to play matching meditation lights.';
+}
+function stopMeditation(turnOff=true){
+ const session=meditationSession;meditationSession=null;meditationSequence++;
+ $('meditationAudio').pause();
+ if(session&&turnOff&&ready&&confirmed?.version>=5){
+  const chr=commandChar,token=epoch;
+  // Conditional stop: a late audio-ended event cannot turn off another mode.
+  gattRun(()=>chr.writeValueWithResponse(Uint8Array.of(10)),token).then(()=>{if(token===epoch)return readState();}).catch(e=>{if(token===epoch)fail(e);});
+ }
+ renderMeditations();
+}
+function showModePanel(panel){
+ $('speedSection').hidden=panel==='meditation';$('timerSection').hidden=panel==='meditation';
+ if(panel!=='meditation')stopMeditation();
+ if(panel!=='weather')cancelWeather();
+ $('customPanel').hidden=panel!=='custom';$('customise').setAttribute('aria-expanded',String(panel==='custom'));
+ $('weatherPanel').hidden=panel!=='weather';
+ $('meditationPanel').hidden=panel!=='meditation';$('meditationButton').setAttribute('aria-expanded',String(panel==='meditation'));
+}
+async function startMeditation(index,fromPlayer=false){
+ if(ready&&confirmed?.version<5)return;
+ const trackInfo=meditationTracks[index];if(!trackInfo)return;
+ cancelWeather();
+ // Set ownership before play(): native play events must not start a second session.
+ stopMeditation(false);
+ const session={index,sequence:++meditationSequence,started:false,connected:ready};meditationSession=session;meditationChoice=index;
+ const current=()=>meditationSession===session;
+ const audio=$('meditationAudio');
+ if(!fromPlayer){audio.src=trackInfo.src;audio.currentTime=0;}
+ $('meditationPlayer').hidden=false;$('meditationPlayer').dataset.theme=trackInfo.theme;
+ $('meditationTitle').textContent=trackInfo.name+' · '+trackInfo.duration;
+ $('meditationMessage').textContent=ready?'Starting your meditation…':'';renderMeditations();
+ try{
+  // play() happens in the original click gesture for iPhone autoplay rules.
+  const playback=audio.play();
+  const chr=commandChar;
+  const lights=session.connected?gattRun(()=>chr.writeValueWithResponse(Uint8Array.of(9,index))):Promise.resolve();
+  await Promise.all([playback,lights]);if(!current())return;
+  if(session.connected){await readState();if(!current())return;if(confirmed.mode!==6+index)throw Error('Rockpool did not start the meditation. Please try again.');}
+  session.started=true;
+  $('meditationMessage').textContent='';
+  track(session.connected?'rockpool_pattern':'rockpool_meditation_preview',{pattern:'meditation_'+trackInfo.theme});
+ }catch(e){
+  if(current()){stopMeditation();$('meditationMessage').textContent=e.message||'Could not start this meditation. Please try again.';}
+ }
+}
+$('meditationButton').onclick=()=>{const open=$('meditationPanel').hidden;showModePanel(open?'meditation':null);};
+document.querySelectorAll('[data-meditation]').forEach(b=>b.onclick=()=>startMeditation(Number(b.dataset.meditation)));
+$('meditationAudio').addEventListener('play',()=>{if(!meditationSession&&meditationChoice!==null&&!$('meditationPanel').hidden)startMeditation(meditationChoice,true);});
+$('meditationAudio').addEventListener('ended',()=>{if(!meditationSession)return;stopMeditation();$('meditationMessage').textContent='Meditation complete. Your Rockpool is resting.';});
+$('meditationAudio').addEventListener('error',()=>{if(!meditationSession)return;stopMeditation();$('meditationMessage').textContent='The recording could not be played. Please try again.';});
+window.addEventListener('pagehide',()=>{stopMeditation();if(device?.gatt.connected&&isMeditationMode(confirmed?.mode))device.gatt.disconnect();});
+
 wheelSet(0,false);preview();render();setInterval(countdown,250);
 if(!navigator.bluetooth||!window.isSecureContext){$('connect').hidden=true;$('help').hidden=false;$('help').textContent='To control your Rockpool on iPhone, open this page in Bluefy.';const a=document.createElement('a');a.href='https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055';a.textContent='Get Bluefy on the App Store';$('help').append(document.createElement('br'),a);}
