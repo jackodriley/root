@@ -14,14 +14,14 @@ class Garden {
  get total(){return this.butterflies.reduce((sum,b)=>sum+b.score,0);}
  leave(b){if(b.target?.occupant===b)b.target.occupant=null;b.lastFlower=b.target?.id??b.lastFlower;b.target=null;b.state='flying';b.cooldown=3;b.wander={x:.1+this.random()*.8,y:.12+this.random()*.4};}
  land(b,f){f.occupant=b;b.target=f;b.state='landed';b.rest=3+this.random()*2;b.x=f.x;b.y=f.y;b.score++;this.events.push({kind:'nectar',name:b.name,x:f.x,y:f.y});}
- step(dt){this.time+=dt;for(const b of this.butterflies){b.cooldown=Math.max(0,b.cooldown-dt);if(b.state==='landed'){b.x=b.target.x;b.y=b.target.y;b.rest-=dt;if(b.rest<=0)this.leave(b);continue;}
+ step(dt,speedMultiplier=1){this.time+=dt;for(const b of this.butterflies){b.cooldown=Math.max(0,b.cooldown-dt*speedMultiplier);if(b.state==='landed'){b.x=b.target.x;b.y=b.target.y;b.rest-=dt*speedMultiplier;if(b.rest<=0)this.leave(b);continue;}
  if(b.spin>0){b.spin=Math.max(0,b.spin-dt);b.angle+=Math.PI*4*dt;if(b.spin===0)b.boost=2.5;continue;}
  b.boost=Math.max(0,b.boost-dt);b.cheekTimer-=dt;if(this.attribute(b,'Cheekiness')>0&&b.cheekTimer<=0){b.cheekTimer=16-this.attribute(b,'Cheekiness')+this.random()*8;if(this.random()<.2+this.attribute(b,'Cheekiness')*.07){b.spin=1;b.target=null;continue;}}
  const radius=.13+this.attribute(b,'Vision')*.055;
  if(!b.target&&b.cooldown===0)b.target=this.flowers.filter(f=>(this.flowers.length===1||f.id!==b.lastFlower)&&!f.occupant&&Math.hypot(f.x-b.x,f.y-b.y)<=radius).sort((a,c)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(c.x-b.x,c.y-b.y))[0]||null;
  if(b.target?.occupant)b.target=null;
  if(!b.wander||Math.hypot(b.wander.x-b.x,b.wander.y-b.y)<.04)b.wander={x:.08+this.random()*.84,y:.15+this.random()*.66};
- const target=b.target||b.wander,dx=target.x-b.x,dy=target.y-b.y,dist=Math.hypot(dx,dy),speed=(.035+this.attribute(b,'Speed')*.013)*(b.boost>0?1.9:1),travel=Math.min(dist,speed*dt);
+ const target=b.target||b.wander,dx=target.x-b.x,dy=target.y-b.y,dist=Math.hypot(dx,dy),speed=(.035+this.attribute(b,'Speed')*.013)*(b.boost>0?1.9:1),travel=Math.min(dist,speed*speedMultiplier*dt);
  if(dist>0){b.x+=dx/dist*travel;b.y+=dy/dist*travel;const heading=Math.atan2(dy,dx)+Math.PI/2,diff=Math.atan2(Math.sin(heading-b.angle),Math.cos(heading-b.angle));b.angle+=diff*Math.min(1,dt*4);}
  if(b.target&&dist<=.018+travel&&!b.target.occupant)this.land(b,b.target);
  }}

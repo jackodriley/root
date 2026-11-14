@@ -1,0 +1,3 @@
+Generated with the built-in imagegen tool, editing garden.png.
+
+Use case: lighting-weather. Edit target: the supplied watercolor garden background. Create the exact same scene at peaceful nighttime. Preserve the exact landscape composition, framing, aspect ratio, flower and leaf positions, distant hills and open central sky. Change only time-of-day lighting: deep indigo and blue night sky, softly moonlit flowers and foliage, subtle stars. Keep it welcoming and legible for a children’s butterfly game. Preserve watercolor paper texture. No characters, butterflies, words, interface, or extra landscape objects. Output the full background image.
