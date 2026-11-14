@@ -4,32 +4,35 @@ class Garden {
  addFlower(name,art=null){if(this.flowers.length>=20)throw Error('The garden holds 20 flowers.');const f={id:this.flowers.length,name,art,occupant:null};this.flowers.push(f);this.layout();return f;}
  layout(width=this.width||1000,height=this.height||700){
  this.width=width;this.height=height;
- const count=this.flowers.length;
- if(!count)return;
- // Give each bloom and its label a separate cell in the lower garden.
- const areaWidth=width*.88,areaHeight=height*.48;
- const columns=Math.min(count,Math.max(1,Math.ceil(Math.sqrt(count*areaWidth/areaHeight))));
- const rows=Math.ceil(count/columns),cellWidth=areaWidth/columns,cellHeight=areaHeight/rows;
- this.flowerSize=Math.max(1,Math.min(130,cellWidth-24,cellHeight-36));
- this.labelWidth=Math.max(1,cellWidth-12);
+ const count=this.flowers.length;if(!count)return;
+ // Measure the three garden edges in pixels so wide and tall screens space evenly.
+ const points=[[.12,.34],[.12,.78],[.88,.78],[.88,.34]];
+ const segments=points.slice(1).map((end,i)=>({start:points[i],end,length:Math.hypot((end[0]-points[i][0])*width,(end[1]-points[i][1])*height)}));
+ const total=segments.reduce((sum,s)=>sum+s.length,0);
  this.flowers.forEach((f,i)=>{
- const row=Math.floor(i/columns),col=i%columns;
- const rowCount=Math.min(columns,count-row*columns);
- f.x=(width/2+(col-(rowCount-1)/2)*cellWidth)/width;
- f.y=(height*.34+(row+.5)*cellHeight)/height;
+ let distance=(i+.5)*total/count;
+ for(const segment of segments){if(distance<=segment.length){const t=distance/segment.length;f.x=segment.start[0]+(segment.end[0]-segment.start[0])*t;f.y=segment.start[1]+(segment.end[1]-segment.start[1])*t;f.edge=segment===segments[0]?'left':segment===segments[2]?'right':'bottom';break;}distance-=segment.length;}
  });
+ let spacing=Math.min(width*.2,height*.24,166);
+ for(const a of this.flowers)for(const b of this.flowers)if(a!==b)spacing=Math.min(spacing,Math.max(Math.abs(a.x-b.x)*width,Math.abs(a.y-b.y)*height));
+ this.flowerSize=Math.max(1,Math.min(130,spacing*.65));this.labelWidth=spacing*.85;this.labelFont=Math.min(12,spacing*.16);
+
  }
 
- add(name,stats,art){if(!name.trim()||!['Speed','Size','Vision','Cheekiness'].every(k=>Number.isInteger(stats[k])&&stats[k]>=0&&stats[k]<=10)||Object.values(stats).reduce((a,b)=>a+b,0)!==10)throw Error('Spend exactly ten points.');const b={id:this.butterflies.length+1,name:name.trim(),stats:{...stats},art,x:.15+this.random()*.7,y:.2+this.random()*.3,angle:0,phase:this.random()*30,score:0,state:'flying',target:null,cooldown:0,rest:0,wander:null,lastFlower:null,spin:0,boost:0,cheekTimer:4+this.random()*8};this.butterflies.push(b);return b;}
+ add(name,stats,art){if(!name.trim()||!['Speed','Size','Vision','Cheekiness'].every(k=>Number.isInteger(stats[k])&&stats[k]>=0&&stats[k]<=10)||Object.values(stats).reduce((a,b)=>a+b,0)!==10)throw Error('Spend exactly ten points.');const b={id:this.butterflies.length+1,name:name.trim(),stats:{...stats},art,x:.15+this.random()*.7,y:.2+this.random()*.3,angle:0,phase:this.random()*30,score:0,state:'flying',target:null,cooldown:0,rest:0,wander:null,lastFlower:null,visits:{},spin:0,boost:0,cheekTimer:4+this.random()*8};this.butterflies.push(b);return b;}
  attribute(b,key){return b.stats[key]+(b.name.trim().toLowerCase()==='ada'?5:0);}
  get total(){return this.butterflies.reduce((sum,b)=>sum+b.score,0);}
  leave(b){if(b.target?.occupant===b)b.target.occupant=null;b.lastFlower=b.target?.id??b.lastFlower;b.target=null;b.state='flying';b.cooldown=3;b.wander={x:.1+this.random()*.8,y:.12+this.random()*.4};}
- land(b,f){f.occupant=b;b.target=f;b.state='landed';b.rest=3+this.random()*2;b.x=f.x;b.y=f.y;b.score++;this.events.push({kind:'nectar',name:b.name,x:f.x,y:f.y});}
+ land(b,f){f.occupant=b;b.target=f;b.state='landed';b.rest=3+this.random()*2;b.x=f.x;b.y=f.y;b.score++;b.visits[f.id]=(b.visits[f.id]||0)+1;this.events.push({kind:'nectar',name:b.name,x:f.x,y:f.y});}
  step(dt,speedMultiplier=1){this.time+=dt;for(const b of this.butterflies){b.cooldown=Math.max(0,b.cooldown-dt*speedMultiplier);if(b.state==='landed'){b.x=b.target.x;b.y=b.target.y;b.rest-=dt*speedMultiplier;if(b.rest<=0)this.leave(b);continue;}
  if(b.spin>0){b.spin=Math.max(0,b.spin-dt);b.angle+=Math.PI*4*dt;if(b.spin===0)b.boost=2.5;continue;}
  b.boost=Math.max(0,b.boost-dt);b.cheekTimer-=dt;if(this.attribute(b,'Cheekiness')>0&&b.cheekTimer<=0){b.cheekTimer=16-this.attribute(b,'Cheekiness')+this.random()*8;if(this.random()<.2+this.attribute(b,'Cheekiness')*.07){b.spin=1;b.target=null;continue;}}
  const radius=.13+this.attribute(b,'Vision')*.055;
- if(!b.target&&b.cooldown===0)b.target=this.flowers.filter(f=>(this.flowers.length===1||f.id!==b.lastFlower)&&!f.occupant&&Math.hypot(f.x-b.x,f.y-b.y)<=radius).sort((a,c)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(c.x-b.x,c.y-b.y))[0]||null;
+ const available=this.flowers.filter(f=>(this.flowers.length===1||f.id!==b.lastFlower)&&!f.occupant);
+ const least=Math.min(...available.map(f=>b.visits[f.id]||0));
+ const explore=available.filter(f=>(b.visits[f.id]||0)===least).sort((a,c)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(c.x-b.x,c.y-b.y))[0];
+ if(!b.target&&b.cooldown===0&&explore){if(Math.hypot(explore.x-b.x,explore.y-b.y)<=radius)b.target=explore;else b.wander={x:explore.x,y:explore.y};}
+
  if(b.target?.occupant)b.target=null;
  if(!b.wander||Math.hypot(b.wander.x-b.x,b.wander.y-b.y)<.04)b.wander={x:.08+this.random()*.84,y:.15+this.random()*.66};
  const target=b.target||b.wander,dx=target.x-b.x,dy=target.y-b.y,dist=Math.hypot(dx,dy),speed=(.035+this.attribute(b,'Speed')*.013)*(b.boost>0?1.9:1),travel=Math.min(dist,speed*speedMultiplier*dt);
