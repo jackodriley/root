@@ -2,13 +2,24 @@
 class Garden {
  constructor(random=Math.random){this.random=random;this.time=0;this.butterflies=[];this.events=[];this.flowers=[];}
  addFlower(name,art=null){if(this.flowers.length>=20)throw Error('The garden holds 20 flowers.');const f={id:this.flowers.length,name,art,occupant:null};this.flowers.push(f);this.layout();return f;}
- layout(){
- // Spread flowers along the left, bottom and right borders, leaving the
- // upper-right scoreboard and the centre of the garden clear.
- const segments=[{x:.08,y:.22,dx:0,dy:.61,length:.61},{x:.08,y:.83,dx:.84,dy:0,length:.84},{x:.92,y:.83,dx:0,dy:-.38,length:.38}];
- const total=segments.reduce((sum,s)=>sum+s.length,0);
- this.flowers.forEach((f,i)=>{let distance=(i+.5)*total/this.flowers.length;for(const s of segments){if(distance<=s.length){const t=distance/s.length;f.x=s.x+s.dx*t;f.y=s.y+s.dy*t;break;}distance-=s.length;}});
+ layout(width=this.width||1000,height=this.height||700){
+ this.width=width;this.height=height;
+ const count=this.flowers.length;
+ if(!count)return;
+ // Give each bloom and its label a separate cell in the lower garden.
+ const areaWidth=width*.88,areaHeight=height*.48;
+ const columns=Math.min(count,Math.max(1,Math.ceil(Math.sqrt(count*areaWidth/areaHeight))));
+ const rows=Math.ceil(count/columns),cellWidth=areaWidth/columns,cellHeight=areaHeight/rows;
+ this.flowerSize=Math.max(1,Math.min(130,cellWidth-24,cellHeight-36));
+ this.labelWidth=Math.max(1,cellWidth-12);
+ this.flowers.forEach((f,i)=>{
+ const row=Math.floor(i/columns),col=i%columns;
+ const rowCount=Math.min(columns,count-row*columns);
+ f.x=(width/2+(col-(rowCount-1)/2)*cellWidth)/width;
+ f.y=(height*.34+(row+.5)*cellHeight)/height;
+ });
  }
+
  add(name,stats,art){if(!name.trim()||!['Speed','Size','Vision','Cheekiness'].every(k=>Number.isInteger(stats[k])&&stats[k]>=0&&stats[k]<=10)||Object.values(stats).reduce((a,b)=>a+b,0)!==10)throw Error('Spend exactly ten points.');const b={id:this.butterflies.length+1,name:name.trim(),stats:{...stats},art,x:.15+this.random()*.7,y:.2+this.random()*.3,angle:0,phase:this.random()*30,score:0,state:'flying',target:null,cooldown:0,rest:0,wander:null,lastFlower:null,spin:0,boost:0,cheekTimer:4+this.random()*8};this.butterflies.push(b);return b;}
  attribute(b,key){return b.stats[key]+(b.name.trim().toLowerCase()==='ada'?5:0);}
  get total(){return this.butterflies.reduce((sum,b)=>sum+b.score,0);}
